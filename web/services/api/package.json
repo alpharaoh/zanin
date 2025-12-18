@@ -1,5 +1,16 @@
 {
+  "name": "api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot run src/server.ts",
+    "build": "bun run tsoa routes",
+    "lint": "eslint ."
+  },
   "dependencies": {
-    "express": "^5.2.1"
+    "@tsoa/runtime": "^7.0.0-alpha.0",
+    "express": "^5.2.1",
+    "tsoa": "^7.0.0-alpha.0"
   }
 }
