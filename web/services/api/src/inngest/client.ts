@@ -1,7 +1,7 @@
 import { EventSchemas, Inngest } from "inngest";
-import { TestEvent } from "./functions/test";
+import { ProcessAudioEvent } from "./functions/processAudio";
 
-type Events = TestEvent;
+type Events = ProcessAudioEvent;
 
 export const inngest = new Inngest({
   id: "zanin.ai",

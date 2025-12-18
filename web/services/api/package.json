@@ -9,6 +9,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@deepgram/sdk": "^4.11.3",
     "@tsoa/runtime": "^7.0.0-alpha.0",
     "@zanin/auth": "workspace:*",
     "@zanin/db": "workspace:*",
