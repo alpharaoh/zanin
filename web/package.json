@@ -1,0 +1,9 @@
+{
+  "name": "zanin",
+  "private": true,
+  "workspaces": [
+    "client",
+    "packages/*",
+    "services/*"
+  ]
+}

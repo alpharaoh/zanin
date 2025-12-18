@@ -1,4 +1,5 @@
 {
+  "name": "@zanin/db",
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
     "dotenv": "^17.2.3",
