@@ -9,6 +9,7 @@
     "specVersion": 3
   },
   "routes": {
-    "routesDir": "build"
+    "routesDir": "build",
+    "authenticationModule": "src/handlers/authHandler.ts"
   }
 }

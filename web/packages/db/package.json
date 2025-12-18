@@ -2,6 +2,7 @@
   "name": "@zanin/db",
   "exports": {
     ".": "./src/index.ts",
+    "./auth": "./src/auth.ts",
     "./queries/*": "./src/queries/*.ts"
   },
   "scripts": {

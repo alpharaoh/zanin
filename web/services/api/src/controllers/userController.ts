@@ -5,7 +5,9 @@ import {
   Path,
   Post,
   Query,
+  Request,
   Route,
+  Security,
   SuccessResponse,
 } from "tsoa";
 
@@ -19,6 +21,7 @@ interface CreateUserRequest {
 }
 
 @Route("users")
+@Security("default")
 export class UsersController extends Controller {
   /**
    * Retrieves the details of an existing user.
@@ -28,12 +31,15 @@ export class UsersController extends Controller {
    */
   @Get("{userId}")
   public async getUser(
+    @Request() request: Request,
     @Path() userId: number,
     @Query() name?: string,
   ): Promise<User> {
+    console.log(request);
+
     return {
-      id: userId,
-      name: name,
+      id: 1,
+      name: "zanin",
     };
   }
 

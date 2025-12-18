@@ -4,17 +4,24 @@ import { RegisterRoutes } from "../build/routes";
 import swaggerUi from "swagger-ui-express";
 import { errorHandler } from "./handlers/errorHandler";
 import { notFoundHandler } from "./handlers/notFoundHandler";
+import { authMiddleware } from "@zanin/db/auth";
 import pino from "pino-http";
 
 export const app = express();
 
 app.use(pino());
-app.use(cors());
+app.use(
+  cors({
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
+    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+  }),
+);
 app.use(
   urlencoded({
     extended: true,
   }),
 );
+app.all("/api/auth/*splat", authMiddleware);
 app.use(json());
 app.use("/docs", swaggerUi.serve, async (_: Request, res: Response) => {
   return res.send(

@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 import { organization } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import db from ".";
@@ -6,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { getActiveOrganization } from "./utils/getActiveOrganization";
 import * as schema from "./schema";
 
+// TODO: Split this up into a seperate package /packages/auth
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -77,6 +79,9 @@ export const auth = betterAuth({
     },
   },
 });
+
+export const authMiddleware = toNodeHandler(auth);
+export { fromNodeHeaders };
 
 const slugify = (name: string) =>
   name
