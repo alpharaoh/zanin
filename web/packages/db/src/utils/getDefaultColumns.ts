@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { text, timestamp } from "drizzle-orm/pg-core";
 
 const createIdColumn = () =>
-  text("id").primaryKey().unique().default(sql.raw(`gen_ulid()`));
+  text("id").primaryKey().unique().default(sql.raw(`uuidv7()`));
 
 export const getDefaultColumns = () => {
   return {

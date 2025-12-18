@@ -8,6 +8,7 @@ import {
   Route,
   SuccessResponse,
 } from "tsoa";
+import { selectOrganization } from "@zanin/db/queries/select/selectOrganization";
 
 interface User {
   id: number;
@@ -46,6 +47,9 @@ export class UsersController extends Controller {
   public async createUser(
     @Body() requestBody: CreateUserRequest,
   ): Promise<void> {
+    console.log(requestBody);
+    const organization = await selectOrganization("123");
+    console.log(organization);
     this.setStatus(201);
   }
 }

@@ -25,7 +25,7 @@ CREATE TABLE "invitation" (
 );
 --> statement-breakpoint
 CREATE TABLE "member" (
-	"id" text PRIMARY KEY DEFAULT gen_ulid() NOT NULL,
+	"id" text PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now(),
 	"deleted_at" timestamp with time zone,
@@ -36,7 +36,7 @@ CREATE TABLE "member" (
 );
 --> statement-breakpoint
 CREATE TABLE "organization" (
-	"id" text PRIMARY KEY DEFAULT gen_ulid() NOT NULL,
+	"id" text PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now(),
 	"deleted_at" timestamp with time zone,
@@ -62,7 +62,7 @@ CREATE TABLE "session" (
 );
 --> statement-breakpoint
 CREATE TABLE "user" (
-	"id" text PRIMARY KEY DEFAULT gen_ulid() NOT NULL,
+	"id" text PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now(),
 	"deleted_at" timestamp with time zone,
