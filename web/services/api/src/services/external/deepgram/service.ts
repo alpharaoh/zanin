@@ -1,43 +1,26 @@
+import type { SyncPrerecordedResponse, PrerecordedSchema } from "@deepgram/sdk";
 import { deepgramClient } from "./client";
 
-interface Word {
-  word: string;
-  start: number;
-  end: number;
-  confidence: number;
-}
+type Alternative =
+  SyncPrerecordedResponse["results"]["channels"][0]["alternatives"][0];
 
-interface TranscriptionResult {
-  transcript: string;
-  confidence: number;
-  words: Word[];
-}
-
-interface TranscribeOptions {
-  model?: "nova-2" | "nova" | "enhanced" | "base";
-  language?: string;
-  punctuate?: boolean;
-  smartFormat?: boolean;
-}
-
-const DEFAULT_OPTIONS: TranscribeOptions = {
+const DEFAULT_OPTIONS: Partial<PrerecordedSchema> = {
   model: "nova-2",
   language: "en",
   punctuate: true,
-  smartFormat: true,
+  diarize: true,
 };
 
 const DeepgramService = {
   transcribe: async (
     audioBuffer: Buffer,
-    options: TranscribeOptions = {},
-  ): Promise<TranscriptionResult> => {
+    options: Partial<PrerecordedSchema> = {},
+  ): Promise<Alternative> => {
     const config = { ...DEFAULT_OPTIONS, ...options };
 
     const { result, error } =
       await deepgramClient.listen.prerecorded.transcribeFile(audioBuffer, {
         model: config.model,
-        smart_format: config.smartFormat,
         punctuate: config.punctuate,
         language: config.language,
       });
@@ -51,8 +34,8 @@ const DeepgramService = {
 
   transcribeUrl: async (
     url: string,
-    options: TranscribeOptions = {},
-  ): Promise<TranscriptionResult> => {
+    options: Partial<PrerecordedSchema> = {},
+  ): Promise<Alternative> => {
     const config = { ...DEFAULT_OPTIONS, ...options };
 
     const { result, error } =
@@ -60,8 +43,8 @@ const DeepgramService = {
         { url },
         {
           model: config.model,
-          smart_format: config.smartFormat,
           punctuate: config.punctuate,
+          diarize: config.diarize,
           language: config.language,
         },
       );
@@ -74,7 +57,9 @@ const DeepgramService = {
   },
 };
 
-function parseTranscriptionResult(result: any): TranscriptionResult {
+function parseTranscriptionResult(
+  result: SyncPrerecordedResponse,
+): Alternative {
   const channel = result.results?.channels?.[0];
   const alternative = channel?.alternatives?.[0];
 
@@ -82,17 +67,7 @@ function parseTranscriptionResult(result: any): TranscriptionResult {
     throw new Error("No transcription result returned from Deepgram");
   }
 
-  return {
-    transcript: alternative.transcript || "",
-    confidence: alternative.confidence || 0,
-    words:
-      alternative.words?.map((w: any) => ({
-        word: w.word,
-        start: w.start,
-        end: w.end,
-        confidence: w.confidence,
-      })) || [],
-  };
+  return alternative;
 }
 
 export default DeepgramService;
