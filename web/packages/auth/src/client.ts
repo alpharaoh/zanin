@@ -9,7 +9,6 @@ export function createClient(baseURL: string) {
   });
 }
 
-// Default client for convenience
 export const authClient = createAuthClient({
   baseURL: env.PUBLIC_SERVER_BASE_URL,
   plugins: [organizationClient()],
