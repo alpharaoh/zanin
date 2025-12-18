@@ -1,13 +1,14 @@
 import { defineConfig } from "orval";
+import "dotenv/config";
 
 export default defineConfig({
   "zanin-api": {
     input: "../services/api/build/swagger.json",
     output: {
-      mode: "split",
+      mode: "single",
       target: "./src/api.ts",
-      schemas: "src/model",
       client: "react-query",
+      baseUrl: process.env.SERVER_BASE_URL,
     },
   },
 });
