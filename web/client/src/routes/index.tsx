@@ -1,13 +1,21 @@
-import { useGetUser } from "@/api";
-import { createFileRoute } from "@tanstack/react-router";
+import { authClient } from "@/lib/auth-client";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  beforeLoad: async ({ location }) => {
+    const { data: session } = await authClient.getSession();
+
+    if (!session?.user) {
+      throw redirect({
+        to: "/sign-in",
+        search: {
+          redirect: location.href,
+        },
+      });
+    } else {
+      throw redirect({
+        to: "/dashboard",
+      });
+    }
+  },
 });
-
-function Index() {
-  const { data: user } = useGetUser(1, { name: "zanin" });
-
-  console.log(user);
-  return <div>User: {JSON.stringify(user?.data)}</div>;
-}

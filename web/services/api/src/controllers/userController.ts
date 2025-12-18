@@ -35,7 +35,7 @@ export class UsersController extends Controller {
     @Path() userId: number,
     @Query() name?: string,
   ): Promise<User> {
-    console.log(request);
+    console.log("\n\n", request?.user);
 
     return {
       id: 1,

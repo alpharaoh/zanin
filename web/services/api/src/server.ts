@@ -9,7 +9,17 @@ import pino from "pino-http";
 
 export const app = express();
 
-app.use(pino());
+app.use(
+  pino({
+    redact: {
+      paths:
+        process.env.NODE_ENV === "production"
+          ? ["req.headers.cookie"]
+          : ["req", "res"],
+      remove: true,
+    },
+  }),
+);
 app.use(
   cors({
     origin: "http://localhost:8080",

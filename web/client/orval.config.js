@@ -1,5 +1,4 @@
 import { defineConfig } from "orval";
-import { env } from "./src/env";
 
 export default defineConfig({
   "zanin-api": {
@@ -8,7 +7,12 @@ export default defineConfig({
       mode: "single",
       target: "./src/api.ts",
       client: "react-query",
-      baseUrl: env.PUBLIC_SERVER_BASE_URL,
+      override: {
+        mutator: {
+          path: "./src/lib/axios.ts",
+          name: "axios",
+        },
+      },
     },
   },
 });
