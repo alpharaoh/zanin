@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@tsoa/runtime": "^7.0.0-alpha.0",
+    "@zanin/auth": "workspace:*",
     "@zanin/db": "workspace:*",
+    "@zanin/env": "workspace:*",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",

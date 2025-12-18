@@ -1,0 +1,16 @@
+{
+  "name": "@zanin/auth",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts"
+  },
+  "dependencies": {
+    "@zanin/db": "workspace:*",
+    "@zanin/env": "workspace:*",
+    "better-auth": "^1.4.7",
+    "drizzle-orm": "^0.45.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3"
+  }
+}

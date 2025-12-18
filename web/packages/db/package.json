@@ -2,8 +2,9 @@
   "name": "@zanin/db",
   "exports": {
     ".": "./src/index.ts",
-    "./auth": "./src/auth.ts",
-    "./queries/*": "./src/queries/*.ts"
+    "./schema": "./src/schema.ts",
+    "./queries/*": "./src/queries/*.ts",
+    "./utils/*": "./src/utils/*.ts"
   },
   "scripts": {
     "db:generate": "npx drizzle-kit generate",
@@ -11,6 +12,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
+    "@zanin/env": "workspace:*",
     "better-auth": "^1.4.7",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",

@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@zanin/auth/client";
 import { cn } from "@/lib/utils";
 
 export default function SignIn() {

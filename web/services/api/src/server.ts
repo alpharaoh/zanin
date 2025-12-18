@@ -1,10 +1,17 @@
+import dotenv from "dotenv";
+import path from "path";
+
+// Load .env from monorepo root (must be before @zanin/env import)
+dotenv.config({ path: path.resolve(import.meta.dir, "../../../.env") });
+
 import cors from "cors";
 import express, { json, urlencoded, Response, Request } from "express";
 import { RegisterRoutes } from "../build/routes";
 import swaggerUi from "swagger-ui-express";
 import { errorHandler } from "./handlers/errorHandler";
 import { notFoundHandler } from "./handlers/notFoundHandler";
-import { authMiddleware } from "@zanin/db/auth";
+import { authMiddleware } from "@zanin/auth";
+import { env } from "@zanin/env";
 import pino from "pino-http";
 
 export const app = express();
@@ -13,18 +20,16 @@ app.use(
   pino({
     redact: {
       paths:
-        process.env.NODE_ENV === "production"
-          ? ["req.headers.cookie"]
-          : ["req", "res"],
+        env.NODE_ENV === "production" ? ["req.headers.cookie"] : ["req", "res"],
       remove: true,
     },
   }),
 );
 app.use(
   cors({
-    origin: "http://localhost:8080",
+    origin: env.CLIENT_URL,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
-    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+    credentials: true,
   }),
 );
 app.use(
@@ -45,8 +50,6 @@ RegisterRoutes(app);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-const port = process.env.PORT || 8081;
-
-app.listen(port, () =>
-  console.log(`Zanin API listening at http://localhost:${port}`),
+app.listen(env.PORT, () =>
+  console.log(`Zanin API listening at http://localhost:${env.PORT}`),
 );

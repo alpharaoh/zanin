@@ -2,25 +2,25 @@ import { betterAuth } from "better-auth";
 import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 import { organization } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import db from ".";
+import db from "@zanin/db";
+import { env } from "@zanin/env";
 import { eq } from "drizzle-orm";
-import { getActiveOrganization } from "./utils/getActiveOrganization";
-import * as schema from "./schema";
+import { getActiveOrganization } from "@zanin/db/utils/getActiveOrganization";
+import * as schema from "@zanin/db/schema";
 
-// TODO: Split this up into a seperate package /packages/auth
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
   }),
-  trustedOrigins: ["http://localhost:8080"],
+  trustedOrigins: [env.CLIENT_URL],
   emailAndPassword: {
     enabled: true,
   },
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
     },
   },
   plugins: [organization()],
@@ -38,7 +38,7 @@ export const auth = betterAuth({
           let slug = baseSlug;
           let i = 1;
 
-          // If the slug already exists, append “-2”, “-3”, …
+          // If the slug already exists, append "-2", "-3", …
           await db.transaction(async (tx) => {
             while (
               await tx

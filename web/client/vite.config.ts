@@ -6,6 +6,8 @@ import { defineConfig } from "vite";
 
 // https://vite.dev/config/
 export default defineConfig({
+  envDir: path.resolve(__dirname, ".."),
+  envPrefix: "PUBLIC_",
   server: {
     port: 8080,
   },

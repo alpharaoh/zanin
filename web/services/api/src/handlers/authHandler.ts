@@ -1,4 +1,4 @@
-import { auth, fromNodeHeaders } from "@zanin/db/auth";
+import { auth, fromNodeHeaders } from "@zanin/auth";
 import type { Request } from "express";
 
 export async function expressAuthentication(

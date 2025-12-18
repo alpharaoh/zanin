@@ -4,7 +4,7 @@ import {
   redirect,
   useNavigate,
 } from "@tanstack/react-router";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@zanin/auth/client";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
