@@ -22,26 +22,33 @@ interface CreateUserRequest {
 
 @Route("users")
 export class UsersController extends Controller {
+  /**
+   * Retrieves the details of an existing user.
+   * Supply the unique user ID from either and receive corresponding user details.
+   * @param userId The unique user ID.
+   * @param name The name of the user.
+   */
   @Get("{userId}")
   public async getUser(
-    @Request() req: ExpressRequest,
     @Path() userId: number,
     @Query() name?: string,
   ): Promise<User> {
-    req.log.info({ userId, name }, "Getting user");
+    console.log("One punch man");
     return {
       id: userId,
       name: name,
     };
   }
 
+  /**
+   * Retrieves the details of an existing user.
+   * Supply the unique user ID from either and receive corresponding user details.
+   */
   @SuccessResponse("201", "Created")
   @Post()
   public async createUser(
     @Body() requestBody: CreateUserRequest,
-    @Request() req: ExpressRequest,
   ): Promise<void> {
-    req.log.info({ requestBody }, "Creating user");
     this.setStatus(201);
   }
 }
