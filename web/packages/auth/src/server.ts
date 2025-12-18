@@ -3,7 +3,7 @@ import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 import { organization } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import db from "@zanin/db";
-import { env } from "@zanin/env";
+import { env } from "@zanin/env/server";
 import { eq } from "drizzle-orm";
 import { getActiveOrganization } from "@zanin/db/utils/getActiveOrganization";
 import * as schema from "@zanin/db/schema";

@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { env } from "@zanin/env";
+import { env } from "@zanin/env/server";
 
 const db = drizzle(env.DATABASE_URL);
 

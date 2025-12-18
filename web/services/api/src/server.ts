@@ -1,4 +1,4 @@
-import { env } from "@zanin/env";
+import { env } from "@zanin/env/server";
 import cors from "cors";
 import express, { json, urlencoded, Response, Request } from "express";
 import { RegisterRoutes } from "../build/routes";
