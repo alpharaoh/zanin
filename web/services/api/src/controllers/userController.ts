@@ -33,7 +33,7 @@ export class UsersController extends Controller {
     @Path() userId: number,
     @Query() name?: string,
   ): Promise<User> {
-    console.log("One punch man");
+    console.log("One punch man, hello, world");
     return {
       id: userId,
       name: name,
