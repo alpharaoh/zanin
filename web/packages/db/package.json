@@ -1,5 +1,9 @@
 {
   "name": "@zanin/db",
+  "exports": {
+    ".": "./src/index.ts",
+    "./queries/*": "./src/queries/*.ts"
+  },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
     "dotenv": "^17.2.3",
