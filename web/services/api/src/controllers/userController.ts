@@ -24,9 +24,11 @@ interface CreateUserRequest {
 export class UsersController extends Controller {
   @Get("{userId}")
   public async getUser(
+    @Request() req: ExpressRequest,
     @Path() userId: number,
     @Query() name?: string,
   ): Promise<User> {
+    req.log.info({ userId, name }, "Getting user");
     return {
       id: userId,
       name: name,
