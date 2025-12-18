@@ -12,6 +12,7 @@
     "build:client": "bun run --cwd client build",
     "start:api": "bun run services/api/src/server.ts",
     "dev:api": "bun run services/api/src/dev.ts",
+    "dev:client": "bun run --cwd client dev",
     "db:generate": "bun run --cwd packages/db db:generate",
     "db:migrate": "bun run --cwd packages/db db:migrate"
   }

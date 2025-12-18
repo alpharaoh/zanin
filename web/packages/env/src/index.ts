@@ -1,15 +1,15 @@
-import "dotenv/config";
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
 
 const getRuntime = (): Record<string, string | undefined> => {
-  // Vite/browser environment
-  const meta = import.meta;
-  if (typeof meta !== "undefined" && "env" in meta) {
-    return meta.env as Record<string, string | undefined>;
+  const viteEnv = (import.meta as any).env;
+  if (viteEnv && typeof viteEnv.MODE === "string") {
+    console.log(viteEnv);
+    return viteEnv;
   }
+
   // Node/Bun environment
-  return process.env as Record<string, string | undefined>;
+  return process.env;
 };
 
 export const env = createEnv({
@@ -25,9 +25,13 @@ export const env = createEnv({
     PORT: z.coerce.number().default(8081),
     CLIENT_URL: z.url().default("http://localhost:8080"),
   },
-  clientPrefix: "PUBLIC_",
+  clientPrefix: "",
   client: {
-    PUBLIC_SERVER_BASE_URL: z.url().default("http://localhost:8081"),
+    SERVER_BASE_URL: z.url().default("http://localhost:8081"),
+    BASE_URL: z.string(),
+    DEV: z.boolean(),
+    MODE: z.enum(["development", "production"]),
+    PROD: z.boolean(),
   },
   runtimeEnv: getRuntime(),
   emptyStringAsUndefined: true,
