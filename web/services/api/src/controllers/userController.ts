@@ -5,11 +5,9 @@ import {
   Path,
   Post,
   Query,
-  Request,
   Route,
   SuccessResponse,
 } from "tsoa";
-import type { Request as ExpressRequest } from "express";
 
 interface User {
   id: number;
@@ -33,7 +31,6 @@ export class UsersController extends Controller {
     @Path() userId: number,
     @Query() name?: string,
   ): Promise<User> {
-    console.log("One punch man, hello, world");
     return {
       id: userId,
       name: name,
