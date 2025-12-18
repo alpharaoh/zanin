@@ -1,4 +1,9 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  redirect,
+  useNavigate,
+} from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/dashboard")({
@@ -20,6 +25,7 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardLayout() {
   const { data: session, refetch } = authClient.useSession();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen">
@@ -39,7 +45,10 @@ function DashboardLayout() {
               Refresh Session
             </button>
             <button
-              onClick={() => authClient.signOut()}
+              onClick={() => {
+                authClient.signOut();
+                navigate({ to: "/sign-in" });
+              }}
               className="px-3 py-1.5 text-sm bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80"
             >
               Sign Out

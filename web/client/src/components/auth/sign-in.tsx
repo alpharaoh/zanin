@@ -111,7 +111,7 @@ export default function SignIn() {
                 await authClient.signIn.social(
                   {
                     provider: "google",
-                    callbackURL: "/dashboard",
+                    callbackURL: `${window.location.origin}/dashboard`,
                   },
                   {
                     onRequest: () => {
