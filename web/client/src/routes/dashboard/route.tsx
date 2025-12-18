@@ -18,7 +18,7 @@ export const Route = createFileRoute("/dashboard")({
   component: DashboardLayout,
 });
 
-function DashboardLayout () {
+function DashboardLayout() {
   const { data: session, refetch } = authClient.useSession();
 
   return (
@@ -52,4 +52,4 @@ function DashboardLayout () {
       </main>
     </div>
   );
-};
+}

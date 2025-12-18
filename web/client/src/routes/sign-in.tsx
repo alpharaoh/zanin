@@ -6,7 +6,7 @@ export const Route = createFileRoute("/sign-in")({
   component: SignInPage,
 });
 
-function SignInPage()  {
+function SignInPage() {
   const navigate = useNavigate();
   const { data: session, isPending } = authClient.useSession();
 
@@ -25,7 +25,7 @@ function SignInPage()  {
 
   return (
     <div className="flex flex-col items-center justify-center h-full w-full gap-4">
-      <SignIn/>
+      <SignIn />
     </div>
   );
-};
+}
