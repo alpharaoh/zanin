@@ -1,4 +1,5 @@
 import { defineConfig } from "orval";
+import { env } from "./src/env";
 import "dotenv/config";
 
 export default defineConfig({
@@ -8,7 +9,7 @@ export default defineConfig({
       mode: "single",
       target: "./src/api.ts",
       client: "react-query",
-      baseUrl: process.env.SERVER_BASE_URL,
+      baseUrl: env.PUBLIC_SERVER_BASE_URL,
     },
   },
 });
