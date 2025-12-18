@@ -1,4 +1,4 @@
-const VAD_BASE_URL = "http://localhost:8000";
+import { env } from "@zanin/env/server";
 
 interface VADSegment {
   start: number;
@@ -18,17 +18,22 @@ const VADService = {
     filename: string = "audio.wav",
   ): Promise<Buffer> => {
     const formData = new FormData();
-    const blob = new Blob([audioBuffer], { type: "audio/wav" });
+    const blob = new Blob([audioBuffer as BlobPart], { type: "audio/wav" });
     formData.append("file", blob, filename);
 
-    const response = await fetch(`${VAD_BASE_URL}/api/v1/vad/detect/audio`, {
-      method: "POST",
-      body: formData,
-    });
+    const response = await fetch(
+      `${env.VAD_SERVICE_URL}/api/v1/vad/detect/audio`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`VAD processing failed: ${response.status} - ${errorText}`);
+      throw new Error(
+        `VAD processing failed: ${response.status} - ${errorText}`,
+      );
     }
 
     const arrayBuffer = await response.arrayBuffer();
@@ -40,17 +45,19 @@ const VADService = {
     filename: string = "audio.wav",
   ): Promise<VADDetectionResult> => {
     const formData = new FormData();
-    const blob = new Blob([audioBuffer], { type: "audio/wav" });
+    const blob = new Blob([audioBuffer as BlobPart], { type: "audio/wav" });
     formData.append("file", blob, filename);
 
-    const response = await fetch(`${VAD_BASE_URL}/api/v1/vad/detect`, {
+    const response = await fetch(`${env.VAD_SERVICE_URL}/api/v1/vad/detect`, {
       method: "POST",
       body: formData,
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`VAD detection failed: ${response.status} - ${errorText}`);
+      throw new Error(
+        `VAD detection failed: ${response.status} - ${errorText}`,
+      );
     }
 
     return await response.json();
