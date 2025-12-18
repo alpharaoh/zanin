@@ -1,4 +1,4 @@
-import { env } from "@zanin/env";
+import { env } from "@zanin/env/client";
 import Axios, { AxiosError, type AxiosRequestConfig } from "axios";
 
 export const AXIOS_INSTANCE = Axios.create({
