@@ -1,12 +1,13 @@
-import { env } from "@zanin/env/server";
-import cors from "cors";
 import express, { json, urlencoded, Response, Request } from "express";
-import { RegisterRoutes } from "../build/routes";
 import swaggerUi from "swagger-ui-express";
+import pino from "pino-http";
+import cors from "cors";
+import { env } from "@zanin/env/server";
+import { RegisterRoutes } from "../build/routes";
 import { errorHandler } from "./handlers/errorHandler";
+import { inngestHandler } from "./handlers/inngestHandler";
 import { notFoundHandler } from "./handlers/notFoundHandler";
 import { authMiddleware } from "@zanin/auth";
-import pino from "pino-http";
 
 export const app = express();
 
@@ -38,6 +39,7 @@ app.use("/docs", swaggerUi.serve, async (_: Request, res: Response) => {
     swaggerUi.generateHTML(await import("../build/swagger.json")),
   );
 });
+app.use("/api/inngest", inngestHandler);
 
 RegisterRoutes(app);
 
