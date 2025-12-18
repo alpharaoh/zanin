@@ -61,12 +61,12 @@ function DashboardLayout() {
       }}
       organization={{
         name: "My Organization",
-        plan: "Free",
+        plan: "Enterprise",
       }}
       navItems={navItems}
       onSignOut={handleSignOut}
     >
-      <div className="flex flex-1 flex-col gap-4 p-4">
+      <div className="flex flex-1 flex-col gap-4 p-4 max-w-7xl w-full mx-auto">
         <Outlet />
       </div>
     </DashboardSidebar>

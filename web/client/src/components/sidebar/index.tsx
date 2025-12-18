@@ -34,6 +34,7 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
+import { cn } from '@/lib/utils'
 import { ChevronsUpDownIcon, LogOutIcon } from "lucide-react"
 import { type ReactNode } from 'react'
 
@@ -77,7 +78,7 @@ export function DashboardSidebar({
     .slice(0, 2)
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <SidebarMenu>
@@ -87,7 +88,7 @@ export function DashboardSidebar({
                   size="icon-sm"
                   render={<span />}
                   nativeButton={false}
-                  className="size-8"
+                  className="size-9"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -155,11 +156,11 @@ export function DashboardSidebar({
                       size="lg"
                       className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground"
                     >
-                      <Avatar>
+                      <Avatar className="size-8">
                         {user.image && (
                           <AvatarImage src={user.image} alt={user.name} />
                         )}
-                        <AvatarFallback className="rounded-lg">
+                        <AvatarFallback className="rounded-lg text-xs">
                           {userInitials}
                         </AvatarFallback>
                       </Avatar>
@@ -171,12 +172,12 @@ export function DashboardSidebar({
                     </SidebarMenuButton>
                   }
                 />
-                <DropdownMenuContent>
+                <DropdownMenuContent className="w-72" side="top" align="start">
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>
                       <Item size="xs">
                         <ItemMedia>
-                          <Avatar>
+                          <Avatar className="size-9">
                             {user.image && (
                               <AvatarImage src={user.image} alt={user.name} />
                             )}
@@ -198,7 +199,7 @@ export function DashboardSidebar({
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
                     <DropdownMenuItem onClick={onSignOut}>
-                      <LogOutIcon className="mr-2 h-4 w-4" />
+                      <LogOutIcon className="mr-2 size-4" />
                       Sign out
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
@@ -210,12 +211,18 @@ export function DashboardSidebar({
         <SidebarRail />
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b">
           <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
+            <SidebarTrigger />
           </div>
         </header>
-        {children}
+        <div
+          className={cn(
+            "flex flex-1 flex-col w-full",
+          )}
+        >
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )
