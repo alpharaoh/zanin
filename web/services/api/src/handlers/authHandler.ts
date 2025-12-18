@@ -6,7 +6,6 @@ export async function expressAuthentication(
   name: string,
   _scopes: string[],
 ) {
-  console.log("HERE\n\n\n", request.headers, name, _scopes);
   if (name === "default") {
     const session = await auth.api.getSession({
       headers: fromNodeHeaders(request.headers),
