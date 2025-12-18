@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true
+  },
+  "references": [
+    { "path": "./client" },
+    { "path": "./packages/auth" },
+    { "path": "./packages/db" },
+    { "path": "./packages/env" },
+    { "path": "./services/api" }
+  ],
+  "files": []
+}

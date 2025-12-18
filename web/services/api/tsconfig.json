@@ -9,6 +9,7 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
+    "composite": true,
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "experimentalDecorators": true,
