@@ -10,6 +10,6 @@ export function createClient(baseURL: string) {
 }
 
 export const authClient = createAuthClient({
-  baseURL: env.SERVER_BASE_URL,
+  baseURL: env.PUBLIC_SERVER_BASE_URL,
   plugins: [organizationClient()],
 });

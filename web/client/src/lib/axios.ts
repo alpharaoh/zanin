@@ -2,7 +2,7 @@ import { env } from "@zanin/env/client";
 import Axios, { AxiosError, type AxiosRequestConfig } from "axios";
 
 export const AXIOS_INSTANCE = Axios.create({
-  baseURL: env.SERVER_BASE_URL,
+  baseURL: env.PUBLIC_SERVER_BASE_URL,
   withCredentials: true, // Send cookies with cross-origin requests
 });
 
