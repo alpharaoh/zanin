@@ -5,16 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "bun --hot run src/server.ts",
-    "build": "bun run tsoa routes",
+    "build": "bun run tsoa spec-and-routes",
     "lint": "eslint ."
   },
   "dependencies": {
     "@tsoa/runtime": "^7.0.0-alpha.0",
     "cors": "^2.8.5",
     "express": "^5.2.1",
+    "swagger-ui-express": "^5.0.1",
     "tsoa": "^7.0.0-alpha.0"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19"
+    "@types/cors": "^2.8.19",
+    "@types/swagger-ui-express": "^4.1.8"
   }
 }
