@@ -9,13 +9,22 @@ import {
   SuccessResponse,
 } from "tsoa";
 
+interface User {
+  id: number;
+  name?: string;
+}
+
+interface CreateUserRequest {
+  name: string;
+}
+
 @Route("users")
 export class UsersController extends Controller {
   @Get("{userId}")
   public async getUser(
     @Path() userId: number,
     @Query() name?: string,
-  ): Promise<any> {
+  ): Promise<User> {
     return {
       id: userId,
       name: name,
@@ -24,7 +33,7 @@ export class UsersController extends Controller {
 
   @SuccessResponse("201", "Created")
   @Post()
-  public async createUser(@Body() requestBody: any): Promise<void> {
+  public async createUser(@Body() requestBody: CreateUserRequest): Promise<void> {
     console.log(requestBody);
     this.setStatus(201);
   }
