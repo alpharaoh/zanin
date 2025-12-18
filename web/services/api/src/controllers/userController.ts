@@ -8,7 +8,6 @@ import {
   Route,
   SuccessResponse,
 } from "tsoa";
-import { selectOrganization } from "@zanin/db/queries/select/selectOrganization";
 
 interface User {
   id: number;
