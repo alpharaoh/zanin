@@ -61,7 +61,7 @@ export const organization = pgTable("organization", {
   name: text("name").notNull(),
   slug: text("slug").unique(),
   logo: text("logo"),
-  metadata: text("metadata"),
+  metadata: jsonb("metadata"),
 });
 
 export const member = pgTable("member", {

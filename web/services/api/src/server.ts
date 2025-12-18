@@ -1,9 +1,4 @@
-import dotenv from "dotenv";
-import path from "path";
-
-// Load .env from monorepo root (must be before @zanin/env import)
-dotenv.config({ path: path.resolve(import.meta.dir, "../../../.env") });
-
+import { env } from "@zanin/env";
 import cors from "cors";
 import express, { json, urlencoded, Response, Request } from "express";
 import { RegisterRoutes } from "../build/routes";
@@ -11,7 +6,6 @@ import swaggerUi from "swagger-ui-express";
 import { errorHandler } from "./handlers/errorHandler";
 import { notFoundHandler } from "./handlers/notFoundHandler";
 import { authMiddleware } from "@zanin/auth";
-import { env } from "@zanin/env";
 import pino from "pino-http";
 
 export const app = express();

@@ -2,11 +2,12 @@ import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
 
 const getRuntime = (): Record<string, string | undefined> => {
-  // Vite
-  if (typeof import.meta !== "undefined" && import.meta.env) {
-    return import.meta.env as Record<string, string | undefined>;
+  // Vite/browser environment
+  const meta = import.meta;
+  if (typeof meta !== "undefined" && "env" in meta) {
+    return meta.env as Record<string, string | undefined>;
   }
-  // Bun
+  // Node/Bun environment
   return process.env as Record<string, string | undefined>;
 };
 
