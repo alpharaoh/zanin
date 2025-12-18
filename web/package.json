@@ -13,7 +13,11 @@
     "start:api": "bun run services/api/src/server.ts",
     "dev:api": "bun run services/api/src/dev.ts",
     "dev:client": "bun run --cwd client dev",
+    "dev": "concurrently \"bun run dev:api\" \"bun run dev:client\" --names \"api,client\" --prefix-colors \"blue,magenta\"",
     "db:generate": "bun run --cwd packages/db db:generate",
     "db:migrate": "bun run --cwd packages/db db:migrate"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
