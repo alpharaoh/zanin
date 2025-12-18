@@ -10,7 +10,11 @@
   },
   "dependencies": {
     "@tsoa/runtime": "^7.0.0-alpha.0",
+    "cors": "^2.8.5",
     "express": "^5.2.1",
     "tsoa": "^7.0.0-alpha.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19"
   }
 }
