@@ -10,10 +10,12 @@
     "build": "bun run build:api && bun run build:client",
     "build:api": "bun run --cwd services/api tsoa spec-and-routes",
     "build:client": "bun run --cwd client build",
+    "build:vad": "cd services/vad && poetry install",
     "start:api": "bun run services/api/src/server.ts",
     "dev:api": "bun run services/api/src/dev.ts",
     "dev:client": "bun run --cwd client dev",
-    "dev": "concurrently \"bun run dev:api\" \"bun run dev:client\" --names \"api,client\" --prefix-colors \"blue,magenta\"",
+    "dev:vad": "cd services/vad && poetry run vad-service",
+    "dev": "concurrently \"bun run dev:api\" \"bun run dev:client\" \"bun run dev:vad\" --names \"api,client,vad\" --prefix-colors \"blue,magenta,green\"",
     "db:generate": "bun run --cwd packages/db db:generate",
     "db:migrate": "bun run --cwd packages/db db:migrate"
   },
