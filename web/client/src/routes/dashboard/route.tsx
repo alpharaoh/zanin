@@ -1,7 +1,24 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
 
-const DashboardLayout = () => {
+export const Route = createFileRoute("/dashboard")({
+  beforeLoad: async () => {
+    const { data: session } = await authClient.getSession();
+
+    if (!session) {
+      throw redirect({
+        to: "/sign-in",
+      });
+    }
+
+    return {
+      session,
+    };
+  },
+  component: DashboardLayout,
+});
+
+function DashboardLayout () {
   const { data: session, refetch } = authClient.useSession();
 
   return (
@@ -36,20 +53,3 @@ const DashboardLayout = () => {
     </div>
   );
 };
-
-export const Route = createFileRoute("/dashboard")({
-  beforeLoad: async () => {
-    const { data: session } = await authClient.getSession();
-
-    if (!session) {
-      throw redirect({
-        to: "/login",
-      });
-    }
-
-    return {
-      session,
-    };
-  },
-  component: DashboardLayout,
-});

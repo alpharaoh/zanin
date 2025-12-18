@@ -12,6 +12,7 @@ export async function getActiveOrganization(userId: string) {
     .from(member)
     .innerJoin(organization, eq(member.organizationId, organization.id))
     .where(eq(member.userId, userId))
+    // “first org created wins” – change the order if you prefer newest or owner-only
     .orderBy(member.createdAt)
     .limit(1)
     .then((rows) => rows[0]);

@@ -13,6 +13,7 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  trustedOrigins: ["http://localhost:8080"],
   emailAndPassword: {
     enabled: true,
   },

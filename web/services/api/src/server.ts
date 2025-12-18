@@ -12,6 +12,7 @@ export const app = express();
 app.use(pino());
 app.use(
   cors({
+    origin: "http://localhost:8080",
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
     credentials: true, // Allow credentials (cookies, authorization headers, etc.)
   }),

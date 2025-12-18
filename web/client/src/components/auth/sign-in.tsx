@@ -15,7 +15,7 @@ export default function SignIn() {
   const [rememberMe, setRememberMe] = useState(false);
 
   return (
-    <Card className="max-w-md">
+    <Card className="max-w-md w-full">
       <CardHeader>
         <CardTitle className="text-lg md:text-xl">Sign In</CardTitle>
         <CardDescription className="text-xs md:text-sm">
@@ -114,10 +114,10 @@ export default function SignIn() {
                       callbackURL: "/dashboard"
                     },
                     {
-                      onRequest: (ctx) => {
+                      onRequest: () => {
                          setLoading(true);
                       },
-                      onResponse: (ctx) => {
+                      onResponse: () => {
                          setLoading(false);
                       },
                      },
