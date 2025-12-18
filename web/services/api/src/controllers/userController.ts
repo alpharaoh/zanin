@@ -4,6 +4,7 @@ import type { UserSession } from "../types/user";
 
 @Security("default")
 @Response(401, "Unauthorized")
+@Response(500, "Internal Server Error")
 @Route("users")
 export class UsersController extends Controller {
   /**
