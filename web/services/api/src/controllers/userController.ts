@@ -5,9 +5,11 @@ import {
   Path,
   Post,
   Query,
+  Request,
   Route,
   SuccessResponse,
 } from "tsoa";
+import type { Request as ExpressRequest } from "express";
 
 interface User {
   id: number;
@@ -35,8 +37,9 @@ export class UsersController extends Controller {
   @Post()
   public async createUser(
     @Body() requestBody: CreateUserRequest,
+    @Request() req: ExpressRequest,
   ): Promise<void> {
-    console.log(requestBody);
+    req.log.info({ requestBody }, "Creating user");
     this.setStatus(201);
   }
 }
