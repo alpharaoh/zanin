@@ -3,6 +3,7 @@ import { connect } from "inngest/connect";
 
 const inngest = new Inngest({
   id: "my-app",
+  appVersion: process.env.RENDER_GIT_COMMIT,
 });
 
 const handleSignupFunction = inngest.createFunction(
@@ -15,7 +16,13 @@ const handleSignupFunction = inngest.createFunction(
 
 (async () => {
   const connection = await connect({
-    apps: [{ client: inngest, functions: [handleSignupFunction] }],
+    apps: [
+      {
+        client: inngest,
+        functions: [handleSignupFunction],
+      },
+    ],
+    maxWorkerConcurrency: 10,
   });
 
   console.log("Worker: connected", connection);
