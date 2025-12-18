@@ -1,9 +1,9 @@
-import { useGetUser } from "@/api";
+import { useGetMe } from "@/api";
 import { createFileRoute } from "@tanstack/react-router";
 
 const DashboardIndex = () => {
   const { session } = Route.useRouteContext();
-  const { data } = useGetUser(123, { name: "zanin" });
+  const { data } = useGetMe();
 
   return (
     <div className="space-y-4">
@@ -11,7 +11,7 @@ const DashboardIndex = () => {
       <p className="text-muted-foreground">
         You are signed in as {session?.user?.email}
       </p>
-      {JSON.stringify(data?.id)}
+      {JSON.stringify(data)}
     </div>
   );
 };
