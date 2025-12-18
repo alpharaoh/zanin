@@ -1,6 +1,5 @@
 import { createAuthClient } from "better-auth/react";
 import { organizationClient } from "better-auth/client/plugins";
-import "dotenv/config";
 import { env } from "@/env";
 
 export const authClient = createAuthClient({

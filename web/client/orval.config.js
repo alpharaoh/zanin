@@ -1,6 +1,5 @@
 import { defineConfig } from "orval";
 import { env } from "./src/env";
-import "dotenv/config";
 
 export default defineConfig({
   "zanin-api": {

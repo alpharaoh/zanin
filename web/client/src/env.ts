@@ -6,5 +6,5 @@ export const env = createEnv({
   client: {
     PUBLIC_SERVER_BASE_URL: z.url().default("http://localhost:8081"),
   },
-  runtimeEnv: process.env,
+  runtimeEnv: import.meta.env,
 });
