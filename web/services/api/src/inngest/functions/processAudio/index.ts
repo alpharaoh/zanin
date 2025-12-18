@@ -20,9 +20,8 @@ export default inngest.createFunction(
   { id: "process-audio" },
   { event: "audio/process.audio" },
   async ({ step }) => {
-    // Step 1: Fetch audio and upload to blob storage
+    // TEST: Read from local file instead of URL
     const rawAudioUrl = await step.run("fetch-audio", async () => {
-      // TEST: Read from local file instead of URL
       const testFilePath = join(homedir(), "Downloads", "test.wav");
       const buffer = readFileSync(testFilePath);
 
@@ -35,7 +34,6 @@ export default inngest.createFunction(
       return url;
     });
 
-    // Step 2: Process with VAD and upload cleaned audio
     const cleanedAudioUrl = await step.run("process-vad", async () => {
       const buffer = await BlobStorageService.download(rawAudioUrl);
       const cleanedBuffer = await VADService.processAudio(buffer);
@@ -49,10 +47,8 @@ export default inngest.createFunction(
       return url;
     });
 
-    // Step 3: Transcribe with Deepgram
     const transcription = await step.run("transcribe-audio", async () => {
-      const buffer = await BlobStorageService.download(cleanedAudioUrl);
-      return await DeepgramService.transcribe(buffer);
+      return await DeepgramService.transcribeUrl(cleanedAudioUrl);
     });
 
     return {
