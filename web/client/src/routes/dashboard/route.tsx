@@ -1,3 +1,4 @@
+import { DashboardSidebar } from "@/components/sidebar";
 import {
   createFileRoute,
   Outlet,
@@ -5,6 +6,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { authClient } from "@zanin/auth/client";
+import { LayoutDashboardIcon, SettingsIcon, UsersIcon } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
@@ -24,41 +26,49 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function DashboardLayout() {
-  const { data: session, refetch } = authClient.useSession();
+  const { session } = Route.useRouteContext();
   const navigate = useNavigate();
 
+  const navItems = [
+    {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: <LayoutDashboardIcon />,
+    },
+    {
+      title: "Users",
+      url: "/dashboard/users",
+      icon: <UsersIcon />,
+    },
+    {
+      title: "Settings",
+      url: "/dashboard/settings",
+      icon: <SettingsIcon />,
+    },
+  ];
+
+  const handleSignOut = async () => {
+    await authClient.signOut();
+    navigate({ to: "/sign-in" });
+  };
+
   return (
-    <div className="min-h-screen">
-      <header className="border-b p-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold">Dashboard</h1>
-          <div className="flex items-center gap-4">
-            {session?.user && (
-              <span className="text-sm text-muted-foreground">
-                {session.user.email}
-              </span>
-            )}
-            <button
-              onClick={() => refetch()}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Refresh Session
-            </button>
-            <button
-              onClick={() => {
-                authClient.signOut();
-                navigate({ to: "/sign-in" });
-              }}
-              className="px-3 py-1.5 text-sm bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
-      <main className="p-4">
+    <DashboardSidebar
+      user={{
+        name: session.user.name,
+        email: session.user.email,
+        image: session.user.image,
+      }}
+      organization={{
+        name: "My Organization",
+        plan: "Free",
+      }}
+      navItems={navItems}
+      onSignOut={handleSignOut}
+    >
+      <div className="flex flex-1 flex-col gap-4 p-4">
         <Outlet />
-      </main>
-    </div>
+      </div>
+    </DashboardSidebar>
   );
 }
