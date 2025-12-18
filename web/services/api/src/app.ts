@@ -4,9 +4,11 @@ import { RegisterRoutes } from "../build/routes";
 import swaggerUi from "swagger-ui-express";
 import { errorHandler } from "./handlers/errorHandler";
 import { notFoundHandler } from "./handlers/notFoundHandler";
+import pino from "pino-http";
 
 export const app = express();
 
+app.use(pino);
 app.use(cors());
 app.use(
   urlencoded({
