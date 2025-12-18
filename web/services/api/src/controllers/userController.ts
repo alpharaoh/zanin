@@ -3,11 +3,11 @@ import type { Request as ExpressRequest } from "express";
 import type { UserSession } from "../types/user";
 
 @Route("users")
-@Security("default")
 export class UsersController extends Controller {
   /**
    * Retrieves the details of the user calling the API.
    */
+  @Security("default")
   @Get("me")
   public async getUser(
     @Request() request: ExpressRequest,
