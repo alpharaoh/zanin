@@ -15,13 +15,24 @@ async function runTsoa() {
 }
 
 let server: Subprocess | null = null;
+let pretty: Subprocess | null = null;
 
 async function startServer() {
   if (server) {
     server.kill();
   }
+  if (pretty) {
+    pretty.kill();
+  }
+
   server = spawn(["bun", "--hot", "run", join(import.meta.dir, "server.ts")], {
     cwd: join(import.meta.dir, ".."),
+    stdout: "pipe",
+    stderr: "inherit",
+  });
+
+  pretty = spawn(["pino-pretty"], {
+    stdin: server.stdout,
     stdout: "inherit",
     stderr: "inherit",
   });

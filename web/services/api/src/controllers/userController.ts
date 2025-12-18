@@ -46,9 +46,6 @@ export class UsersController extends Controller {
   public async createUser(
     @Body() requestBody: CreateUserRequest,
   ): Promise<void> {
-    console.log(requestBody);
-    const organization = await selectOrganization("123");
-    console.log(organization);
     this.setStatus(201);
   }
 }
