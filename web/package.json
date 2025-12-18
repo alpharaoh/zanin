@@ -11,6 +11,7 @@
     "build:api": "bun run --cwd services/api tsoa spec-and-routes",
     "build:client": "bun run --cwd client build",
     "start:api": "bun run services/api/src/server.ts",
+    "dev:api": "bun run services/api/src/dev.ts",
     "db:generate": "bun run --cwd packages/db db:generate",
     "db:migrate": "bun run --cwd packages/db db:migrate"
   }

@@ -80,6 +80,7 @@
       "name": "@zanin/env",
       "dependencies": {
         "@t3-oss/env-core": "^0.13.10",
+        "dotenv": "^17.2.3",
         "zod": "^4.2.1",
       },
       "devDependencies": {
