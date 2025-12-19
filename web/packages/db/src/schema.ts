@@ -1,2 +1,2 @@
 export * from "./schemas/auth";
-export * from "./schemas/recording";
+export * from "./schemas/recordings";

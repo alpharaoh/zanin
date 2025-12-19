@@ -1,8 +1,8 @@
 import db from "../../";
-import { InsertRecording, recording } from "../../schema";
+import { InsertRecording, recordings } from "../../schema";
 
 export const insertRecording = async (values: InsertRecording) => {
-  const entry = await db.insert(recording).values(values).returning();
+  const entry = await db.insert(recordings).values(values).returning();
 
   return entry[0];
 };
