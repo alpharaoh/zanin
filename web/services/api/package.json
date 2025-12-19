@@ -11,6 +11,7 @@
   "dependencies": {
     "@ai-sdk/google": "^2.0.49",
     "@deepgram/sdk": "^4.11.3",
+    "@pinecone-database/pinecone": "^6.1.3",
     "@tsoa/runtime": "^7.0.0-alpha.0",
     "@vercel/blob": "^2.0.0",
     "@zanin/auth": "workspace:*",

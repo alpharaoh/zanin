@@ -99,6 +99,7 @@
       "dependencies": {
         "@ai-sdk/google": "^2.0.49",
         "@deepgram/sdk": "^4.11.3",
+        "@pinecone-database/pinecone": "^6.1.3",
         "@tsoa/runtime": "^7.0.0-alpha.0",
         "@vercel/blob": "^2.0.0",
         "@zanin/auth": "workspace:*",
@@ -637,6 +638,8 @@
     "@orval/swr": ["@orval/swr@7.17.0", "", { "dependencies": { "@orval/core": "7.17.0", "@orval/fetch": "7.17.0" } }, "sha512-ZC5ZjzILWt8WE3V4gWRIg9XWHjQBubUJzin67aKERlybPN+sqMdgMEl9/XL+emUItkAIdex9cCaDHZwqjrmbKg=="],
 
     "@orval/zod": ["@orval/zod@7.17.0", "", { "dependencies": { "@orval/core": "7.17.0", "lodash.uniq": "^4.5.0", "openapi3-ts": "4.5.0" } }, "sha512-ldwGUR4K0YIay+4UGR7ykTYD99Cs+CHIAOAVVny8/h9dU0CD/6sxomHuCzrC0Z2QxVZ4rL7k8g10Kffmp+dHBw=="],
+
+    "@pinecone-database/pinecone": ["@pinecone-database/pinecone@6.1.3", "", {}, "sha512-EegC8sLP40+xdq3bu80TR6OZe3Sc4LuJFSFZb8RbMr3xvODEsvXe4QoS+kFx2PDR5g3dokP44NFR9AxseCeVQA=="],
 
     "@pinojs/redact": ["@pinojs/redact@0.4.0", "", {}, "sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg=="],
 

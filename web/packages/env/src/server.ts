@@ -1,6 +1,5 @@
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
-
 export const env = createEnv({
   server: {
     DATABASE_URL: z.url(),
@@ -12,6 +11,7 @@ export const env = createEnv({
     VAD_SERVICE_URL: z.url().default("http://localhost:8000"),
     BLOB_READ_WRITE_TOKEN: z.string().min(1),
     GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1),
+    PINECONE_API_KEY: z.string().min(1),
     NODE_ENV: z
       .enum(["development", "production", "test"])
       .default("development"),

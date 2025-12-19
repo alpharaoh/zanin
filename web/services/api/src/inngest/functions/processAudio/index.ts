@@ -24,7 +24,10 @@ export type ProcessAudioEvent = {
 };
 
 export default inngest.createFunction(
-  { id: "process-audio" },
+  {
+    id: "process-audio",
+    concurrency: 10,
+  },
   { event: "audio/process.audio" },
   async ({ step }) => {
     // Create initial recording entry
@@ -109,6 +112,14 @@ export default inngest.createFunction(
           },
         },
       );
+    });
+
+    // Trigger vectorization of the recording
+    await step.sendEvent("trigger-vectorization", {
+      name: "recording/vectorize",
+      data: {
+        recordingId: recording.id,
+      },
     });
 
     return {
