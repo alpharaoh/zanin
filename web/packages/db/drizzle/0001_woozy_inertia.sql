@@ -20,6 +20,5 @@ CREATE TABLE "recordings" (
 	CONSTRAINT "recordings_id_unique" UNIQUE("id")
 );
 --> statement-breakpoint
-ALTER TABLE "organization" ALTER COLUMN "metadata" SET DATA TYPE jsonb;--> statement-breakpoint
 ALTER TABLE "recordings" ADD CONSTRAINT "recordings_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "recordings" ADD CONSTRAINT "recordings_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;

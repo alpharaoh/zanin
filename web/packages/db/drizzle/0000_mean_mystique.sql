@@ -43,7 +43,7 @@ CREATE TABLE "organization" (
 	"name" text NOT NULL,
 	"slug" text,
 	"logo" text,
-	"metadata" text,
+	"metadata" jsonb,
 	CONSTRAINT "organization_id_unique" UNIQUE("id"),
 	CONSTRAINT "organization_slug_unique" UNIQUE("slug")
 );
