@@ -1,4 +1,5 @@
 import { inngest } from "../../client";
+import { vectorize } from "../vectorize";
 import VADService from "../../../services/external/vad/service";
 import DeepgramService from "../../../services/external/deepgram/service";
 import BlobStorageService from "../../../services/external/store/blob/service";
@@ -8,6 +9,8 @@ import { updateRecording } from "@zanin/db/queries/update/updateRecording";
 import { readFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
+
+const RECORDINGS_INDEX = "recordings";
 
 // TODO: Remove hardcoded values when auth is integrated
 const TEMP_ORG_ID = "019b3473-1477-714e-8bd9-0b87826bd3b6";
@@ -114,11 +117,19 @@ export default inngest.createFunction(
       );
     });
 
-    // Trigger vectorization of the recording
-    await step.sendEvent("trigger-vectorization", {
-      name: "recording/vectorize",
+    // Vectorize the recording transcript
+    const vectorResult = await step.invoke("vectorize-recording", {
+      function: vectorize,
       data: {
-        recordingId: recording.id,
+        indexName: RECORDINGS_INDEX,
+        namespace: TEMP_ORG_ID,
+        documentId: recording.id,
+        text: transcription.transcript,
+        metadata: {
+          recordingId: recording.id,
+          organizationId: TEMP_ORG_ID,
+          userId: TEMP_USER_ID,
+        },
       },
     });
 
@@ -126,6 +137,7 @@ export default inngest.createFunction(
       success: true,
       recordingId: recording.id,
       transcription,
+      vectorization: vectorResult,
     };
   },
 );

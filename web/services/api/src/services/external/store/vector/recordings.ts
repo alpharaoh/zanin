@@ -1,8 +1,7 @@
 import type { RecordMetadata } from "@pinecone-database/pinecone";
 import SimpleVectorService from "./simple";
 import EmbeddingService from "./embedding";
-import type { VectorRecord, VectorStats } from "./types";
-import { chunkText } from "./utils/chunkText";
+import type { VectorStats } from "./types";
 
 const RECORDINGS_INDEX = "recordings";
 
@@ -17,26 +16,6 @@ export interface RecordingChunkMetadata extends RecordMetadata {
   totalChunks: number;
   text: string;
   createdAt: string;
-}
-
-/**
- * Options for upserting a recording
- */
-export interface UpsertRecordingOptions {
-  recordingId: string;
-  organizationId: string;
-  userId: string;
-  transcript: string;
-  chunkSize?: number;
-  chunkOverlap?: number;
-}
-
-/**
- * Result of upserting a recording
- */
-export interface UpsertRecordingResult {
-  chunksUpserted: number;
-  vectorIds: string[];
 }
 
 /**
@@ -59,58 +38,10 @@ export interface RecordingSearchResult {
 }
 
 /**
- * Domain service for vectorizing and searching recordings.
- * Builds on top of SimpleVectorService and EmbeddingService.
+ * Domain service for searching recordings.
+ * Vectorization is handled by the generic vectorize Inngest function.
  */
 const RecordingVectorService = {
-  /**
-   * Vectorize a recording transcript and store in Pinecone.
-   * Chunks the transcript for better semantic search.
-   */
-  async upsertRecording(
-    options: UpsertRecordingOptions,
-  ): Promise<UpsertRecordingResult> {
-    const {
-      recordingId,
-      organizationId,
-      userId,
-      transcript,
-      chunkSize,
-      chunkOverlap,
-    } = options;
-
-    const chunks = await chunkText(transcript, chunkSize, chunkOverlap);
-
-    if (chunks.length === 0) {
-      return { chunksUpserted: 0, vectorIds: [] };
-    }
-
-    const embeddings = await EmbeddingService.embedMany(chunks);
-
-    const vectors: VectorRecord<RecordingChunkMetadata>[] = chunks.map(
-      (text, index) => ({
-        id: `${recordingId}-chunk-${index}`,
-        values: embeddings[index],
-        metadata: {
-          recordingId,
-          organizationId,
-          userId,
-          chunkIndex: index,
-          totalChunks: chunks.length,
-          text,
-          createdAt: new Date().toISOString(),
-        },
-      }),
-    );
-
-    await SimpleVectorService.upsert(RECORDINGS_INDEX, organizationId, vectors);
-
-    return {
-      chunksUpserted: vectors.length,
-      vectorIds: vectors.map((v) => v.id),
-    };
-  },
-
   /**
    * Search for recordings by semantic similarity.
    * Results are grouped by recording with matched chunks.
