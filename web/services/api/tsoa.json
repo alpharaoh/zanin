@@ -11,5 +11,10 @@
   "routes": {
     "routesDir": "build",
     "authenticationModule": "src/handlers/authHandler.ts"
+  },
+  "multerOpts": {
+    "limits": {
+      "fileSize": 209715200
+    }
   }
 }

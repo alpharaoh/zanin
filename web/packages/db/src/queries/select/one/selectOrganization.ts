@@ -1,6 +1,6 @@
-import db from "../../";
+import db from "../../..";
 import { eq } from "drizzle-orm";
-import { organization } from "../../schema";
+import { organization } from "../../../schema";
 
 export const selectOrganization = async (id: string) => {
   const entry = await db

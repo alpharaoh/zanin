@@ -1,6 +1,6 @@
-import db from "../../";
+import db from "../../../";
 import { eq } from "drizzle-orm";
-import { recordings } from "../../schema";
+import { recordings } from "../../../schema";
 
 export const selectRecording = async (id: string) => {
   const entry = await db
