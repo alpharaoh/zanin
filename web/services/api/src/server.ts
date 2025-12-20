@@ -7,6 +7,7 @@ import { RegisterRoutes } from "../build/routes";
 import { errorHandler } from "./handlers/errorHandler";
 import { inngestHandler } from "./handlers/inngestHandler";
 import { notFoundHandler } from "./handlers/notFoundHandler";
+import { responseHandler } from "./handlers/responseHandler";
 import { authMiddleware } from "@zanin/auth";
 
 export const app = express();
@@ -40,6 +41,7 @@ app.use("/docs", swaggerUi.serve, async (_: Request, res: Response) => {
   );
 });
 app.use("/api/inngest", inngestHandler);
+app.use(responseHandler);
 
 RegisterRoutes(app);
 
