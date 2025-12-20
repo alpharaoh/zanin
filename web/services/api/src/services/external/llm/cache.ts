@@ -4,8 +4,10 @@ import { env } from "@zanin/env/server";
 const client = new GoogleGenAI({ apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY });
 
 const DEFAULT_CACHE_TTL_SECONDS = 300;
-const DEFAULT_CACHE_MODEL = "gemini-2.5-flash-preview-05-20";
-const DEFAULT_GENERATE_MODEL = "gemini-2.5-flash-preview-05-20";
+const DEFAULT_CACHE_MODEL = "gemini-2.5-flash-preview-09-2025";
+const DEFAULT_GENERATE_MODEL = "gemini-2.5-flash-preview-09-2025";
+
+export const MIN_CACHE_TOKENS = 1024;
 
 export interface CreateCacheOptions {
   systemInstruction: string;
@@ -28,6 +30,8 @@ export interface GenerateWithCacheOptions {
  * @see https://ai.google.dev/gemini-api/docs/caching
  */
 const CacheLLMService = {
+  minCacheTokens: MIN_CACHE_TOKENS,
+
   async createCache(options: CreateCacheOptions): Promise<CachedContent> {
     const {
       systemInstruction,
@@ -66,6 +70,14 @@ const CacheLLMService = {
 
   async deleteCache(cacheName: string): Promise<void> {
     await client.caches.delete({ name: cacheName });
+  },
+
+  async getTokenSize(fullText: string): Promise<number> {
+    const response = await client.models.countTokens({
+      model: DEFAULT_CACHE_MODEL,
+      contents: fullText,
+    });
+    return response.totalTokens || 0;
   },
 
   async getCache(cacheName: string): Promise<CachedContent> {

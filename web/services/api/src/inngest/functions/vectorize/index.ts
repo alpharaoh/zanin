@@ -76,40 +76,49 @@ export const vectorize = inngest.createFunction(
     // Optionally generate contextual embeddings using cached document context
     let textsToEmbed = chunks;
     if (useContextualEmbeddings) {
-      // Create a cache for the full document to save tokens
-      const cache = await step.run("create-document-cache", async () => {
-        return await CacheLLMService.createCache({
-          systemInstruction: CONTEXTUAL_SYSTEM_INSTRUCTION,
-          contents: text,
+      const tokenSize = await step.run("get-token-size", async () => {
+        return await CacheLLMService.getTokenSize(text);
+      });
+
+      if (tokenSize >= CacheLLMService.minCacheTokens) {
+        // Create a cache for the full document to save tokens
+        const cache = await step.run("create-document-cache", async () => {
+          return await CacheLLMService.createCache({
+            systemInstruction: CONTEXTUAL_SYSTEM_INSTRUCTION,
+            contents: text,
+          });
         });
-      });
 
-      const cacheName = cache.name;
-      if (!cacheName) {
-        throw new NonRetriableError("Cache name is empty");
+        const cacheName = cache.name;
+        if (!cacheName) {
+          throw new NonRetriableError("Cache name is empty");
+        }
+
+        logger.info(`Created document cache: ${cacheName}`);
+
+        const contextualChunks: string[] = [];
+
+        for (let i = 0; i < chunks.length; i++) {
+          const contextualChunk = await step.run(
+            `generate-context-${i}`,
+            async () => {
+              const context = await generateContextForChunk(
+                chunks[i],
+                cacheName,
+              );
+              return `${context}\n\n${chunks[i]}`;
+            },
+          );
+          contextualChunks.push(contextualChunk);
+        }
+
+        await step.run("delete-document-cache", async () => {
+          await CacheLLMService.deleteCache(cacheName);
+        });
+
+        textsToEmbed = contextualChunks;
+        logger.info("Generated contextual embeddings for all chunks");
       }
-
-      logger.info(`Created document cache: ${cacheName}`);
-
-      const contextualChunks: string[] = [];
-
-      for (let i = 0; i < chunks.length; i++) {
-        const contextualChunk = await step.run(
-          `generate-context-${i}`,
-          async () => {
-            const context = await generateContextForChunk(chunks[i], cacheName);
-            return `${context}\n\n${chunks[i]}`;
-          },
-        );
-        contextualChunks.push(contextualChunk);
-      }
-
-      await step.run("delete-document-cache", async () => {
-        await CacheLLMService.deleteCache(cacheName);
-      });
-
-      textsToEmbed = contextualChunks;
-      logger.info("Generated contextual embeddings for all chunks");
     }
 
     const embeddings = await step.run("generate-embeddings", async () => {

@@ -130,6 +130,9 @@ export default inngest.createFunction(
           organizationId: TEMP_ORG_ID,
           userId: TEMP_USER_ID,
         },
+        options: {
+          useContextualEmbeddings: false,
+        },
       },
     });
 
