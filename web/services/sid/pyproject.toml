@@ -28,6 +28,7 @@ pydantic-settings = "^2.6.0"
 speechbrain = "^1.0.0"
 torch = "^2.0.0"
 torchaudio = ">=2.0.0,<2.9.0"
+huggingface-hub = "<0.24.0"  # SpeechBrain uses deprecated use_auth_token
 
 # Audio Processing
 numpy = "^2.0.0"
