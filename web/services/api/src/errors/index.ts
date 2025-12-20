@@ -6,4 +6,4 @@ export {
   NotFoundError,
   ConflictError,
   InternalServerError,
-} from "./HttpError";
+} from "./httpError";
