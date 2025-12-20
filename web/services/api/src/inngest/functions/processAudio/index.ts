@@ -45,7 +45,7 @@ export default inngest.createFunction(
 
     // TEST: Read from local file instead of URL
     const rawAudioUrl = await step.run("fetch-audio", async () => {
-      const testFilePath = join(homedir(), "Downloads", "test.wav");
+      const testFilePath = join(homedir(), "Downloads", "conversation.wav");
       const buffer = readFileSync(testFilePath);
 
       const { url } = await BlobStorageService.upload(
@@ -117,6 +117,12 @@ export default inngest.createFunction(
       );
     });
 
+    const cleanedTranscript = transcription.words
+      .map((word) => {
+        return `${word.speaker}: ${word.word}`;
+      })
+      .join("\n");
+
     // Vectorize the recording transcript
     const vectorResult = await step.invoke("vectorize-recording", {
       function: vectorize,
@@ -124,7 +130,7 @@ export default inngest.createFunction(
         indexName: RECORDINGS_INDEX,
         namespace: TEMP_ORG_ID,
         documentId: recording.id,
-        text: transcription.transcript,
+        text: cleanedTranscript,
         metadata: {
           recordingId: recording.id,
           organizationId: TEMP_ORG_ID,
