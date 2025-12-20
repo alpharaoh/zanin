@@ -8,6 +8,10 @@ import type {
 } from "./types";
 
 const BATCH_SIZE = 100;
+const DEFAULT_DIMENSION = 768; // Google text-embedding-004
+
+// Track which indexes we've verified in memory to avoid repeated API calls
+const verifiedIndexes = new Set<string>();
 
 /**
  * Low-level Pinecone operations with no domain knowledge.
@@ -17,6 +21,7 @@ const SimpleVectorService = {
   /**
    * Upsert vectors to an index/namespace.
    * Automatically batches large upserts (Pinecone recommends batches of 100).
+   * Creates the index if it doesn't exist.
    */
   async upsert<T extends RecordMetadata>(
     indexName: string,
@@ -26,6 +31,8 @@ const SimpleVectorService = {
     if (vectors.length === 0) {
       return;
     }
+
+    await this.ensureIndex(indexName);
 
     const index = pinecone.index<T>(indexName);
     const ns = index.namespace(namespace);
@@ -117,6 +124,41 @@ const SimpleVectorService = {
     return {
       vectorCount: stats.totalRecordCount ?? 0,
     };
+  },
+
+  /**
+   * Ensure an index exists, creating it if necessary.
+   * Uses serverless spec on AWS us-east-1.
+   */
+  async ensureIndex(
+    indexName: string,
+    dimension: number = DEFAULT_DIMENSION,
+  ): Promise<void> {
+    if (verifiedIndexes.has(indexName)) {
+      return;
+    }
+
+    const existingIndexes = await pinecone.listIndexes();
+    const exists = existingIndexes.indexes?.some(
+      (idx) => idx.name === indexName,
+    );
+
+    if (!exists) {
+      await pinecone.createIndex({
+        name: indexName,
+        dimension,
+        metric: "cosine",
+        spec: {
+          serverless: {
+            cloud: "aws",
+            region: "eu-central-1",
+          },
+        },
+        waitUntilReady: true,
+      });
+    }
+
+    verifiedIndexes.add(indexName);
   },
 };
 
