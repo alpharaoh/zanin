@@ -101,6 +101,10 @@ poetry run ruff check .
 3. **Identification**: Extract embeddings from audio segments, compare via cosine similarity
 4. **Threshold**: If similarity >= 0.25, label as "owner", else "other"
 
+## Rainbow Passage (For enrollment)
+
+When the sunlight strikes raindrops in the air, they act as a prism and form a rainbow. The rainbow is a division of white light into many beautiful colors. These take the shape of a long round arch, with its path high above, and its two ends apparently beyond the horizon. There is, according to legend, a boiling pot of gold at one end. People look, but no one ever finds it. When a man looks for something beyond his reach, his friends say he is looking for the pot of gold at the end of the rainbow.
+
 ## Model
 
 Uses [SpeechBrain ECAPA-TDNN](https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb) trained on VoxCeleb1+2:

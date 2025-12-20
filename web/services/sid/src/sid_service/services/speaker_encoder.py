@@ -55,7 +55,7 @@ class SpeakerEncoder:
         Extract speaker embedding from an audio file.
 
         Args:
-            audio_path: Path to the audio file (WAV, MP3, FLAC, etc.)
+            audio_path: Path to the audio file (WAV, MP3, FLAC, M4A, etc.)
 
         Returns:
             192-dimensional numpy array representing the speaker embedding
@@ -65,18 +65,13 @@ class SpeakerEncoder:
 
         logger.debug("Extracting embedding from file", path=audio_path)
 
-        # Load and resample audio to 16kHz if needed
-        signal, sample_rate = torchaudio.load(audio_path)
+        # Use AudioUtils to load (handles ffmpeg conversion for M4A, etc.)
+        from .audio_utils import AudioUtils
 
-        if sample_rate != 16000:
-            resampler = torchaudio.transforms.Resample(
-                orig_freq=sample_rate, new_freq=16000
-            )
-            signal = resampler(signal)
+        waveform, sample_rate = AudioUtils.load_audio(audio_path, target_sample_rate=16000)
 
-        # Convert to mono if stereo
-        if signal.shape[0] > 1:
-            signal = torch.mean(signal, dim=0, keepdim=True)
+        # Convert to tensor with batch dimension
+        signal = torch.from_numpy(waveform).unsqueeze(0).float()
 
         # Extract embedding
         embedding = self._model.encode_batch(signal)
