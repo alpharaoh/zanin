@@ -75,7 +75,6 @@ export const vectorize = inngest.createFunction(
 
     // Optionally generate contextual embeddings using cached document context
     let textsToEmbed = chunks;
-
     if (useContextualEmbeddings) {
       // Create a cache for the full document to save tokens
       const cache = await step.run("create-document-cache", async () => {
@@ -85,7 +84,11 @@ export const vectorize = inngest.createFunction(
         });
       });
 
-      const cacheName = cache.name!;
+      const cacheName = cache.name;
+      if (!cacheName) {
+        throw new NonRetriableError("Cache name is empty");
+      }
+
       logger.info(`Created document cache: ${cacheName}`);
 
       const contextualChunks: string[] = [];
@@ -101,7 +104,6 @@ export const vectorize = inngest.createFunction(
         contextualChunks.push(contextualChunk);
       }
 
-      // Clean up the cache
       await step.run("delete-document-cache", async () => {
         await CacheLLMService.deleteCache(cacheName);
       });
@@ -124,7 +126,8 @@ export const vectorize = inngest.createFunction(
         documentId,
         chunkIndex: idx,
         totalChunks: chunks.length,
-        text: chunk, // Store original chunk, not contextual version
+        text: chunk,
+        textWithContext: textsToEmbed[idx],
         createdAt: new Date().toISOString(),
       } as ChunkMetadata,
     }));
