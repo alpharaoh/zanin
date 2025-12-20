@@ -1,11 +1,11 @@
 import { embed, embedMany } from "ai";
 import { google } from "@ai-sdk/google";
 
-const EMBEDDING_MODEL = google.textEmbeddingModel("text-embedding-004");
+// 3072 dimensions, 2048 max tokens
+const EMBEDDING_MODEL = google.textEmbeddingModel("gemini-embedding-001");
 
 /**
  * Service for generating text embeddings.
- * Uses Google's text-embedding-004 model (768 dimensions).
  */
 const EmbeddingService = {
   async embed(text: string): Promise<number[]> {

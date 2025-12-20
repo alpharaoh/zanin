@@ -8,10 +8,6 @@ import type {
 } from "./types";
 
 const BATCH_SIZE = 100;
-const DEFAULT_DIMENSION = 768; // Google text-embedding-004
-
-// Track which indexes we've verified in memory to avoid repeated API calls
-const verifiedIndexes = new Set<string>();
 
 /**
  * Low-level Pinecone operations with no domain knowledge.
@@ -124,42 +120,6 @@ const SimpleVectorService = {
     return {
       vectorCount: stats.totalRecordCount ?? 0,
     };
-  },
-
-  /**
-   * Ensure an index exists, creating it if necessary.
-   * Uses serverless spec on AWS.
-   */
-  async ensureIndex(
-    indexName: string,
-    dimension: number = DEFAULT_DIMENSION,
-  ): Promise<void> {
-    if (verifiedIndexes.has(indexName)) {
-      return;
-    }
-
-    const existingIndexes = await pinecone.listIndexes();
-    const exists = existingIndexes.indexes?.some(
-      (idx) => idx.name === indexName,
-    );
-
-    if (!exists) {
-      await pinecone.createIndex({
-        name: indexName,
-        dimension,
-        metric: "cosine",
-        spec: {
-          serverless: {
-            cloud: "aws",
-            // We don't have starter plan so it will auto-fill us-east-1
-            region: "europe-west4",
-          },
-        },
-        waitUntilReady: true,
-      });
-    }
-
-    verifiedIndexes.add(indexName);
   },
 };
 
