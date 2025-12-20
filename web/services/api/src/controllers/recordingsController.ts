@@ -13,15 +13,15 @@ import {
   UploadedFile,
 } from "tsoa";
 import type { Request as ExpressRequest } from "express";
-import { RecordingsService, RecordingResponse } from "../services/recordings";
+import { RecordingsService, Recording } from "../services/recordings";
 
 interface RecordingListResponse {
-  recordings: RecordingResponse[];
+  recordings: Recording[];
   count: number;
 }
 
 interface CreateRecordingResponse {
-  recording: RecordingResponse;
+  recording: Recording;
   message: string;
 }
 
@@ -107,7 +107,7 @@ export class RecordingsController extends Controller {
   public async getRecording(
     @Request() request: ExpressRequest,
     @Path() recordingId: string,
-  ): Promise<RecordingResponse> {
+  ): Promise<Recording> {
     const user = request.user;
     if (!user) {
       this.setStatus(401);

@@ -1,11 +1,53 @@
-import { eq, isNull, and } from "drizzle-orm";
 import { omit } from "lodash";
-import db from "@zanin/db";
-import { recordings, SelectRecording } from "@zanin/db/schema";
+import { insertRecording } from "@zanin/db/queries/insert/insertRecording";
+import { selectRecording } from "@zanin/db/queries/select/one/selectRecording";
+import { listRecordings } from "@zanin/db/queries/select/many/listRecordings";
+import { updateRecording } from "@zanin/db/queries/update/updateRecording";
 import { inngest } from "../inngest/client";
 import BlobStorageService from "./external/store/blob/service";
+import { SelectRecording } from "@zanin/db/schema";
 
-export type RecordingResponse = Omit<SelectRecording, "deletedAt">;
+export interface Recording {
+  status: "pending" | "processing" | "completed" | "failed";
+  finishedAt: Date | undefined;
+  processingError: string | undefined;
+  title: string | undefined;
+  rawAudioUrl: string;
+  cleanedAudioUrl: string | undefined;
+  confidence: number | undefined;
+  originalDuration: number | undefined;
+  transcript: {
+    end: number;
+    start: number;
+    content: string;
+    speaker: "ME" | string;
+    wordCount: number;
+    speakerNumber: number;
+  }[];
+  words: {
+    end: number;
+    word: string;
+    start: number;
+    speaker: number;
+    confidence: number;
+    punctuated_word: string;
+    speaker_confidence: number;
+  }[];
+  vadSegments: {
+    segements: {
+      end: number;
+      start: number;
+    };
+  }[];
+  speakerLabels: {};
+  metadata: {
+    language: "en";
+    speakerIdentification: {
+      otherSpeakingSeconds: number;
+      ownerSpeakingSeconds: number;
+    };
+  };
+}
 
 export interface CreateRecordingInput {
   organizationId: string;
@@ -21,15 +63,15 @@ export interface ListRecordingsInput {
   offset?: number;
 }
 
-function toRecordingResponse(recording: SelectRecording): RecordingResponse {
-  return omit(recording, ["deletedAt"]);
+function toRecordingResponse(recording: SelectRecording): Recording {
+  return omit(recording, ["deletedAt", "metadata.model"]) as Recording;
 }
 
 export const RecordingsService = {
   /**
    * Create a new recording, upload audio to S3, and trigger processing
    */
-  create: async (input: CreateRecordingInput): Promise<RecordingResponse> => {
+  create: async (input: CreateRecordingInput): Promise<Recording> => {
     const { organizationId, userId, audioBuffer } = input;
 
     const timestamp = Date.now();
@@ -40,15 +82,12 @@ export const RecordingsService = {
       { contentType: "audio/wav" },
     );
 
-    const [recording] = await db
-      .insert(recordings)
-      .values({
-        organizationId,
-        userId,
-        status: "processing",
-        rawAudioUrl,
-      })
-      .returning();
+    const recording = await insertRecording({
+      organizationId,
+      userId,
+      status: "processing",
+      rawAudioUrl,
+    });
 
     await inngest.send({
       name: "audio/process.audio",
@@ -69,21 +108,11 @@ export const RecordingsService = {
   getById: async (
     id: string,
     organizationId: string,
-  ): Promise<RecordingResponse | null> => {
-    const [recording] = await db
-      .select()
-      .from(recordings)
-      .where(
-        and(
-          eq(recordings.id, id),
-          eq(recordings.organizationId, organizationId),
-          isNull(recordings.deletedAt),
-        ),
-      )
-      .limit(1);
+  ): Promise<Recording | undefined> => {
+    const recording = await selectRecording(id, organizationId);
 
-    if (!recording) {
-      return null;
+    if (!recording || recording.deletedAt) {
+      return undefined;
     }
 
     return toRecordingResponse(recording);
@@ -92,27 +121,23 @@ export const RecordingsService = {
   /**
    * List recordings for an organization
    */
-  list: async (input: ListRecordingsInput): Promise<RecordingResponse[]> => {
+  list: async (input: ListRecordingsInput): Promise<Recording[]> => {
     const { organizationId, userId, limit = 50, offset = 0 } = input;
 
-    const conditions = [
-      eq(recordings.organizationId, organizationId),
-      isNull(recordings.deletedAt),
-    ];
+    const recordings = await listRecordings(
+      {
+        organizationId,
+        deletedAt: null,
+        userId,
+      },
+      {
+        createdAt: "desc",
+      },
+      limit,
+      offset,
+    );
 
-    if (userId) {
-      conditions.push(eq(recordings.userId, userId));
-    }
-
-    const results = await db
-      .select()
-      .from(recordings)
-      .where(and(...conditions))
-      .orderBy(recordings.createdAt)
-      .limit(limit)
-      .offset(offset);
-
-    return results.map(toRecordingResponse);
+    return recordings.map(toRecordingResponse);
   },
 
   /**
@@ -121,23 +146,22 @@ export const RecordingsService = {
   delete: async (
     id: string,
     organizationId: string,
-  ): Promise<RecordingResponse | null> => {
-    const [recording] = await db
-      .update(recordings)
-      .set({ deletedAt: new Date() })
-      .where(
-        and(
-          eq(recordings.id, id),
-          eq(recordings.organizationId, organizationId),
-          isNull(recordings.deletedAt),
-        ),
-      )
-      .returning();
+  ): Promise<Recording | undefined> => {
+    const recording = await updateRecording(
+      {
+        id,
+        organizationId,
+        deletedAt: null,
+      },
+      {
+        deletedAt: new Date(),
+      },
+    );
 
-    if (!recording) {
-      return null;
+    if (!recording?.[0]) {
+      return undefined;
     }
 
-    return toRecordingResponse(recording);
+    return toRecordingResponse(recording[0]);
   },
 };
