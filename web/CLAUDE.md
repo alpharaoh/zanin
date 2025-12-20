@@ -8,6 +8,7 @@ A wearable device that captures audio throughout the day. Users plug it into the
 - **Monorepo**: Bun workspaces
 - **Database**: PostgreSQL (Neon) with Drizzle ORM
 - **Background Jobs**: Inngest
+- **Vector Database**: Pinecone
 
 ## Project Structure
 
@@ -33,10 +34,14 @@ Express 5 + TSOA for OpenAPI generation. Handles auth, background jobs, and orch
 - `src/controllers/` - REST endpoints
 - `src/handlers/` - Express middleware (auth, error, inngest)
 - `src/inngest/` - Background job definitions
+  - `functions/processAudio/` - Audio processing workflow (VAD, transcription, title generation, vectorization)
+  - `functions/vectorize/` - Generic text vectorization with optional contextual embeddings
 - `src/services/external/` - External service clients:
-  - `deepgram/` - Speech-to-text
+  - `deepgram/` - Speech-to-text transcription
   - `vad/` - VAD service client
-  - `store/blob/` - Blob storage (Vercel Blob)
+  - `llm/` - LLM operations and utils
+  - `store/blob/` - Blob storage
+  - `store/vector/` - Vector storage
 
 ### VAD (`/services/vad`)
 Python FastAPI service using Silero VAD. Detects voice activity and extracts speech-only audio.
@@ -51,7 +56,7 @@ React 19 + Vite + TanStack Router/Query + Tailwind CSS.
 ## Roadmap
 
 - [ ] Memory system (like OpenAI memory, without vector DB)
-- [ ] Vector database for semantic search
+- [ ] Vector database semantic search integration
 - [ ] Daily insight reports
 - [ ] Hardware integration
 - [ ] User file upload interface
