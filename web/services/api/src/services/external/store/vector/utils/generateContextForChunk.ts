@@ -12,7 +12,9 @@ export async function generateContextForChunk(
   chunk: string,
   cacheName: string,
 ): Promise<string> {
-  const prompt = `Here is the chunk we want to situate within the document:
+  const prompt = `You are given the text of a document.
+
+Here is the chunk we want to situate within the document:
 <chunk>
 ${chunk}
 </chunk>

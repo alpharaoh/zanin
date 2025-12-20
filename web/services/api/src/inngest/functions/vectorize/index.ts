@@ -121,31 +121,36 @@ export const vectorize = inngest.createFunction(
       }
     }
 
-    const embeddings = await step.run("generate-embeddings", async () => {
-      return await EmbeddingService.embedMany(textsToEmbed);
-    });
+    const vectors = await step.run(
+      "generate-embeddings-and-upsert-vectors",
+      async () => {
+        const embeddings = await EmbeddingService.embedMany(textsToEmbed);
 
-    logger.info(`Generated ${embeddings.length} embeddings`);
+        logger.info(`Generated ${embeddings.length} embeddings`);
 
-    const vectors = chunks.map((chunk, idx) => ({
-      id: `${documentId}-chunk-${idx}`,
-      values: embeddings[idx],
-      metadata: {
-        ...metadata,
-        documentId,
-        chunkIndex: idx,
-        totalChunks: chunks.length,
-        text: chunk,
-        textWithContext: useContextualEmbeddings
-          ? textsToEmbed[idx]
-          : undefined,
-        createdAt: new Date().toISOString(),
-      } as ChunkMetadata,
-    }));
+        const vectors = chunks.map((chunk, idx) => ({
+          id: `${documentId}-chunk-${idx}`,
+          values: embeddings[idx],
+          metadata: {
+            ...metadata,
+            documentId,
+            chunkIndex: idx,
+            totalChunks: chunks.length,
+            text: chunk,
+            textWithContext: useContextualEmbeddings
+              ? textsToEmbed[idx]
+              : undefined,
+            createdAt: new Date().toISOString(),
+          } as ChunkMetadata,
+        }));
 
-    await step.run("upsert-vectors", async () => {
-      await SimpleVectorService.upsert(indexName, namespace, vectors);
-    });
+        await step.run("upsert-vectors", async () => {
+          await SimpleVectorService.upsert(indexName, namespace, vectors);
+        });
+
+        return vectors;
+      },
+    );
 
     logger.info(
       `Upserted ${vectors.length} vectors to ${indexName}/${namespace}`,

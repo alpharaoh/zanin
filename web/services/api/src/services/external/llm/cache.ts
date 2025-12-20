@@ -4,8 +4,8 @@ import { env } from "@zanin/env/server";
 const client = new GoogleGenAI({ apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY });
 
 const DEFAULT_CACHE_TTL_SECONDS = 300;
-const DEFAULT_CACHE_MODEL = "gemini-2.5-flash-preview-09-2025";
-const DEFAULT_GENERATE_MODEL = "gemini-2.5-flash-preview-09-2025";
+const DEFAULT_CACHE_MODEL = "gemini-2.5-flash";
+const DEFAULT_GENERATE_MODEL = "gemini-2.5-flash";
 
 export const MIN_CACHE_TOKENS = 1024;
 
