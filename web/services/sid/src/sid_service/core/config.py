@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     sample_rate: int = Field(default=16000)
 
     # Profile Storage
-    profiles_dir: str = Field(default="/data/profiles")
+    profiles_dir: str = Field(default="./data/profiles")
 
     # Processing
     max_file_size_mb: int = Field(default=2048)

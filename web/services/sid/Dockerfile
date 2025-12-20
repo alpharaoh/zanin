@@ -40,6 +40,7 @@ COPY --from=builder /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH="/app/src"
 ENV PYTHONUNBUFFERED=1
+ENV SID_PROFILES_DIR="/data/profiles"
 
 # Copy source code
 COPY src/ ./src/
