@@ -30,7 +30,7 @@ interface CreateRecordingResponse {
 @Response(401, "Unauthorized")
 @Response(400, "No active organization")
 @Response(500, "Internal Server Error")
-@Route("recordings")
+@Route("v1/recordings")
 export class RecordingsController extends Controller {
   /**
    * Upload an audio file and create a new recording.
@@ -69,17 +69,12 @@ export class RecordingsController extends Controller {
   ): Promise<RecordingListResponse> {
     const { userId, organizationId } = request.user!;
 
-    const recordings = await RecordingsService.list({
+    return RecordingsService.list({
       organizationId,
       userId,
       limit,
       offset,
     });
-
-    return {
-      recordings,
-      count: recordings.length,
-    };
   }
 
   /**

@@ -1,4 +1,4 @@
-import { and, inArray } from "drizzle-orm";
+import { and, count, inArray } from "drizzle-orm";
 import { InsertOrganization, organization } from "../../../schema";
 import { buildOrderBy } from "../../../utils/buildOrderBy";
 import { buildWhere } from "../../../utils/buildWhere";
@@ -17,19 +17,29 @@ export const listOrganizations = async (
     whereCondition = and(whereCondition, inArray(organization.id, ids));
   }
 
-  const query = db.select().from(organization).where(whereCondition);
+  const dataQuery = db.select().from(organization).where(whereCondition);
 
   if (orderBy) {
-    query.orderBy(...buildOrderBy(organization, orderBy));
+    dataQuery.orderBy(...buildOrderBy(organization, orderBy));
   }
 
   if (limit) {
-    query.limit(limit);
+    dataQuery.limit(limit);
   }
 
   if (offset) {
-    query.offset(offset);
+    dataQuery.offset(offset);
   }
 
-  return query;
+  const countQuery = db
+    .select({ count: count() })
+    .from(organization)
+    .where(whereCondition);
+
+  const [data, countResult] = await Promise.all([dataQuery, countQuery]);
+
+  return {
+    data,
+    count: countResult[0]?.count ?? 0,
+  };
 };

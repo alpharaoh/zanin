@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 export function buildWhere<
   InsertRow extends Record<string, any>,
@@ -6,7 +6,13 @@ export function buildWhere<
 >(table: TableColumns, where: Partial<InsertRow>) {
   const predicates = (Object.keys(where) as (keyof InsertRow)[])
     .filter((k) => where[k] !== undefined)
-    .map((k) => eq(table[k], where[k]));
+    .map((k) => {
+      const value = where[k];
+      if (value === null) {
+        return isNull(table[k]);
+      }
+      return eq(table[k], value);
+    });
 
   if (!predicates.length) {
     return and();

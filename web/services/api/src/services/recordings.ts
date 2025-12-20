@@ -121,10 +121,12 @@ export const RecordingsService = {
   /**
    * List recordings for an organization
    */
-  list: async (input: ListRecordingsInput): Promise<Recording[]> => {
+  list: async (
+    input: ListRecordingsInput,
+  ): Promise<{ recordings: Recording[]; count: number }> => {
     const { organizationId, userId, limit = 50, offset = 0 } = input;
 
-    const recordings = await listRecordings(
+    const { data, count } = await listRecordings(
       {
         organizationId,
         deletedAt: null,
@@ -137,7 +139,10 @@ export const RecordingsService = {
       offset,
     );
 
-    return recordings.map(toRecordingResponse);
+    return {
+      recordings: data.map(toRecordingResponse),
+      count,
+    };
   },
 
   /**

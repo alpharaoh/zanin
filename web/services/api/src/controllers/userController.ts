@@ -27,7 +27,7 @@ interface User {
 @Response(401, "Unauthorized")
 @Response(400, "No active organization")
 @Response(500, "Internal Server Error")
-@Route("users")
+@Route("v1/users")
 export class UsersController extends Controller {
   /**
    * Retrieves the details of the user calling the API.
@@ -36,9 +36,9 @@ export class UsersController extends Controller {
   public async getMe(@Request() request: ExpressRequest): Promise<User> {
     const { userId, organizationId, user } = request.user!;
 
-    const members = await listMembers({ userId });
+    const { data: members } = await listMembers({ userId });
     const organizationIdsForUser = members.map((m) => m.organizationId);
-    const organizations = await listOrganizations({
+    const { data: organizations } = await listOrganizations({
       ids: organizationIdsForUser,
     });
 
