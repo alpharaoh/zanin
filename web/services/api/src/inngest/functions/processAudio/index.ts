@@ -122,13 +122,11 @@ export default inngest.createFunction(
           return undefined;
         }
 
-        // Extract speaker segments from transcription
         const segments = extractSpeakerSegments(transcription.words);
         if (segments.length === 0) {
           return undefined;
         }
 
-        // Identify speakers
         const result = await SIDService.identifyFromUrl(
           TEMP_USER_ID,
           segments,
