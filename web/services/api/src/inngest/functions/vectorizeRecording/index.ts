@@ -1,7 +1,7 @@
 import { inngest } from "../../client";
 import { selectRecording } from "@zanin/db/queries/select/selectRecording";
 import { updateRecording } from "@zanin/db/queries/update/updateRecording";
-import VectorDBService from "../../../services/external/store/vector/service";
+import RecordingVectorService from "../../../services/external/store/vector/recordings";
 import { NonRetriableError } from "inngest";
 
 type VectorizeRecording = {
@@ -42,7 +42,7 @@ export default inngest.createFunction(
     });
 
     const vectorResult = await step.run("vectorize-transcript", async () => {
-      return await VectorDBService.upsertRecording({
+      return await RecordingVectorService.upsertRecording({
         recordingId: recording.id,
         organizationId: recording.organizationId,
         userId: recording.userId,
