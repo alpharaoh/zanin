@@ -33,7 +33,7 @@ app.use(
   }),
 );
 app.all("/api/auth/*splat", authMiddleware);
-app.use(json());
+app.use(json({ limit: "200mb" }));
 app.use("/docs", swaggerUi.serve, async (_: Request, res: Response) => {
   return res.send(
     swaggerUi.generateHTML(await import("../build/swagger.json")),
