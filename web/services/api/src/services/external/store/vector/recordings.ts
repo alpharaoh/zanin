@@ -1,8 +1,8 @@
 import type { RecordMetadata } from "@pinecone-database/pinecone";
 import SimpleVectorService from "./simple";
 import EmbeddingService from "./embedding";
-import { chunkText, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP } from "./utils";
 import type { VectorRecord, VectorStats } from "./types";
+import { chunkText } from "./utils/chunkText";
 
 const RECORDINGS_INDEX = "recordings";
 
@@ -75,11 +75,11 @@ const RecordingVectorService = {
       organizationId,
       userId,
       transcript,
-      chunkSize = DEFAULT_CHUNK_SIZE,
-      chunkOverlap = DEFAULT_CHUNK_OVERLAP,
+      chunkSize,
+      chunkOverlap,
     } = options;
 
-    const chunks = chunkText(transcript, chunkSize, chunkOverlap);
+    const chunks = await chunkText(transcript, chunkSize, chunkOverlap);
 
     if (chunks.length === 0) {
       return { chunksUpserted: 0, vectorIds: [] };
@@ -153,7 +153,12 @@ const RecordingVectorService = {
         continue;
       }
 
-      const { recordingId: recId, userId: recUserId, text, chunkIndex } = result.metadata;
+      const {
+        recordingId: recId,
+        userId: recUserId,
+        text,
+        chunkIndex,
+      } = result.metadata;
 
       if (!grouped.has(recId)) {
         grouped.set(recId, { userId: recUserId, chunks: [] });
@@ -184,11 +189,9 @@ const RecordingVectorService = {
     organizationId: string,
     recordingId: string,
   ): Promise<void> {
-    await SimpleVectorService.deleteByFilter(
-      RECORDINGS_INDEX,
-      organizationId,
-      { recordingId: { $eq: recordingId } },
-    );
+    await SimpleVectorService.deleteByFilter(RECORDINGS_INDEX, organizationId, {
+      recordingId: { $eq: recordingId },
+    });
   },
 
   /**
