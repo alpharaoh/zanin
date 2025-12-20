@@ -19,7 +19,7 @@ Here is the chunk we want to situate within the document:
 ${chunk}
 </chunk>
 
-Please give a short succinct context to situate this chunk within the overall document for the purposes of improving search retrieval of the chunk. Answer only with the succinct context and nothing else.`;
+Please give a short succinct and concise context to situate this chunk within the overall document for the purposes of improving search retrieval of the chunk. Answer only with the succinct context and nothing else.`;
 
   return await CacheLLMService.generateWithCache({
     prompt,
