@@ -209,15 +209,6 @@ export const RecordingsSearchService = {
         continue;
       }
 
-      const recording = await RecordingsService.getById(
-        docResult.documentId,
-        organizationId,
-      );
-
-      if (!recording) {
-        continue;
-      }
-
       results.push({
         recordingId: docResult.documentId,
         matches: docResult.chunks.map((chunk) => ({
