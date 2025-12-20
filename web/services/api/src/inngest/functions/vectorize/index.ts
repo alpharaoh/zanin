@@ -4,7 +4,11 @@ import type { RecordMetadata } from "@pinecone-database/pinecone";
 import SimpleVectorService from "../../../services/external/store/vector/simple";
 import EmbeddingService from "../../../services/external/store/vector/embedding";
 import { chunkText } from "../../../services/external/store/vector/utils/chunkText";
-import { generateContextForChunk } from "../../../services/external/store/vector/utils/generateContextForChunk";
+import {
+  createDocumentCache,
+  generateContextForChunkWithCache,
+  deleteDocumentCache,
+} from "../../../services/external/store/vector/utils/generateContextForChunk";
 
 export interface VectorizeOptions {
   useContextualEmbeddings?: boolean;
@@ -69,22 +73,37 @@ export const vectorize = inngest.createFunction(
 
     logger.info(`Chunked text into ${chunks.length} chunks`);
 
-    // Optionally generate contextual embeddings
+    // Optionally generate contextual embeddings using cached document context
     let textsToEmbed = chunks;
 
     if (useContextualEmbeddings) {
+      // Create a cache for the full document to save tokens
+      const cacheName = await step.run("create-document-cache", async () => {
+        return await createDocumentCache(text);
+      });
+
+      logger.info(`Created document cache: ${cacheName}`);
+
       const contextualChunks: string[] = [];
 
       for (let i = 0; i < chunks.length; i++) {
         const contextualChunk = await step.run(
           `generate-context-${i}`,
           async () => {
-            const context = await generateContextForChunk(chunks[i], text);
+            const context = await generateContextForChunkWithCache(
+              chunks[i],
+              cacheName,
+            );
             return `${context}\n\n${chunks[i]}`;
           },
         );
         contextualChunks.push(contextualChunk);
       }
+
+      // Clean up the cache
+      await step.run("delete-document-cache", async () => {
+        await deleteDocumentCache(cacheName);
+      });
 
       textsToEmbed = contextualChunks;
       logger.info("Generated contextual embeddings for all chunks");
