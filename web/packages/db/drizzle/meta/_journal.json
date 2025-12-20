@@ -15,6 +15,13 @@
       "when": 1766111341525,
       "tag": "0001_woozy_inertia",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766242292861,
+      "tag": "0002_wise_bruce_banner",
+      "breakpoints": true
     }
   ]
 }
