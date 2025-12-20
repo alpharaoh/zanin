@@ -44,7 +44,6 @@ export class SIDController extends Controller {
       audio.originalname,
     );
 
-    this.setStatus(201);
     return {
       success: result.success,
       audioDurationSeconds: result.audio_duration_seconds,
@@ -62,7 +61,7 @@ export class SIDController extends Controller {
   ): Promise<ProfileInfo> {
     const { userId } = request.user!;
 
-    return SIDService.getProfile(userId);
+    return await SIDService.getProfile(userId);
   }
 
   /**

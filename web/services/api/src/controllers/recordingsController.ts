@@ -60,7 +60,7 @@ export class RecordingsController extends Controller {
   ): Promise<RecordingListResponse> {
     const { userId, organizationId } = request.user!;
 
-    return RecordingsService.list({
+    return await RecordingsService.list({
       organizationId,
       userId,
       limit,
