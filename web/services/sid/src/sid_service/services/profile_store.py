@@ -107,9 +107,7 @@ class ProfileStore:
         if not self._profiles_dir.exists():
             return []
 
-        return [
-            p.stem for p in self._profiles_dir.glob("*.npy")
-        ]
+        return [p.stem for p in self._profiles_dir.glob("*.npy")]
 
     def get_profile_info(self, user_id: str) -> dict | None:
         """
