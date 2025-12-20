@@ -105,11 +105,11 @@ export class RecordingsController extends Controller {
    */
   @Delete("{recordingId}")
   @Response(404, "Recording not found")
-  @SuccessResponse(200, "Deleted")
+  @SuccessResponse(204)
   public async deleteRecording(
     @Request() request: ExpressRequest,
     @Path() recordingId: string,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<void> {
     const { organizationId } = request.user!;
 
     const recording = await RecordingsService.delete(
@@ -120,10 +120,5 @@ export class RecordingsController extends Controller {
     if (!recording) {
       throw new NotFoundError("Recording not found");
     }
-
-    return {
-      success: true,
-      message: "Recording deleted successfully",
-    };
   }
 }
