@@ -21,11 +21,6 @@ interface RecordingListResponse {
   count: number;
 }
 
-interface CreateRecordingResponse {
-  recording: Recording;
-  message: string;
-}
-
 @Security("default")
 @Response(401, "Unauthorized")
 @Response(400, "No active organization")
@@ -41,7 +36,7 @@ export class RecordingsController extends Controller {
   public async createRecording(
     @Request() request: ExpressRequest,
     @UploadedFile() audio: Express.Multer.File,
-  ): Promise<CreateRecordingResponse> {
+  ): Promise<Recording> {
     const { userId, organizationId } = request.user!;
 
     const recording = await RecordingsService.create({
@@ -51,11 +46,7 @@ export class RecordingsController extends Controller {
       filename: audio.originalname,
     });
 
-    this.setStatus(201);
-    return {
-      recording,
-      message: "Recording created and processing started",
-    };
+    return recording;
   }
 
   /**
