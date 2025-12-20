@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { ValidateError } from "tsoa";
+import { HttpError } from "../errors";
 
 export const errorHandler = (
   err: unknown,
@@ -17,13 +18,16 @@ export const errorHandler = (
     });
   }
 
-  if (err instanceof Error) {
-    if (err.message === "Unauthorized") {
-      return res.status(401).json({
-        message: "Unauthorized",
-      });
+  if (err instanceof HttpError) {
+    if (err.statusCode >= 500) {
+      req.log.error(err);
     }
+    return res.status(err.statusCode).json({
+      message: err.message,
+    });
+  }
 
+  if (err instanceof Error) {
     req.log.error(err);
     return res.status(500).json({
       message: "Internal Server Error",

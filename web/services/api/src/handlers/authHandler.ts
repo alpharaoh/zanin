@@ -1,5 +1,6 @@
 import { auth, fromNodeHeaders } from "@zanin/auth";
 import type { Request } from "express";
+import { UnauthorizedError } from "../errors";
 
 export async function expressAuthentication(
   request: Request,
@@ -12,7 +13,7 @@ export async function expressAuthentication(
     });
 
     if (!session) {
-      return Promise.reject(new Error("Unauthorized"));
+      return Promise.reject(new UnauthorizedError());
     }
 
     return session;

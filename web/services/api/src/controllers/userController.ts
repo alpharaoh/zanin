@@ -2,6 +2,7 @@ import { Controller, Get, Request, Response, Route, Security } from "tsoa";
 import type { Request as ExpressRequest } from "express";
 import { listMembers } from "@zanin/db/queries/select/many/listMembers";
 import { listOrganizations } from "@zanin/db/queries/select/many/listOrganizations";
+import { UnauthorizedError } from "../errors";
 
 interface User {
   id: string;
@@ -34,8 +35,7 @@ export class UsersController extends Controller {
   @Get("me")
   public async getMe(@Request() request: ExpressRequest): Promise<User> {
     if (!request.user) {
-      // TODO: Create a nicer error class
-      throw new Error("Unauthorized");
+      throw new UnauthorizedError();
     }
 
     const members = await listMembers({

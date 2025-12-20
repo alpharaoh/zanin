@@ -14,6 +14,7 @@ import {
 } from "tsoa";
 import type { Request as ExpressRequest } from "express";
 import { RecordingsService, Recording } from "../services/recordings";
+import { BadRequestError, NotFoundError, UnauthorizedError } from "../errors";
 
 interface RecordingListResponse {
   recordings: Recording[];
@@ -42,14 +43,12 @@ export class RecordingsController extends Controller {
   ): Promise<CreateRecordingResponse> {
     const user = request.user;
     if (!user) {
-      this.setStatus(401);
-      throw new Error("Unauthorized");
+      throw new UnauthorizedError();
     }
 
     const organizationId = user.session.activeOrganizationId;
     if (!organizationId) {
-      this.setStatus(400);
-      throw new Error("No active organization");
+      throw new BadRequestError("No active organization");
     }
 
     const recording = await RecordingsService.create({
@@ -77,14 +76,12 @@ export class RecordingsController extends Controller {
   ): Promise<RecordingListResponse> {
     const user = request.user;
     if (!user) {
-      this.setStatus(401);
-      throw new Error("Unauthorized");
+      throw new UnauthorizedError();
     }
 
     const organizationId = user.session.activeOrganizationId;
     if (!organizationId) {
-      this.setStatus(400);
-      throw new Error("No active organization");
+      throw new BadRequestError("No active organization");
     }
 
     const recordings = await RecordingsService.list({
@@ -110,14 +107,12 @@ export class RecordingsController extends Controller {
   ): Promise<Recording> {
     const user = request.user;
     if (!user) {
-      this.setStatus(401);
-      throw new Error("Unauthorized");
+      throw new UnauthorizedError();
     }
 
     const organizationId = user.session.activeOrganizationId;
     if (!organizationId) {
-      this.setStatus(400);
-      throw new Error("No active organization");
+      throw new BadRequestError("No active organization");
     }
 
     const recording = await RecordingsService.getById(
@@ -126,8 +121,7 @@ export class RecordingsController extends Controller {
     );
 
     if (!recording) {
-      this.setStatus(404);
-      throw new Error("Recording not found");
+      throw new NotFoundError("Recording not found");
     }
 
     return recording;
@@ -145,14 +139,12 @@ export class RecordingsController extends Controller {
   ): Promise<{ success: boolean; message: string }> {
     const user = request.user;
     if (!user) {
-      this.setStatus(401);
-      throw new Error("Unauthorized");
+      throw new UnauthorizedError();
     }
 
     const organizationId = user.session.activeOrganizationId;
     if (!organizationId) {
-      this.setStatus(400);
-      throw new Error("No active organization");
+      throw new BadRequestError("No active organization");
     }
 
     const recording = await RecordingsService.delete(
@@ -161,8 +153,7 @@ export class RecordingsController extends Controller {
     );
 
     if (!recording) {
-      this.setStatus(404);
-      throw new Error("Recording not found");
+      throw new NotFoundError("Recording not found");
     }
 
     return {
