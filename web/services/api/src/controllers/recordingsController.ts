@@ -17,6 +17,7 @@ import { RecordingsService, Recording } from "../services/recordings";
 import {
   RecordingsSearchService,
   RecordingWithMatches,
+  AnswerSource,
 } from "../services/recordingsSearch";
 import { NotFoundError } from "../errors";
 
@@ -28,6 +29,11 @@ interface RecordingListResponse {
 interface RecordingSearchResponse {
   results: RecordingWithMatches[];
   totalMatches: number;
+}
+
+interface RecordingAskResponse {
+  answer: string;
+  sources: AnswerSource[];
 }
 
 @Security("default")
@@ -100,6 +106,30 @@ export class RecordingsController extends Controller {
       endDate: endDate ? new Date(endDate) : undefined,
       limit,
       rerank,
+    });
+  }
+
+  /**
+   * Ask a question and get an AI-generated answer based on your recordings.
+   * Uses semantic search to find relevant transcript chunks and generates a response.
+   * Optionally filter by date range using startDate and endDate (ISO 8601 format).
+   */
+  @Get("ask")
+  public async askRecordings(
+    @Request() request: ExpressRequest,
+    @Query() query: string,
+    @Query() startDate?: Date,
+    @Query() endDate?: Date,
+    @Query() maxSources?: number,
+  ): Promise<RecordingAskResponse> {
+    const { organizationId } = request.user!;
+
+    return await RecordingsSearchService.ask({
+      organizationId,
+      question: query,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      maxSources,
     });
   }
 

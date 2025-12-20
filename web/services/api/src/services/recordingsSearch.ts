@@ -1,6 +1,6 @@
 import { VectorSearchService } from "./external/store/vector/search";
 import type { SearchableMetadata } from "./external/store/vector/search";
-import { RecordingsService } from "./recordings";
+import { SimpleLLMService } from "./external/llm/simple";
 
 const RECORDINGS_INDEX = "recordings";
 
@@ -53,6 +53,34 @@ export interface SearchRecordingsInput {
 export interface SearchRecordingsResponse {
   results: RecordingWithMatches[];
   totalMatches: number;
+}
+
+/**
+ * Ask input options
+ */
+export interface AskRecordingsInput {
+  organizationId: string;
+  question: string;
+  startDate?: Date;
+  endDate?: Date;
+  maxSources?: number;
+}
+
+/**
+ * Source used to answer the question
+ */
+export interface AnswerSource {
+  recordingId: string;
+  text: string;
+  score: number;
+}
+
+/**
+ * Ask response with LLM-generated answer
+ */
+export interface AskRecordingsResponse {
+  answer: string;
+  sources: AnswerSource[];
 }
 
 /**
@@ -227,5 +255,73 @@ export const RecordingsSearchService = {
     }
 
     return results;
+  },
+
+  /**
+   * Ask a question and get an LLM-generated answer based on recording transcripts.
+   * Uses RAG (Retrieval Augmented Generation) to find relevant context and generate an answer.
+   */
+  ask: async (input: AskRecordingsInput): Promise<AskRecordingsResponse> => {
+    const {
+      organizationId,
+      question,
+      startDate,
+      endDate,
+      maxSources = 5,
+    } = input;
+
+    const filter = buildDateFilter(startDate, endDate);
+
+    // Search for relevant chunks with reranking for better quality
+    const searchResults =
+      await VectorSearchService.searchByPrompt<RecordingChunkMetadata>(
+        RECORDINGS_INDEX,
+        organizationId,
+        question,
+        {
+          topK: maxSources,
+          filter,
+          rerank: true,
+          transformQuery: true,
+        },
+      );
+
+    if (searchResults.length === 0) {
+      return {
+        answer:
+          "I couldn't find any relevant information in your recordings to answer this question.",
+        sources: [],
+      };
+    }
+
+    // Build context from search results
+    const sources: AnswerSource[] = searchResults.map((result) => ({
+      recordingId: result.metadata?.recordingId ?? "",
+      text: result.text,
+      score: result.score,
+    }));
+
+    const context = sources
+      .map((source, idx) => `[Source ${idx + 1}]: ${source.text}`)
+      .join("\n\n");
+
+    // Generate answer using LLM
+    const prompt = `You are a helpful assistant that answers questions based on the user's recorded conversations and meetings.
+
+Use the following context from the user's recordings to answer their question. Be concise and direct. If the context doesn't contain enough information to fully answer the question, say so and provide what you can based on the available information.
+
+Context from recordings:
+${context}
+
+Question: ${question}
+
+Answer:`;
+
+    const answer = await SimpleLLMService.generateText(prompt);
+
+    return {
+      answer: answer.trim(),
+      sources,
+    };
   },
 };
