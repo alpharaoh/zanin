@@ -28,8 +28,6 @@ const SimpleVectorService = {
       return;
     }
 
-    await this.ensureIndex(indexName);
-
     const index = pinecone.index<T>(indexName);
     const ns = index.namespace(namespace);
 
