@@ -93,9 +93,15 @@ export default inngest.createFunction(
       return result;
     });
 
+    const cleanedTranscript = transcription.words
+      .map((word) => {
+        return `[SPEAKER ${word.speaker}]: ${word.word}`;
+      })
+      .join("\n");
+
     const title = await step.run("generate-title", async () => {
       return await SimpleLLMService.generateText(
-        `Summarize the following transcript into a title:\n\n"${transcription.transcript}"\n\nThe title must be no longer than 5 words.`,
+        `Summarize the following transcript into a title:\n\n"${cleanedTranscript}"\n\nThe title must be no longer than 5 words.`,
       );
     });
 
@@ -105,7 +111,7 @@ export default inngest.createFunction(
         {
           status: "completed",
           finishedAt: new Date(),
-          cleanedTranscript: transcription.transcript,
+          cleanedTranscript: cleanedTranscript,
           confidence: transcription.confidence,
           words: transcription.words,
           title: title.trim(),
@@ -116,12 +122,6 @@ export default inngest.createFunction(
         },
       );
     });
-
-    const cleanedTranscript = transcription.words
-      .map((word) => {
-        return `${word.speaker}: ${word.word}`;
-      })
-      .join("\n");
 
     // Vectorize the recording transcript
     const vectorResult = await step.invoke("vectorize-recording", {

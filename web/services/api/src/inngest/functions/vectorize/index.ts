@@ -144,16 +144,14 @@ export const vectorize = inngest.createFunction(
           } as ChunkMetadata,
         }));
 
-        await step.run("upsert-vectors", async () => {
-          await SimpleVectorService.upsert(indexName, namespace, vectors);
-        });
+        await SimpleVectorService.upsert(indexName, namespace, vectors);
+
+        logger.info(
+          `Upserted ${vectors.length} vectors to ${indexName}/${namespace}`,
+        );
 
         return vectors;
       },
-    );
-
-    logger.info(
-      `Upserted ${vectors.length} vectors to ${indexName}/${namespace}`,
     );
 
     return {
