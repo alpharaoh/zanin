@@ -2,7 +2,6 @@ import { Controller, Get, Request, Response, Route, Security } from "tsoa";
 import type { Request as ExpressRequest } from "express";
 import { listMembers } from "@zanin/db/queries/select/many/listMembers";
 import { listOrganizations } from "@zanin/db/queries/select/many/listOrganizations";
-import { UnauthorizedError } from "../errors";
 
 interface User {
   id: string;
@@ -12,7 +11,7 @@ interface User {
   emailVerified: boolean;
   name: string;
   image?: string | undefined;
-  activeOrganizationId?: string | undefined;
+  activeOrganizationId: string;
   organizations: {
     name: string;
     slug: string | null;
@@ -26,6 +25,7 @@ interface User {
 
 @Security("default")
 @Response(401, "Unauthorized")
+@Response(400, "No active organization")
 @Response(500, "Internal Server Error")
 @Route("users")
 export class UsersController extends Controller {
@@ -34,27 +34,23 @@ export class UsersController extends Controller {
    */
   @Get("me")
   public async getMe(@Request() request: ExpressRequest): Promise<User> {
-    if (!request.user) {
-      throw new UnauthorizedError();
-    }
+    const { userId, organizationId, user } = request.user!;
 
-    const members = await listMembers({
-      userId: request.user.user.id,
-    });
+    const members = await listMembers({ userId });
     const organizationIdsForUser = members.map((m) => m.organizationId);
     const organizations = await listOrganizations({
       ids: organizationIdsForUser,
     });
 
-    const user: User = {
-      id: request.user?.user.id,
-      createdAt: request.user?.user.createdAt,
-      updatedAt: request.user?.user.updatedAt,
-      email: request.user?.user.email,
-      emailVerified: request.user?.user.emailVerified,
-      name: request.user?.user.name,
-      image: request.user?.user.image,
-      activeOrganizationId: request.user?.session.activeOrganizationId,
+    return {
+      id: user.id,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      email: user.email,
+      emailVerified: user.emailVerified,
+      name: user.name,
+      image: user.image,
+      activeOrganizationId: organizationId,
       organizations: organizations.map((org) => ({
         name: org.name,
         slug: org.slug,
@@ -65,7 +61,5 @@ export class UsersController extends Controller {
         updatedAt: org.updatedAt,
       })),
     };
-
-    return user;
   }
 }

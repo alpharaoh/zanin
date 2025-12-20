@@ -14,7 +14,7 @@ import {
 } from "tsoa";
 import type { Request as ExpressRequest } from "express";
 import { RecordingsService, Recording } from "../services/recordings";
-import { BadRequestError, NotFoundError, UnauthorizedError } from "../errors";
+import { NotFoundError } from "../errors";
 
 interface RecordingListResponse {
   recordings: Recording[];
@@ -28,6 +28,7 @@ interface CreateRecordingResponse {
 
 @Security("default")
 @Response(401, "Unauthorized")
+@Response(400, "No active organization")
 @Response(500, "Internal Server Error")
 @Route("recordings")
 export class RecordingsController extends Controller {
@@ -41,19 +42,11 @@ export class RecordingsController extends Controller {
     @Request() request: ExpressRequest,
     @UploadedFile() audio: Express.Multer.File,
   ): Promise<CreateRecordingResponse> {
-    const user = request.user;
-    if (!user) {
-      throw new UnauthorizedError();
-    }
-
-    const organizationId = user.session.activeOrganizationId;
-    if (!organizationId) {
-      throw new BadRequestError("No active organization");
-    }
+    const { userId, organizationId } = request.user!;
 
     const recording = await RecordingsService.create({
       organizationId,
-      userId: user.user.id,
+      userId,
       audioBuffer: audio.buffer,
       filename: audio.originalname,
     });
@@ -74,19 +67,11 @@ export class RecordingsController extends Controller {
     @Query() limit?: number,
     @Query() offset?: number,
   ): Promise<RecordingListResponse> {
-    const user = request.user;
-    if (!user) {
-      throw new UnauthorizedError();
-    }
-
-    const organizationId = user.session.activeOrganizationId;
-    if (!organizationId) {
-      throw new BadRequestError("No active organization");
-    }
+    const { userId, organizationId } = request.user!;
 
     const recordings = await RecordingsService.list({
       organizationId,
-      userId: user.user.id,
+      userId,
       limit,
       offset,
     });
@@ -106,15 +91,7 @@ export class RecordingsController extends Controller {
     @Request() request: ExpressRequest,
     @Path() recordingId: string,
   ): Promise<Recording> {
-    const user = request.user;
-    if (!user) {
-      throw new UnauthorizedError();
-    }
-
-    const organizationId = user.session.activeOrganizationId;
-    if (!organizationId) {
-      throw new BadRequestError("No active organization");
-    }
+    const { organizationId } = request.user!;
 
     const recording = await RecordingsService.getById(
       recordingId,
@@ -138,15 +115,7 @@ export class RecordingsController extends Controller {
     @Request() request: ExpressRequest,
     @Path() recordingId: string,
   ): Promise<{ success: boolean; message: string }> {
-    const user = request.user;
-    if (!user) {
-      throw new UnauthorizedError();
-    }
-
-    const organizationId = user.session.activeOrganizationId;
-    if (!organizationId) {
-      throw new BadRequestError("No active organization");
-    }
+    const { organizationId } = request.user!;
 
     const recording = await RecordingsService.delete(
       recordingId,
