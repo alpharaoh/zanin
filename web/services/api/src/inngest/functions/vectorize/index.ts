@@ -6,14 +6,18 @@ import EmbeddingService from "../../../services/external/store/vector/embedding"
 import { chunkText } from "../../../services/external/store/vector/utils/chunkText";
 import { generateContextForChunk } from "../../../services/external/store/vector/utils/generateContextForChunk";
 
-// ============================================================================
-// Types
-// ============================================================================
-
 export interface VectorizeOptions {
   useContextualEmbeddings?: boolean;
   chunkSize?: number;
   chunkOverlap?: number;
+}
+
+interface ChunkMetadata extends RecordMetadata {
+  documentId: string;
+  chunkIndex: number;
+  totalChunks: number;
+  text: string;
+  createdAt: string;
 }
 
 type VectorizeData = {
@@ -31,18 +35,6 @@ export type VectorizeEvent = {
   "content/vectorize": VectorizeData;
 };
 
-interface ChunkMetadata extends RecordMetadata {
-  documentId: string;
-  chunkIndex: number;
-  totalChunks: number;
-  text: string;
-  createdAt: string;
-}
-
-// ============================================================================
-// Function
-// ============================================================================
-
 export const vectorize = inngest.createFunction(
   {
     id: "vectorize",
@@ -54,7 +46,6 @@ export const vectorize = inngest.createFunction(
     const { indexName, namespace, documentId, text, metadata, options } =
       event.data;
 
-    // Validate input
     if (!text || text.trim().length === 0) {
       throw new NonRetriableError("Text content is empty");
     }
@@ -63,7 +54,6 @@ export const vectorize = inngest.createFunction(
     const chunkSize = options?.chunkSize;
     const chunkOverlap = options?.chunkOverlap;
 
-    // Step 1: Chunk the text
     const chunks = await step.run("chunk-text", async () => {
       return await chunkText(text, chunkSize, chunkOverlap);
     });
@@ -79,7 +69,7 @@ export const vectorize = inngest.createFunction(
 
     logger.info(`Chunked text into ${chunks.length} chunks`);
 
-    // Step 2: Optionally generate contextual embeddings
+    // Optionally generate contextual embeddings
     let textsToEmbed = chunks;
 
     if (useContextualEmbeddings) {
@@ -100,14 +90,12 @@ export const vectorize = inngest.createFunction(
       logger.info("Generated contextual embeddings for all chunks");
     }
 
-    // Step 3: Generate embeddings
     const embeddings = await step.run("generate-embeddings", async () => {
       return await EmbeddingService.embedMany(textsToEmbed);
     });
 
     logger.info(`Generated ${embeddings.length} embeddings`);
 
-    // Step 4: Build vectors with metadata
     const vectors = chunks.map((chunk, idx) => ({
       id: `${documentId}-chunk-${idx}`,
       values: embeddings[idx],
@@ -121,12 +109,13 @@ export const vectorize = inngest.createFunction(
       } as ChunkMetadata,
     }));
 
-    // Step 5: Upsert to vector DB
     await step.run("upsert-vectors", async () => {
       await SimpleVectorService.upsert(indexName, namespace, vectors);
     });
 
-    logger.info(`Upserted ${vectors.length} vectors to ${indexName}/${namespace}`);
+    logger.info(
+      `Upserted ${vectors.length} vectors to ${indexName}/${namespace}`,
+    );
 
     return {
       success: true,

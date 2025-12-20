@@ -1,6 +1,11 @@
 import { pinecone } from "./client";
 import type { RecordMetadata } from "@pinecone-database/pinecone";
-import type { VectorRecord, QueryResult, QueryOptions, VectorStats } from "./types";
+import type {
+  VectorRecord,
+  QueryResult,
+  QueryOptions,
+  VectorStats,
+} from "./types";
 
 const BATCH_SIZE = 100;
 
@@ -39,12 +44,7 @@ const SimpleVectorService = {
     namespace: string,
     options: QueryOptions,
   ): Promise<QueryResult<T>[]> {
-    const {
-      vector,
-      topK = 10,
-      filter,
-      includeMetadata = true,
-    } = options;
+    const { vector, topK = 10, filter, includeMetadata = true } = options;
 
     const index = pinecone.index<T>(indexName);
     const ns = index.namespace(namespace);
