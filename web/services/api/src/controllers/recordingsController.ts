@@ -86,6 +86,7 @@ export class RecordingsController extends Controller {
 
     const recordings = await RecordingsService.list({
       organizationId,
+      userId: user.user.id,
       limit,
       offset,
     });
