@@ -127,7 +127,9 @@ export const vectorize = inngest.createFunction(
         chunkIndex: idx,
         totalChunks: chunks.length,
         text: chunk,
-        textWithContext: textsToEmbed[idx],
+        textWithContext: useContextualEmbeddings
+          ? textsToEmbed[idx]
+          : undefined,
         createdAt: new Date().toISOString(),
       } as ChunkMetadata,
     }));

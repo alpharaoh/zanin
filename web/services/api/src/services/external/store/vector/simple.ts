@@ -128,7 +128,7 @@ const SimpleVectorService = {
 
   /**
    * Ensure an index exists, creating it if necessary.
-   * Uses serverless spec on AWS us-east-1.
+   * Uses serverless spec on AWS.
    */
   async ensureIndex(
     indexName: string,
@@ -151,7 +151,8 @@ const SimpleVectorService = {
         spec: {
           serverless: {
             cloud: "aws",
-            region: "eu-central-1",
+            // We don't have starter plan so it will auto-fill us-east-1
+            region: "europe-west4",
           },
         },
         waitUntilReady: true,
