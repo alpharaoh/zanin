@@ -153,10 +153,10 @@ export function DashboardSidebar({
                 <DropdownMenuTrigger
                   render={
                     <SidebarMenuButton
-                      size="lg"
+                      size='lg'
                       className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground"
                     >
-                      <Avatar className="size-8">
+                      <Avatar className="size-9">
                         {user.image && (
                           <AvatarImage src={user.image} alt={user.name} />
                         )}
@@ -172,8 +172,8 @@ export function DashboardSidebar({
                     </SidebarMenuButton>
                   }
                 />
-                <DropdownMenuContent className="w-72" side="top" align="start">
-                  <DropdownMenuGroup>
+                <DropdownMenuContent className="w-fit" side="top" align="start">
+                  <DropdownMenuGroup className='pr-6'>
                     <DropdownMenuLabel>
                       <Item size="xs">
                         <ItemMedia>
@@ -199,7 +199,7 @@ export function DashboardSidebar({
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
                     <DropdownMenuItem onClick={onSignOut}>
-                      <LogOutIcon className="mr-2 size-4" />
+                      <LogOutIcon className="size-4" />
                       Sign out
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
