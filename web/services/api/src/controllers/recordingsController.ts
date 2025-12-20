@@ -14,11 +14,20 @@ import {
 } from "tsoa";
 import type { Request as ExpressRequest } from "express";
 import { RecordingsService, Recording } from "../services/recordings";
+import {
+  RecordingsSearchService,
+  RecordingWithMatches,
+} from "../services/recordingsSearch";
 import { NotFoundError } from "../errors";
 
 interface RecordingListResponse {
   recordings: Recording[];
   count: number;
+}
+
+interface RecordingSearchResponse {
+  results: RecordingWithMatches[];
+  totalMatches: number;
 }
 
 @Security("default")
@@ -65,6 +74,32 @@ export class RecordingsController extends Controller {
       userId,
       limit,
       offset,
+    });
+  }
+
+  /**
+   * Search recordings by semantic query.
+   * Returns recordings with matching transcript chunks, ranked by relevance.
+   * Optionally filter by date range using startDate and endDate (ISO 8601 format).
+   */
+  @Get("search")
+  public async searchRecordings(
+    @Request() request: ExpressRequest,
+    @Query() query: string,
+    @Query() startDate?: Date,
+    @Query() endDate?: Date,
+    @Query() limit?: number,
+    @Query() rerank?: boolean,
+  ): Promise<RecordingSearchResponse> {
+    const { organizationId } = request.user!;
+
+    return await RecordingsSearchService.search({
+      organizationId,
+      query,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      limit,
+      rerank,
     });
   }
 

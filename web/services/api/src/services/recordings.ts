@@ -24,15 +24,6 @@ export interface Recording {
     wordCount: number;
     speakerNumber: number;
   }[];
-  words: {
-    end: number;
-    word: string;
-    start: number;
-    speaker: number;
-    confidence: number;
-    punctuated_word: string;
-    speaker_confidence: number;
-  }[];
   vadSegments: {
     segements: {
       end: number;
@@ -64,7 +55,7 @@ export interface ListRecordingsInput {
 }
 
 function toRecordingResponse(recording: SelectRecording): Recording {
-  return omit(recording, ["deletedAt", "metadata.model"]) as Recording;
+  return omit(recording, ["deletedAt", "metadata.model", "words"]) as Recording;
 }
 
 export const RecordingsService = {
