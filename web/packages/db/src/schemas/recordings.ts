@@ -16,6 +16,7 @@ export const recordings = pgTable("recordings", {
   cleanedTranscript: text("cleaned_transcript"),
   words: jsonb("words"),
   vadSegments: jsonb("vad_segments"),
+  speakerLabels: jsonb("speaker_labels"),
   metadata: jsonb("metadata"),
 });
 

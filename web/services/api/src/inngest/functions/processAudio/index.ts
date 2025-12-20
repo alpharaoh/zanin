@@ -4,11 +4,14 @@ import VADService from "../../../services/external/vad/service";
 import DeepgramService from "../../../services/external/deepgram/service";
 import BlobStorageService from "../../../services/external/store/blob/service";
 import { SimpleLLMService } from "../../../services/external/llm/simple";
+import SIDService from "../../../services/external/sid/service";
 import { insertRecording } from "@zanin/db/queries/insert/insertRecording";
 import { updateRecording } from "@zanin/db/queries/update/updateRecording";
 import { readFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
+import { extractSpeakerSegments } from "./utils/extractSpeakerSegments";
+import { buildSpeakerLabelMap } from "./utils/buildSpeakerLabelMap";
 
 const RECORDINGS_INDEX = "recordings";
 
@@ -32,7 +35,9 @@ export default inngest.createFunction(
     concurrency: 10,
   },
   { event: "audio/process.audio" },
-  async ({ step }) => {
+  async ({ step, logger }) => {
+    logger.info("Processing audio");
+
     // Create initial recording entry
     const recording = await step.run("create-recording", async () => {
       return await insertRecording({
@@ -42,6 +47,8 @@ export default inngest.createFunction(
         rawAudioUrl: "", // Will be updated after upload
       });
     });
+
+    logger.info("Created recording", { recordingId: recording.id });
 
     // TEST: Read from local file instead of URL
     const rawAudioUrl = await step.run("fetch-audio", async () => {
@@ -60,6 +67,8 @@ export default inngest.createFunction(
     await step.run("update-raw-recording-url", async () => {
       await updateRecording({ id: recording.id }, { rawAudioUrl });
     });
+
+    logger.info("Updated raw recording URL", { recordingId: recording.id });
 
     const { url: cleanedAudioUrl, segments: vadSegments } = await step.run(
       "process-vad",
@@ -81,6 +90,8 @@ export default inngest.createFunction(
       },
     );
 
+    logger.info("Generated VAD segments", { recordingId: recording.id });
+
     await step.run("update-cleaned-recording-url", async () => {
       await updateRecording(
         { id: recording.id },
@@ -88,14 +99,59 @@ export default inngest.createFunction(
       );
     });
 
+    logger.info("Updated VAD segments and cleanedAudioUrl", {
+      recordingId: recording.id,
+    });
+
     const transcription = await step.run("transcribe-audio", async () => {
       const result = await DeepgramService.transcribeUrl(cleanedAudioUrl);
       return result;
     });
 
+    logger.info("Generated transcription", { recordingId: recording.id });
+
+    // Identify speakers using voice recognition
+    const speakerIdentification = await step.run(
+      "identify-speakers",
+      async () => {
+        const hasProfile = await SIDService.hasProfile(TEMP_USER_ID);
+        if (!hasProfile) {
+          logger.info(
+            "No voice profile found, skipping speaker identification",
+          );
+          return undefined;
+        }
+
+        // Extract speaker segments from transcription
+        const segments = extractSpeakerSegments(transcription.words);
+        if (segments.length === 0) {
+          return undefined;
+        }
+
+        // Identify speakers
+        const result = await SIDService.identifyFromUrl(
+          TEMP_USER_ID,
+          segments,
+          cleanedAudioUrl,
+        );
+
+        return result;
+      },
+    );
+
+    logger.info("Identified speakers", { recordingId: recording.id });
+
+    // Build speaker label map and create transcript
+    const speakerLabelMap = speakerIdentification
+      ? buildSpeakerLabelMap(speakerIdentification.segments)
+      : undefined;
+
     const cleanedTranscript = transcription.words
       .map((word) => {
-        return `[SPEAKER ${word.speaker}]: ${word.word}`;
+        const speakerNum = word.speaker ?? 0;
+        const label =
+          speakerLabelMap?.get(speakerNum) ?? `SPEAKER ${speakerNum}`;
+        return `[${label}]: ${word.word}`;
       })
       .join("\n");
 
@@ -104,6 +160,8 @@ export default inngest.createFunction(
         `Summarize the following transcript into a title:\n\n"${cleanedTranscript}"\n\nThe title must be no longer than 5 words.`,
       );
     });
+
+    logger.info(`Generated title: ${title}`, { recordingId: recording.id });
 
     await step.run("update-recording", async () => {
       await updateRecording(
@@ -115,13 +173,26 @@ export default inngest.createFunction(
           confidence: transcription.confidence,
           words: transcription.words,
           title: title.trim(),
+          speakerLabels: speakerLabelMap
+            ? Object.fromEntries(speakerLabelMap)
+            : undefined,
           metadata: {
             model: "nova-2",
             language: "en",
+            speakerIdentification: speakerIdentification
+              ? {
+                  ownerSpeakingSeconds:
+                    speakerIdentification.owner_speaking_seconds,
+                  otherSpeakingSeconds:
+                    speakerIdentification.other_speaking_seconds,
+                }
+              : undefined,
           },
         },
       );
     });
+
+    logger.info("Updated recording metadata", { recordingId: recording.id });
 
     // Vectorize the recording transcript
     const vectorResult = await step.invoke("vectorize-recording", {
@@ -141,6 +212,8 @@ export default inngest.createFunction(
         },
       },
     });
+
+    logger.info("Vectorized recording", { recordingId: recording.id });
 
     return {
       success: true,

@@ -9,6 +9,7 @@ export const env = createEnv({
     BETTER_AUTH_URL: z.url(),
     DEEPGRAM_API_KEY: z.string().min(1),
     VAD_SERVICE_URL: z.url().default("http://localhost:8000"),
+    SID_SERVICE_URL: z.url().default("http://localhost:8001"),
     BLOB_READ_WRITE_TOKEN: z.string().min(1),
     GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1),
     PINECONE_API_KEY: z.string().min(1),
