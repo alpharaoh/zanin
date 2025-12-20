@@ -128,7 +128,7 @@ export class RecordingsController extends Controller {
   }
 
   /**
-   * Delete a recording (soft delete).
+   * Delete a recording
    */
   @Delete("{recordingId}")
   @Response(404, "Recording not found")
