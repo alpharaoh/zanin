@@ -13,7 +13,7 @@ export const recordings = pgTable("recordings", {
   cleanedAudioUrl: text("cleaned_audio_url"),
   confidence: real("confidence"),
   originalDuration: real("original_duration"),
-  cleanedTranscript: text("cleaned_transcript"),
+  transcript: jsonb("transcript"),
   words: jsonb("words"),
   vadSegments: jsonb("vad_segments"),
   speakerLabels: jsonb("speaker_labels"),

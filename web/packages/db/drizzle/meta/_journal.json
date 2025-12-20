@@ -22,6 +22,13 @@
       "when": 1766242292861,
       "tag": "0002_wise_bruce_banner",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1766242862255,
+      "tag": "0003_parallel_shotgun",
+      "breakpoints": true
     }
   ]
 }

@@ -12,6 +12,10 @@ import { homedir } from "os";
 import { join } from "path";
 import { extractSpeakerSegments } from "./utils/extractSpeakerSegments";
 import { buildSpeakerLabelMap } from "./utils/buildSpeakerLabelMap";
+import {
+  buildStructuredTranscript,
+  transcriptToText,
+} from "./utils/buildStructuredTranscript";
 
 const RECORDINGS_INDEX = "recordings";
 
@@ -139,23 +143,21 @@ export default inngest.createFunction(
 
     logger.info("Identified speakers", { recordingId: recording.id });
 
-    // Build speaker label map and create transcript
+    // Build speaker label map and structured transcript
     const speakerLabelMap = speakerIdentification
       ? buildSpeakerLabelMap(speakerIdentification.segments)
       : undefined;
 
-    const cleanedTranscript = transcription.words
-      .map((word) => {
-        const speakerNum = word.speaker ?? 0;
-        const label =
-          speakerLabelMap?.get(speakerNum) ?? `SPEAKER ${speakerNum}`;
-        return `[${label}]: ${word.word}`;
-      })
-      .join("\n");
+    const transcript = buildStructuredTranscript(
+      transcription.words,
+      speakerLabelMap,
+    );
+
+    const transcriptText = transcriptToText(transcript);
 
     const title = await step.run("generate-title", async () => {
       return await SimpleLLMService.generateText(
-        `Summarize the following transcript into a title:\n\n"${cleanedTranscript}"\n\nThe title must be no longer than 5 words.`,
+        `Summarize the following transcript into a title:\n\n"${transcriptText}"\n\nThe title must be no longer than 5 words.`,
       );
     });
 
@@ -167,7 +169,7 @@ export default inngest.createFunction(
         {
           status: "completed",
           finishedAt: new Date(),
-          cleanedTranscript: cleanedTranscript,
+          transcript,
           confidence: transcription.confidence,
           words: transcription.words,
           title: title.trim(),
@@ -199,7 +201,7 @@ export default inngest.createFunction(
         indexName: RECORDINGS_INDEX,
         namespace: TEMP_ORG_ID,
         documentId: recording.id,
-        text: cleanedTranscript,
+        text: transcriptText,
         metadata: {
           recordingId: recording.id,
           organizationId: TEMP_ORG_ID,
