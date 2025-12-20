@@ -3,12 +3,12 @@ import { NonRetriableError } from "inngest";
 import type { RecordMetadata } from "@pinecone-database/pinecone";
 import SimpleVectorService from "../../../services/external/store/vector/simple";
 import EmbeddingService from "../../../services/external/store/vector/embedding";
+import CacheLLMService from "../../../services/external/llm/cache";
 import { chunkText } from "../../../services/external/store/vector/utils/chunkText";
-import {
-  createDocumentCache,
-  generateContextForChunkWithCache,
-  deleteDocumentCache,
-} from "../../../services/external/store/vector/utils/generateContextForChunk";
+import { generateContextForChunk } from "../../../services/external/store/vector/utils/generateContextForChunk";
+
+const CONTEXTUAL_SYSTEM_INSTRUCTION =
+  "You will be given chunks from this text. For each chunk, provide a short succinct context to situate that chunk within the overall text for the purposes of improving search retrieval.";
 
 export interface VectorizeOptions {
   useContextualEmbeddings?: boolean;
@@ -78,10 +78,14 @@ export const vectorize = inngest.createFunction(
 
     if (useContextualEmbeddings) {
       // Create a cache for the full document to save tokens
-      const cacheName = await step.run("create-document-cache", async () => {
-        return await createDocumentCache(text);
+      const cache = await step.run("create-document-cache", async () => {
+        return await CacheLLMService.createCache({
+          systemInstruction: CONTEXTUAL_SYSTEM_INSTRUCTION,
+          contents: text,
+        });
       });
 
+      const cacheName = cache.name!;
       logger.info(`Created document cache: ${cacheName}`);
 
       const contextualChunks: string[] = [];
@@ -90,10 +94,7 @@ export const vectorize = inngest.createFunction(
         const contextualChunk = await step.run(
           `generate-context-${i}`,
           async () => {
-            const context = await generateContextForChunkWithCache(
-              chunks[i],
-              cacheName,
-            );
+            const context = await generateContextForChunk(chunks[i], cacheName);
             return `${context}\n\n${chunks[i]}`;
           },
         );
@@ -102,7 +103,7 @@ export const vectorize = inngest.createFunction(
 
       // Clean up the cache
       await step.run("delete-document-cache", async () => {
-        await deleteDocumentCache(cacheName);
+        await CacheLLMService.deleteCache(cacheName);
       });
 
       textsToEmbed = contextualChunks;

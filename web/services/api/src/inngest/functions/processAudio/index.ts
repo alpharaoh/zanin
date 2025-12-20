@@ -3,7 +3,7 @@ import { vectorize } from "../vectorize";
 import VADService from "../../../services/external/vad/service";
 import DeepgramService from "../../../services/external/deepgram/service";
 import BlobStorageService from "../../../services/external/store/blob/service";
-import { SimpleLLMService } from "../../../services/external/llm/service";
+import { SimpleLLMService } from "../../../services/external/llm/simple";
 import { insertRecording } from "@zanin/db/queries/insert/insertRecording";
 import { updateRecording } from "@zanin/db/queries/update/updateRecording";
 import { readFileSync } from "fs";

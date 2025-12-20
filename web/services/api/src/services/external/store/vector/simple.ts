@@ -63,9 +63,6 @@ const SimpleVectorService = {
     }));
   },
 
-  /**
-   * Delete vectors by their IDs.
-   */
   async deleteByIds(
     indexName: string,
     namespace: string,
