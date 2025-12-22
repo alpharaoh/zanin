@@ -5,49 +5,208 @@
  * OpenAPI spec version: 0.0.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import { axios } from './lib/axios';
 import type { ErrorType } from './lib/axios';
-export type UserSessionUser = {
-  image?: string;
-  name: string;
-  emailVerified: boolean;
-  email: string;
-  updatedAt: string;
+export type UserOrganizationsItem = {
+  /** @nullable */
+  updatedAt: string | null;
   createdAt: string;
   id: string;
+  metadata: unknown;
+  /** @nullable */
+  logo: string | null;
+  /** @nullable */
+  slug: string | null;
+  name: string;
 };
 
-export type UserSessionSession = {
-  activeOrganizationId?: string;
-  token: string;
-  expiresAt: string;
-  userId: string;
-  updatedAt: string;
-  createdAt: string;
+export interface User {
   id: string;
+  createdAt: string;
+  updatedAt: string;
+  email: string;
+  emailVerified: boolean;
+  name: string;
+  image?: string;
+  activeOrganizationId: string;
+  organizations: UserOrganizationsItem[];
+}
+
+export interface EnrollmentResponse {
+  success: boolean;
+  audioDurationSeconds: number;
+  embeddingDimension: number;
+  message?: string;
+}
+
+/**
+ * Profile information
+ */
+export interface ProfileInfo {
+  exists: boolean;
+  user_id: string;
+  embedding_dimension?: number;
+  created_at?: string;
+}
+
+export type RecordingStatus = typeof RecordingStatus[keyof typeof RecordingStatus];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const RecordingStatus = {
+  pending: 'pending',
+  processing: 'processing',
+  completed: 'completed',
+  failed: 'failed',
+} as const;
+
+export type RecordingTranscriptItemSpeaker = string | 'ME';
+
+export type RecordingTranscriptItem = {
+  speakerNumber: number;
+  wordCount: number;
+  speaker: RecordingTranscriptItemSpeaker;
+  content: string;
+  start: number;
+  end: number;
+};
+
+export type RecordingVadSegmentsItemSegements = {
+  start: number;
+  end: number;
+};
+
+export type RecordingVadSegmentsItem = {
+  segements: RecordingVadSegmentsItemSegements;
+};
+
+export type RecordingSpeakerLabels = { [key: string]: unknown };
+
+export type RecordingMetadataSpeakerIdentification = {
+  ownerSpeakingSeconds: number;
+  otherSpeakingSeconds: number;
 };
 
 /**
- * @nullable
  */
-export type UserSession = {
-  user: UserSessionUser;
-  session: UserSessionSession;
-} | null;
+export type RecordingMetadataLanguage = typeof RecordingMetadataLanguage[keyof typeof RecordingMetadataLanguage];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const RecordingMetadataLanguage = {
+  en: 'en',
+} as const;
+
+export type RecordingMetadata = {
+  speakerIdentification: RecordingMetadataSpeakerIdentification;
+  /** */
+  language: RecordingMetadataLanguage;
+};
+
+export interface Recording {
+  status: RecordingStatus;
+  finishedAt?: string;
+  processingError?: string;
+  title?: string;
+  rawAudioUrl: string;
+  cleanedAudioUrl?: string;
+  confidence?: number;
+  originalDuration?: number;
+  transcript: RecordingTranscriptItem[];
+  vadSegments: RecordingVadSegmentsItem[];
+  speakerLabels: RecordingSpeakerLabels;
+  metadata: RecordingMetadata;
+}
+
+export interface RecordingListResponse {
+  recordings: Recording[];
+  count: number;
+}
+
+/**
+ * A search result for a recording chunk
+ */
+export interface RecordingSearchResult {
+  id: string;
+  score: number;
+  text: string;
+  recordingId: string;
+  chunkIndex?: number;
+}
+
+/**
+ * A recording with its matching search results
+ */
+export interface RecordingWithMatches {
+  recordingId: string;
+  matches: RecordingSearchResult[];
+  topScore: number;
+}
+
+export interface RecordingSearchResponse {
+  results: RecordingWithMatches[];
+  totalMatches: number;
+}
+
+/**
+ * Source used to answer the question
+ */
+export interface AnswerSource {
+  recordingId: string;
+  text: string;
+  score: number;
+}
+
+export interface RecordingAskResponse {
+  answer: string;
+  sources: AnswerSource[];
+}
+
+export type EnrollBody = {
+  audio: Blob;
+};
+
+export type CreateRecordingBody = {
+  audio: Blob;
+};
+
+export type ListRecordingsParams = {
+limit?: number;
+offset?: number;
+};
+
+export type SearchRecordingsParams = {
+query: string;
+startDate?: string;
+endDate?: string;
+limit?: number;
+rerank?: boolean;
+};
+
+export type AskRecordingsParams = {
+query: string;
+startDate?: string;
+endDate?: string;
+maxSources?: number;
+};
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
@@ -62,8 +221,8 @@ export const getMe = (
 ) => {
       
       
-      return axios<UserSession>(
-      {url: `/users/me`, method: 'GET', signal
+      return axios<User>(
+      {url: `/v1/users/me`, method: 'GET', signal
     },
       options);
     }
@@ -73,7 +232,7 @@ export const getMe = (
 
 export const getGetMeQueryKey = () => {
     return [
-    `/users/me`
+    `/v1/users/me`
     ] as const;
     }
 
@@ -138,3 +297,712 @@ export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = Err
 
   return query;
 }
+
+
+
+
+
+/**
+ * Enroll a voice profile for the current user.
+Upload an audio file containing your voice to create or update your voice profile.
+ */
+export const enroll = (
+    enrollBody: EnrollBody,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      const formData = new FormData();
+formData.append(`audio`, enrollBody.audio)
+
+      return axios<EnrollmentResponse>(
+      {url: `/v1/sid/enroll`, method: 'POST',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData, signal
+    },
+      options);
+    }
+  
+
+
+export const getEnrollMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof enroll>>, TError,{data: EnrollBody}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof enroll>>, TError,{data: EnrollBody}, TContext> => {
+
+const mutationKey = ['enroll'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof enroll>>, {data: EnrollBody}> = (props) => {
+          const {data} = props ?? {};
+
+          return  enroll(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EnrollMutationResult = NonNullable<Awaited<ReturnType<typeof enroll>>>
+    export type EnrollMutationBody = EnrollBody
+    export type EnrollMutationError = ErrorType<void>
+
+    export const useEnroll = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof enroll>>, TError,{data: EnrollBody}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof enroll>>,
+        TError,
+        {data: EnrollBody},
+        TContext
+      > => {
+
+      const mutationOptions = getEnrollMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
+/**
+ * Get the voice profile status for the current user.
+ */
+export const getProfile = (
+    
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<ProfileInfo>(
+      {url: `/v1/sid/profile`, method: 'GET', signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGetProfileQueryKey = () => {
+    return [
+    `/v1/sid/profile`
+    ] as const;
+    }
+
+    
+export const getGetProfileQueryOptions = <TData = Awaited<ReturnType<typeof getProfile>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProfileQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProfile>>> = ({ signal }) => getProfile(requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getProfile>>>
+export type GetProfileQueryError = ErrorType<void>
+
+
+export function useGetProfile<TData = Awaited<ReturnType<typeof getProfile>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProfile>>,
+          TError,
+          Awaited<ReturnType<typeof getProfile>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetProfile<TData = Awaited<ReturnType<typeof getProfile>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProfile>>,
+          TError,
+          Awaited<ReturnType<typeof getProfile>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetProfile<TData = Awaited<ReturnType<typeof getProfile>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetProfile<TData = Awaited<ReturnType<typeof getProfile>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetProfileQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Delete the voice profile for the current user.
+ */
+export const deleteProfile = (
+    
+ options?: SecondParameter<typeof axios>,) => {
+      
+      
+      return axios<void>(
+      {url: `/v1/sid/profile`, method: 'DELETE'
+    },
+      options);
+    }
+  
+
+
+export const getDeleteProfileMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProfile>>, TError,void, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteProfile>>, TError,void, TContext> => {
+
+const mutationKey = ['deleteProfile'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteProfile>>, void> = () => {
+          
+
+          return  deleteProfile(requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteProfileMutationResult = NonNullable<Awaited<ReturnType<typeof deleteProfile>>>
+    
+    export type DeleteProfileMutationError = ErrorType<void>
+
+    export const useDeleteProfile = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProfile>>, TError,void, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteProfile>>,
+        TError,
+        void,
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteProfileMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
+/**
+ * Upload an audio file and create a new recording.
+The audio will be processed asynchronously for transcription and speaker identification.
+ */
+export const createRecording = (
+    createRecordingBody: CreateRecordingBody,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      const formData = new FormData();
+formData.append(`audio`, createRecordingBody.audio)
+
+      return axios<Recording>(
+      {url: `/v1/recordings`, method: 'POST',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData, signal
+    },
+      options);
+    }
+  
+
+
+export const getCreateRecordingMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRecording>>, TError,{data: CreateRecordingBody}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof createRecording>>, TError,{data: CreateRecordingBody}, TContext> => {
+
+const mutationKey = ['createRecording'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createRecording>>, {data: CreateRecordingBody}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createRecording(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateRecordingMutationResult = NonNullable<Awaited<ReturnType<typeof createRecording>>>
+    export type CreateRecordingMutationBody = CreateRecordingBody
+    export type CreateRecordingMutationError = ErrorType<void>
+
+    export const useCreateRecording = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRecording>>, TError,{data: CreateRecordingBody}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createRecording>>,
+        TError,
+        {data: CreateRecordingBody},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateRecordingMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
+/**
+ * List all recordings for the current organization.
+ */
+export const listRecordings = (
+    params?: ListRecordingsParams,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<RecordingListResponse>(
+      {url: `/v1/recordings`, method: 'GET',
+        params, signal
+    },
+      options);
+    }
+  
+
+
+
+export const getListRecordingsQueryKey = (params?: ListRecordingsParams,) => {
+    return [
+    `/v1/recordings`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListRecordingsQueryOptions = <TData = Awaited<ReturnType<typeof listRecordings>>, TError = ErrorType<void>>(params?: ListRecordingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRecordings>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRecordingsQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRecordings>>> = ({ signal }) => listRecordings(params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRecordings>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListRecordingsQueryResult = NonNullable<Awaited<ReturnType<typeof listRecordings>>>
+export type ListRecordingsQueryError = ErrorType<void>
+
+
+export function useListRecordings<TData = Awaited<ReturnType<typeof listRecordings>>, TError = ErrorType<void>>(
+ params: undefined |  ListRecordingsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRecordings>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRecordings>>,
+          TError,
+          Awaited<ReturnType<typeof listRecordings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListRecordings<TData = Awaited<ReturnType<typeof listRecordings>>, TError = ErrorType<void>>(
+ params?: ListRecordingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRecordings>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRecordings>>,
+          TError,
+          Awaited<ReturnType<typeof listRecordings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListRecordings<TData = Awaited<ReturnType<typeof listRecordings>>, TError = ErrorType<void>>(
+ params?: ListRecordingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRecordings>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useListRecordings<TData = Awaited<ReturnType<typeof listRecordings>>, TError = ErrorType<void>>(
+ params?: ListRecordingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRecordings>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListRecordingsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Search recordings by semantic query.
+Returns recordings with matching transcript chunks, ranked by relevance.
+Optionally filter by date range using startDate and endDate (ISO 8601 format).
+ */
+export const searchRecordings = (
+    params: SearchRecordingsParams,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<RecordingSearchResponse>(
+      {url: `/v1/recordings/search`, method: 'GET',
+        params, signal
+    },
+      options);
+    }
+  
+
+
+
+export const getSearchRecordingsQueryKey = (params?: SearchRecordingsParams,) => {
+    return [
+    `/v1/recordings/search`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getSearchRecordingsQueryOptions = <TData = Awaited<ReturnType<typeof searchRecordings>>, TError = ErrorType<void>>(params: SearchRecordingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchRecordings>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchRecordingsQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchRecordings>>> = ({ signal }) => searchRecordings(params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchRecordings>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SearchRecordingsQueryResult = NonNullable<Awaited<ReturnType<typeof searchRecordings>>>
+export type SearchRecordingsQueryError = ErrorType<void>
+
+
+export function useSearchRecordings<TData = Awaited<ReturnType<typeof searchRecordings>>, TError = ErrorType<void>>(
+ params: SearchRecordingsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchRecordings>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof searchRecordings>>,
+          TError,
+          Awaited<ReturnType<typeof searchRecordings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSearchRecordings<TData = Awaited<ReturnType<typeof searchRecordings>>, TError = ErrorType<void>>(
+ params: SearchRecordingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchRecordings>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof searchRecordings>>,
+          TError,
+          Awaited<ReturnType<typeof searchRecordings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSearchRecordings<TData = Awaited<ReturnType<typeof searchRecordings>>, TError = ErrorType<void>>(
+ params: SearchRecordingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchRecordings>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useSearchRecordings<TData = Awaited<ReturnType<typeof searchRecordings>>, TError = ErrorType<void>>(
+ params: SearchRecordingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchRecordings>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSearchRecordingsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Ask a question and get an AI-generated answer based on your recordings.
+Uses semantic search to find relevant transcript chunks and generates a response.
+Optionally filter by date range using startDate and endDate (ISO 8601 format).
+ */
+export const askRecordings = (
+    params: AskRecordingsParams,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<RecordingAskResponse>(
+      {url: `/v1/recordings/ask`, method: 'GET',
+        params, signal
+    },
+      options);
+    }
+  
+
+
+
+export const getAskRecordingsQueryKey = (params?: AskRecordingsParams,) => {
+    return [
+    `/v1/recordings/ask`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getAskRecordingsQueryOptions = <TData = Awaited<ReturnType<typeof askRecordings>>, TError = ErrorType<void>>(params: AskRecordingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof askRecordings>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAskRecordingsQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof askRecordings>>> = ({ signal }) => askRecordings(params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof askRecordings>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AskRecordingsQueryResult = NonNullable<Awaited<ReturnType<typeof askRecordings>>>
+export type AskRecordingsQueryError = ErrorType<void>
+
+
+export function useAskRecordings<TData = Awaited<ReturnType<typeof askRecordings>>, TError = ErrorType<void>>(
+ params: AskRecordingsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof askRecordings>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof askRecordings>>,
+          TError,
+          Awaited<ReturnType<typeof askRecordings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAskRecordings<TData = Awaited<ReturnType<typeof askRecordings>>, TError = ErrorType<void>>(
+ params: AskRecordingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof askRecordings>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof askRecordings>>,
+          TError,
+          Awaited<ReturnType<typeof askRecordings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAskRecordings<TData = Awaited<ReturnType<typeof askRecordings>>, TError = ErrorType<void>>(
+ params: AskRecordingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof askRecordings>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useAskRecordings<TData = Awaited<ReturnType<typeof askRecordings>>, TError = ErrorType<void>>(
+ params: AskRecordingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof askRecordings>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAskRecordingsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Get a specific recording by ID.
+ */
+export const getRecording = (
+    recordingId: string,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<Recording>(
+      {url: `/v1/recordings/${recordingId}`, method: 'GET', signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGetRecordingQueryKey = (recordingId?: string,) => {
+    return [
+    `/v1/recordings/${recordingId}`
+    ] as const;
+    }
+
+    
+export const getGetRecordingQueryOptions = <TData = Awaited<ReturnType<typeof getRecording>>, TError = ErrorType<void>>(recordingId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecording>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRecordingQueryKey(recordingId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRecording>>> = ({ signal }) => getRecording(recordingId, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(recordingId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRecording>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetRecordingQueryResult = NonNullable<Awaited<ReturnType<typeof getRecording>>>
+export type GetRecordingQueryError = ErrorType<void>
+
+
+export function useGetRecording<TData = Awaited<ReturnType<typeof getRecording>>, TError = ErrorType<void>>(
+ recordingId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecording>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRecording>>,
+          TError,
+          Awaited<ReturnType<typeof getRecording>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRecording<TData = Awaited<ReturnType<typeof getRecording>>, TError = ErrorType<void>>(
+ recordingId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecording>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRecording>>,
+          TError,
+          Awaited<ReturnType<typeof getRecording>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRecording<TData = Awaited<ReturnType<typeof getRecording>>, TError = ErrorType<void>>(
+ recordingId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecording>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetRecording<TData = Awaited<ReturnType<typeof getRecording>>, TError = ErrorType<void>>(
+ recordingId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecording>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetRecordingQueryOptions(recordingId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Delete a recording
+ */
+export const deleteRecording = (
+    recordingId: string,
+ options?: SecondParameter<typeof axios>,) => {
+      
+      
+      return axios<void>(
+      {url: `/v1/recordings/${recordingId}`, method: 'DELETE'
+    },
+      options);
+    }
+  
+
+
+export const getDeleteRecordingMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteRecording>>, TError,{recordingId: string}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteRecording>>, TError,{recordingId: string}, TContext> => {
+
+const mutationKey = ['deleteRecording'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteRecording>>, {recordingId: string}> = (props) => {
+          const {recordingId} = props ?? {};
+
+          return  deleteRecording(recordingId,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteRecordingMutationResult = NonNullable<Awaited<ReturnType<typeof deleteRecording>>>
+    
+    export type DeleteRecordingMutationError = ErrorType<void>
+
+    export const useDeleteRecording = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteRecording>>, TError,{recordingId: string}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteRecording>>,
+        TError,
+        {recordingId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteRecordingMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
