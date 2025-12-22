@@ -18,7 +18,7 @@
     "dev:vad": "cd services/vad && poetry run vad-service",
     "dev:sid": "cd services/sid && poetry run sid-service",
     "dev:inngest": "cd services/api && npm exec --ignore-scripts=false -- inngest-cli@latest dev",
-    "dev": "concurrently \"bun run dev:api\" \"bun run dev:client\" \"bun run dev:vad\" \"bun run dev:inngest\" --names \"api,client,vad,inngest\" --prefix-colors \"blue,magenta,green,yellow\"",
+    "dev": "concurrently \"bun run dev:api\" \"bun run dev:client\" \"bun run dev:vad\" \"bun run dev:inngest\" \"bun run dev:sid\" --names \"api,client,vad,inngest,sid\" --prefix-colors \"blue,magenta,green,yellow,red\"",
     "db:generate": "bun run --cwd packages/db db:generate",
     "db:migrate": "bun run --cwd packages/db db:migrate"
   },
