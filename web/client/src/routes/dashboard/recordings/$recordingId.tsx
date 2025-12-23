@@ -27,7 +27,9 @@ function RecordingDetailPage() {
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [activeTab, setActiveTab] = useState<"transcript" | "analytics">("transcript");
+  const [activeTab, setActiveTab] = useState<"transcript" | "analytics">(
+    "transcript"
+  );
 
   const { data: recording, isLoading, error } = useGetRecording(recordingId);
   const deleteMutation = useDeleteRecording();
@@ -43,7 +45,9 @@ function RecordingDetailPage() {
   }, [recordingId, deleteMutation, queryClient, navigate]);
 
   const handleSeek = useCallback((time: number) => {
-    const seekFn = (window as unknown as { seekToTime?: (time: number) => void }).seekToTime;
+    const seekFn = (
+      window as unknown as { seekToTime?: (time: number) => void }
+    ).seekToTime;
     if (seekFn) {
       seekFn(time);
     }
@@ -64,10 +68,13 @@ function RecordingDetailPage() {
     return <RecordingNotFound />;
   }
 
-  const ownerSeconds = recording.metadata?.speakerIdentification?.ownerSpeakingSeconds ?? 0;
-  const otherSeconds = recording.metadata?.speakerIdentification?.otherSpeakingSeconds ?? 0;
+  const ownerSeconds =
+    recording.metadata?.speakerIdentification?.ownerSpeakingSeconds ?? 0;
+  const otherSeconds =
+    recording.metadata?.speakerIdentification?.otherSpeakingSeconds ?? 0;
   const totalSeconds = ownerSeconds + otherSeconds;
-  const ownerPercent = totalSeconds > 0 ? Math.round((ownerSeconds / totalSeconds) * 100) : 0;
+  const ownerPercent =
+    totalSeconds > 0 ? Math.round((ownerSeconds / totalSeconds) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -107,6 +114,14 @@ function RecordingDetailPage() {
         </button>
       </div>
 
+      {/* Summary */}
+      {recording.summary && (
+        <div className="border border-border p-4">
+          <p className="mb-2 text-xs text-muted-foreground">{">"} summary</p>
+          <p className="text-xs leading-relaxed">{recording.summary}</p>
+        </div>
+      )}
+
       {/* Player */}
       <RecordingPlayer
         audioUrl={recording.rawAudioUrl}
@@ -115,10 +130,7 @@ function RecordingDetailPage() {
       />
 
       {/* AI Chat */}
-      <AskAI
-        onAsk={handleAskAI}
-        placeholder="ask about this recording..."
-      />
+      <AskAI onAsk={handleAskAI} placeholder="ask about this recording..." />
 
       {/* Tabs */}
       <div className="flex items-center gap-px border border-border">
@@ -157,7 +169,9 @@ function RecordingDetailPage() {
         <div className="space-y-6">
           {/* Speaking Time */}
           <div className="border border-border p-4">
-            <p className="mb-4 text-xs text-muted-foreground">{">"} speaking_time</p>
+            <p className="mb-4 text-xs text-muted-foreground">
+              {">"} speaking_time
+            </p>
 
             {/* Bar */}
             <div className="mb-3 h-2 overflow-hidden bg-muted">
@@ -171,14 +185,105 @@ function RecordingDetailPage() {
             <div className="flex justify-between text-xs">
               <span>
                 <span className="text-primary">{ownerPercent}%</span>
-                <span className="ml-2 text-muted-foreground">you ({formatDuration(ownerSeconds)})</span>
+                <span className="ml-2 text-muted-foreground">
+                  you ({formatDuration(ownerSeconds)})
+                </span>
               </span>
               <span>
                 <span className="text-foreground">{100 - ownerPercent}%</span>
-                <span className="ml-2 text-muted-foreground">others ({formatDuration(otherSeconds)})</span>
+                <span className="ml-2 text-muted-foreground">
+                  others ({formatDuration(otherSeconds)})
+                </span>
               </span>
             </div>
           </div>
+
+          {/* Owner Analysis */}
+          {recording.ownerAnalysis && (
+            <div className="border border-border">
+              {/* Header */}
+              <div className="border-b border-border bg-card px-4 py-3">
+                <p className="text-xs text-muted-foreground">
+                  {">"} communication_analysis
+                </p>
+              </div>
+
+              {/* Style & Role */}
+              <div className="grid gap-px border-b border-border bg-border sm:grid-cols-2">
+                <div className="bg-background p-4">
+                  <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    style
+                  </p>
+                  <p className="text-sm">
+                    {recording.ownerAnalysis.communicationStyle}
+                  </p>
+                </div>
+                <div className="bg-background p-4">
+                  <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    role
+                  </p>
+                  <p className="text-sm">
+                    {recording.ownerAnalysis.conversationRole}
+                  </p>
+                </div>
+              </div>
+
+              {/* Strengths */}
+              {recording.ownerAnalysis.strengths.length > 0 && (
+                <div className="border-b border-border p-4">
+                  <p className="mb-3 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    strengths
+                  </p>
+                  <ul className="space-y-2">
+                    {recording.ownerAnalysis.strengths.map((strength, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <span className="mt-1 size-1.5 shrink-0 bg-emerald-500" />
+                        {strength}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Areas for Improvement */}
+              {recording.ownerAnalysis.improvements.length > 0 && (
+                <div className="border-b border-border p-4">
+                  <p className="mb-3 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    areas_for_improvement
+                  </p>
+                  <ul className="space-y-2">
+                    {recording.ownerAnalysis.improvements.map(
+                      (improvement, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm">
+                          <span className="mt-1 size-1.5 shrink-0 bg-amber-500" />
+                          {improvement}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              {/* Key Behaviors */}
+              {recording.ownerAnalysis.keyBehaviors.length > 0 && (
+                <div className="p-4">
+                  <p className="mb-3 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    key_behaviors
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {recording.ownerAnalysis.keyBehaviors.map((behavior, i) => (
+                      <span
+                        key={i}
+                        className="border border-border bg-card px-2 py-1 text-xs"
+                      >
+                        {behavior}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Details */}
           <div className="border border-border p-4">
@@ -186,39 +291,57 @@ function RecordingDetailPage() {
             <dl className="space-y-3 text-xs">
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">status</dt>
-                <dd><StatusBadge status={recording.status} /></dd>
+                <dd>
+                  <StatusBadge status={recording.status} />
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">duration</dt>
-                <dd>{recording.originalDuration ? formatDuration(recording.originalDuration) : "—"}</dd>
+                <dd>
+                  {recording.originalDuration
+                    ? formatDuration(recording.originalDuration)
+                    : "—"}
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">language</dt>
-                <dd className="uppercase">{recording.metadata?.language ?? "—"}</dd>
+                <dd className="uppercase">
+                  {recording.metadata?.language ?? "—"}
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">speakers</dt>
                 <dd>
                   {recording.transcript.length > 0
-                    ? new Set(recording.transcript.map((t) => t.speakerNumber)).size
+                    ? new Set(recording.transcript.map((t) => t.speakerNumber))
+                        .size
                     : "—"}
                 </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">words</dt>
-                <dd>{recording.transcript.reduce((sum, t) => sum + t.wordCount, 0)}</dd>
+                <dd>
+                  {recording.transcript.reduce(
+                    (sum, t) => sum + t.wordCount,
+                    0
+                  )}
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">talk_ratio</dt>
                 <dd>
-                  {otherSeconds > 0 ? (ownerSeconds / otherSeconds).toFixed(2) : "—"}
+                  {otherSeconds > 0
+                    ? (ownerSeconds / otherSeconds).toFixed(2)
+                    : "—"}
                 </dd>
               </div>
             </dl>
 
             {recording.processingError && (
               <div className="mt-4 border border-destructive/50 bg-destructive/10 p-3">
-                <p className="text-xs text-destructive">error: {recording.processingError}</p>
+                <p className="text-xs text-destructive">
+                  error: {recording.processingError}
+                </p>
               </div>
             )}
           </div>
@@ -233,7 +356,8 @@ function RecordingDetailPage() {
               {">"} confirm_delete
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground">
-              permanently delete "{recording.title || "untitled"}" and all associated data?
+              permanently delete "{recording.title || "untitled"}" and all
+              associated data?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -244,7 +368,9 @@ function RecordingDetailPage() {
               onClick={handleDelete}
               className="border border-destructive bg-destructive/10 text-xs text-destructive hover:bg-destructive hover:text-white"
             >
-              {deleteMutation.isPending && <Loader2Icon className="size-3 animate-spin" />}
+              {deleteMutation.isPending && (
+                <Loader2Icon className="size-3 animate-spin" />
+              )}
               delete
             </AlertDialogAction>
           </AlertDialogFooter>

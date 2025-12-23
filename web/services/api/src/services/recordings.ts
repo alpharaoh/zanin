@@ -7,6 +7,16 @@ import { inngest } from "../inngest/client";
 import BlobStorageService from "./external/store/blob/service";
 import { SelectRecording } from "@zanin/db/schema";
 
+export interface OwnerAnalysis {
+  communicationStyle: string;
+  strengths: string[];
+  improvements: string[];
+  conversationRole: string;
+  keyBehaviors: string[];
+  speakingPercentage: number;
+  turnCount: number;
+}
+
 export interface Recording {
   id: string;
   status: "pending" | "processing" | "completed" | "failed";
@@ -39,6 +49,8 @@ export interface Recording {
       ownerSpeakingSeconds: number;
     };
   };
+  summary: string | undefined;
+  ownerAnalysis: OwnerAnalysis | undefined;
 }
 
 export interface CreateRecordingInput {

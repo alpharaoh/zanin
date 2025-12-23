@@ -67,6 +67,16 @@ export interface ProfileInfo {
   created_at?: string;
 }
 
+export interface OwnerAnalysis {
+  communicationStyle: string;
+  strengths: string[];
+  improvements: string[];
+  conversationRole: string;
+  keyBehaviors: string[];
+  speakingPercentage: number;
+  turnCount: number;
+}
+
 export type RecordingStatus = typeof RecordingStatus[keyof typeof RecordingStatus];
 
 
@@ -135,6 +145,8 @@ export interface Recording {
   vadSegments: RecordingVadSegmentsItem[];
   speakerLabels: RecordingSpeakerLabels;
   metadata: RecordingMetadata;
+  summary?: string;
+  ownerAnalysis?: OwnerAnalysis;
 }
 
 export interface RecordingListResponse {
