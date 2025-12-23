@@ -282,7 +282,6 @@ interface RecordingRowProps {
 
 function RecordingRow({ recording, onDelete }: RecordingRowProps) {
   const [showActions, setShowActions] = useState(false);
-  const recordingId = extractRecordingId(recording.rawAudioUrl);
 
   return (
     <div
@@ -292,7 +291,7 @@ function RecordingRow({ recording, onDelete }: RecordingRowProps) {
     >
       <Link
         to="/dashboard/recordings/$recordingId"
-        params={{ recordingId }}
+        params={{ recordingId: recording.id }}
         className="col-span-5 truncate hover:text-primary"
       >
         {recording.title || "untitled"}
@@ -312,7 +311,7 @@ function RecordingRow({ recording, onDelete }: RecordingRowProps) {
       </div>
       <div className="col-span-1 flex justify-end">
         <button
-          onClick={() => onDelete(recordingId)}
+          onClick={() => onDelete(recording.id)}
           className={cn(
             "p-1 text-muted-foreground transition-all hover:text-destructive",
             showActions ? "opacity-100" : "opacity-0"
@@ -339,15 +338,6 @@ function StatusBadge({ status }: { status: string }) {
       <span className="text-muted-foreground">{config.text}</span>
     </span>
   );
-}
-
-function extractRecordingId(url: string): string {
-  const parts = url.split("/");
-  const recordingsIndex = parts.findIndex((p) => p === "recordings");
-  if (recordingsIndex !== -1 && parts[recordingsIndex + 1]) {
-    return parts[recordingsIndex + 1];
-  }
-  return btoa(url).slice(0, 20);
 }
 
 function RecordingsSkeleton() {

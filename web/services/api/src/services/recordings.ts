@@ -8,6 +8,7 @@ import BlobStorageService from "./external/store/blob/service";
 import { SelectRecording } from "@zanin/db/schema";
 
 export interface Recording {
+  id: string;
   status: "pending" | "processing" | "completed" | "failed";
   finishedAt: Date | undefined;
   processingError: string | undefined;

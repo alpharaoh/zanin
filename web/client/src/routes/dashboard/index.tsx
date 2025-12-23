@@ -168,12 +168,10 @@ function StatBox({ label, value, extra }: StatBoxProps) {
 }
 
 function RecordingRow({ recording }: { recording: Recording }) {
-  const recordingId = extractRecordingId(recording.rawAudioUrl);
-
   return (
     <Link
       to="/dashboard/recordings/$recordingId"
-      params={{ recordingId }}
+      params={{ recordingId: recording.id }}
       className="grid grid-cols-12 gap-4 border-b border-border px-4 py-3 text-sm transition-colors last:border-b-0 hover:bg-card"
     >
       <div className="col-span-6 truncate">
@@ -210,15 +208,6 @@ function StatusBadge({ status }: { status: string }) {
       <span className="text-muted-foreground">{config.text}</span>
     </span>
   );
-}
-
-function extractRecordingId(url: string): string {
-  const parts = url.split("/");
-  const recordingsIndex = parts.findIndex((p) => p === "recordings");
-  if (recordingsIndex !== -1 && parts[recordingsIndex + 1]) {
-    return parts[recordingsIndex + 1];
-  }
-  return btoa(url).slice(0, 20);
 }
 
 function DashboardSkeleton() {

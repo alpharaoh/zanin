@@ -122,6 +122,7 @@ export type RecordingMetadata = {
 };
 
 export interface Recording {
+  id: string;
   status: RecordingStatus;
   finishedAt?: string;
   processingError?: string;
