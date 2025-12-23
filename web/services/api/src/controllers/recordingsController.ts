@@ -66,12 +66,18 @@ export class RecordingsController extends Controller {
 
   /**
    * List all recordings for the current organization.
+   * Supports filtering by search term, date range, and sorting.
    */
   @Get()
   public async listRecordings(
     @Request() request: ExpressRequest,
     @Query() limit?: number,
     @Query() offset?: number,
+    @Query() search?: string,
+    @Query() startDate?: Date,
+    @Query() endDate?: Date,
+    @Query() sortBy?: "date" | "duration",
+    @Query() sortOrder?: "asc" | "desc",
   ): Promise<RecordingListResponse> {
     const { userId, organizationId } = request.user!;
 
@@ -80,6 +86,11 @@ export class RecordingsController extends Controller {
       userId,
       limit,
       offset,
+      search,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      sortBy,
+      sortOrder,
     });
   }
 
@@ -113,11 +124,13 @@ export class RecordingsController extends Controller {
    * Ask a question and get an AI-generated answer based on your recordings.
    * Uses semantic search to find relevant transcript chunks and generates a response.
    * Optionally filter by date range using startDate and endDate (ISO 8601 format).
+   * Optionally filter by a specific recording using recordingId.
    */
   @Get("ask")
   public async askRecordings(
     @Request() request: ExpressRequest,
     @Query() query: string,
+    @Query() recordingId?: string,
     @Query() startDate?: Date,
     @Query() endDate?: Date,
     @Query() maxSources?: number,
@@ -127,6 +140,7 @@ export class RecordingsController extends Controller {
     return await RecordingsSearchService.ask({
       organizationId,
       question: query,
+      recordingId,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
       maxSources,

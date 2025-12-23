@@ -34,8 +34,15 @@ export function TranscriptViewer({
 
   if (transcript.length === 0) {
     return (
-      <div className={cn("border border-dashed border-border p-8 text-center", className)}>
-        <p className="text-sm text-muted-foreground">// no transcript available</p>
+      <div
+        className={cn(
+          "border border-dashed border-border p-8 text-center",
+          className
+        )}
+      >
+        <p className="text-sm text-muted-foreground">
+          // no transcript available
+        </p>
       </div>
     );
   }
@@ -60,7 +67,11 @@ export function TranscriptViewer({
                 )}
               >
                 <div className="mb-2 flex items-center gap-3 text-xs">
-                  <span className={cn(isYou ? "text-primary" : "text-muted-foreground")}>
+                  <span
+                    className={cn(
+                      isYou ? "text-primary" : "text-muted-foreground"
+                    )}
+                  >
                     {isYou ? "you" : `speaker_${segment.speakerNumber}`}
                   </span>
                   <button
@@ -71,10 +82,12 @@ export function TranscriptViewer({
                     [{formatTimestamp(segment.start)}]
                   </button>
                 </div>
-                <p className={cn(
-                  "text-sm leading-relaxed",
-                  isActive ? "text-foreground" : "text-muted-foreground"
-                )}>
+                <p
+                  className={cn(
+                    "text-sm leading-relaxed",
+                    isActive ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
                   {segment.content}
                 </p>
               </div>

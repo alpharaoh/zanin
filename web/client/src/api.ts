@@ -192,7 +192,30 @@ export type CreateRecordingBody = {
 export type ListRecordingsParams = {
 limit?: number;
 offset?: number;
+search?: string;
+startDate?: string;
+endDate?: string;
+sortBy?: ListRecordingsSortBy;
+sortOrder?: ListRecordingsSortOrder;
 };
+
+export type ListRecordingsSortBy = typeof ListRecordingsSortBy[keyof typeof ListRecordingsSortBy];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const ListRecordingsSortBy = {
+  date: 'date',
+  duration: 'duration',
+} as const;
+
+export type ListRecordingsSortOrder = typeof ListRecordingsSortOrder[keyof typeof ListRecordingsSortOrder];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const ListRecordingsSortOrder = {
+  asc: 'asc',
+  desc: 'desc',
+} as const;
 
 export type SearchRecordingsParams = {
 query: string;
@@ -204,6 +227,7 @@ rerank?: boolean;
 
 export type AskRecordingsParams = {
 query: string;
+recordingId?: string;
 startDate?: string;
 endDate?: string;
 maxSources?: number;
@@ -584,6 +608,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     
 /**
  * List all recordings for the current organization.
+Supports filtering by search term, date range, and sorting.
  */
 export const listRecordings = (
     params?: ListRecordingsParams,
@@ -770,6 +795,7 @@ export function useSearchRecordings<TData = Awaited<ReturnType<typeof searchReco
  * Ask a question and get an AI-generated answer based on your recordings.
 Uses semantic search to find relevant transcript chunks and generates a response.
 Optionally filter by date range using startDate and endDate (ISO 8601 format).
+Optionally filter by a specific recording using recordingId.
  */
 export const askRecordings = (
     params: AskRecordingsParams,

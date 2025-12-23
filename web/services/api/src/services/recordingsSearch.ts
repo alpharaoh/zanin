@@ -61,6 +61,7 @@ export interface SearchRecordingsResponse {
 export interface AskRecordingsInput {
   organizationId: string;
   question: string;
+  recordingId?: string;
   startDate?: Date;
   endDate?: Date;
   maxSources?: number;
@@ -265,12 +266,21 @@ export const RecordingsSearchService = {
     const {
       organizationId,
       question,
+      recordingId,
       startDate,
       endDate,
       maxSources = 5,
     } = input;
 
-    const filter = buildDateFilter(startDate, endDate);
+    const dateFilter = buildDateFilter(startDate, endDate);
+
+    let filter: Record<string, unknown> | undefined;
+    if (dateFilter || recordingId) {
+      filter = { ...dateFilter };
+      if (recordingId) {
+        filter.recordingId = recordingId;
+      }
+    }
 
     // Search for relevant chunks with reranking for better quality
     const searchResults =

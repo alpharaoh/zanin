@@ -53,6 +53,11 @@ export interface ListRecordingsInput {
   userId?: string;
   limit?: number;
   offset?: number;
+  search?: string;
+  startDate?: Date;
+  endDate?: Date;
+  sortBy?: "date" | "duration";
+  sortOrder?: "asc" | "desc";
 }
 
 function toRecordingResponse(recording: SelectRecording): Recording {
@@ -116,17 +121,36 @@ export const RecordingsService = {
   list: async (
     input: ListRecordingsInput,
   ): Promise<{ recordings: Recording[]; count: number }> => {
-    const { organizationId, userId, limit = 50, offset = 0 } = input;
+    const {
+      organizationId,
+      userId,
+      limit = 50,
+      offset = 0,
+      search,
+      startDate,
+      endDate,
+      sortBy = "date",
+      sortOrder = "desc",
+    } = input;
+
+    // Build order by clause
+    const orderBy: Record<string, "asc" | "desc"> = {};
+    if (sortBy === "duration") {
+      orderBy.originalDuration = sortOrder;
+    } else {
+      orderBy.finishedAt = sortOrder;
+    }
 
     const { data, count } = await listRecordings(
       {
         organizationId,
         deletedAt: null,
         userId,
+        search,
+        startDate,
+        endDate,
       },
-      {
-        createdAt: "desc",
-      },
+      orderBy,
       limit,
       offset,
     );

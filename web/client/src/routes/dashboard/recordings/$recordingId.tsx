@@ -1,4 +1,5 @@
-import { useDeleteRecording, useGetRecording } from "@/api";
+import { askRecordings, useDeleteRecording, useGetRecording } from "@/api";
+import { AskAI } from "@/components/ai/ask-ai";
 import { RecordingPlayer } from "@/components/recordings/recording-player";
 import { TranscriptViewer } from "@/components/recordings/transcript-viewer";
 import {
@@ -47,6 +48,13 @@ function RecordingDetailPage() {
       seekFn(time);
     }
   }, []);
+
+  const handleAskAI = useCallback(
+    async (query: string) => {
+      return askRecordings({ query, recordingId });
+    },
+    [recordingId]
+  );
 
   if (isLoading) {
     return <RecordingDetailSkeleton />;
@@ -104,6 +112,12 @@ function RecordingDetailPage() {
         audioUrl={recording.rawAudioUrl}
         cleanedAudioUrl={recording.cleanedAudioUrl}
         onTimeUpdate={setCurrentTime}
+      />
+
+      {/* AI Chat */}
+      <AskAI
+        onAsk={handleAskAI}
+        placeholder="ask about this recording..."
       />
 
       {/* Tabs */}
