@@ -137,6 +137,7 @@ export default inngest.createFunction(
           status: "completed",
           finishedAt: new Date(),
           transcript,
+          originalDuration: vadSegments.total_audio_duration,
           confidence: transcription.confidence,
           words: transcription.words,
           title: title.trim(),
