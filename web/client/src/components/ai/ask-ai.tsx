@@ -92,49 +92,47 @@ export function AskAI({
       {/* Input Box */}
       <form onSubmit={handleSubmit} className="border border-border">
         {/* Text input area */}
-        <div className="px-4 py-3">
+        <div className="flex items-center gap-2 px-4 py-3">
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={placeholder}
             disabled={isLoading}
-            className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/40 placeholder:italic disabled:opacity-50"
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/40 placeholder:italic disabled:opacity-50"
           />
+          {query && !isLoading && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <XIcon className="size-3" />
+              Clear
+            </button>
+          )}
         </div>
 
         {/* Bottom bar */}
         <div className="flex items-center justify-between border-t border-border px-3 py-2">
           <span className="text-xs text-muted-foreground">AI</span>
 
-          <div className="flex items-center gap-2">
-            {query && !isLoading && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="p-1 text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <XIcon className="size-4" />
-              </button>
+          <button
+            type="submit"
+            disabled={!hasInput || isLoading}
+            className={cn(
+              "flex size-7 items-center justify-center transition-colors",
+              hasInput && !isLoading
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground"
             )}
-
-            <button
-              type="submit"
-              disabled={!hasInput || isLoading}
-              className={cn(
-                "flex size-7 items-center justify-center transition-colors",
-                hasInput && !isLoading
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
-              )}
-            >
-              {isLoading ? (
-                <Loader2Icon className="size-4 animate-spin" />
-              ) : (
-                <ArrowUpIcon className="size-4" />
-              )}
-            </button>
-          </div>
+          >
+            {isLoading ? (
+              <Loader2Icon className="size-4 animate-spin" />
+            ) : (
+              <ArrowUpIcon className="size-4" />
+            )}
+          </button>
         </div>
       </form>
 
@@ -166,18 +164,22 @@ export function AskAI({
                         </TooltipTrigger>
                         <TooltipContent
                           side="top"
-                          className="max-w-xs border border-border bg-card p-2"
+                          className="max-w-xs p-3"
                         >
-                          <p className="text-xs leading-snug text-muted-foreground">
+                          <p className="text-xs leading-snug text-neutral-300">
                             "{truncateText(source.text)}"
                           </p>
                           <div className="mt-2 flex items-center justify-between text-[10px]">
-                            <span className="text-muted-foreground/50">
+                            <span className="text-muted-foreground">
                               {Math.round(source.score * 100)}% match
                             </span>
-                            <span className="text-primary">
+                            <Link
+                              to="/dashboard/recordings/$recordingId"
+                              params={{ recordingId: source.recordingId }}
+                              className="text-primary hover:underline"
+                            >
                               view recording →
-                            </span>
+                            </Link>
                           </div>
                         </TooltipContent>
                       </Tooltip>

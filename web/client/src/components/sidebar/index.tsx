@@ -7,6 +7,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "@tanstack/react-router";
 import { LogOutIcon, SettingsIcon } from "lucide-react";
@@ -58,17 +63,22 @@ export function DashboardSidebar({
                 : location.pathname.startsWith(item.url);
 
             return (
-              <Link
-                key={item.title}
-                to={item.url}
-                className={cn(
-                  "flex size-10 items-center justify-center text-muted-foreground transition-colors hover:text-foreground",
-                  isActive && "bg-primary/10 text-primary"
-                )}
-                title={item.title}
-              >
-                {item.icon}
-              </Link>
+              <Tooltip key={item.title}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={item.url}
+                    className={cn(
+                      "flex size-10 items-center justify-center text-muted-foreground transition-colors hover:text-foreground",
+                      isActive && "bg-primary/10 text-primary"
+                    )}
+                  >
+                    {item.icon}
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="text-xs">
+                  {item.title}
+                </TooltipContent>
+              </Tooltip>
             );
           })}
         </nav>
