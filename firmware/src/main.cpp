@@ -51,6 +51,7 @@ void inputLoop(Count &count) {
 
     if (word == "stop") {
       count.setState(ControlLoopState::Stopped);
+      return;
     }
   }
 }

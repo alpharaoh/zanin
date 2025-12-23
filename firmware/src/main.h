@@ -1,4 +1,5 @@
 #include <atomic>
+
 enum class ControlLoopState { Idle, Running, Finished, Stopped };
 
 class Count {
