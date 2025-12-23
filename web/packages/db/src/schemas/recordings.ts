@@ -18,6 +18,9 @@ export const recordings = pgTable("recordings", {
   vadSegments: jsonb("vad_segments"),
   speakerLabels: jsonb("speaker_labels"),
   metadata: jsonb("metadata"),
+  // AI-generated analysis
+  summary: text("summary"),
+  ownerAnalysis: jsonb("owner_analysis"),
 });
 
 export type SelectRecording = typeof recordings.$inferSelect;

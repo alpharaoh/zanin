@@ -29,6 +29,13 @@
       "when": 1766242862255,
       "tag": "0003_parallel_shotgun",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1766498673207,
+      "tag": "0004_slow_punisher",
+      "breakpoints": true
     }
   ]
 }

@@ -12,10 +12,12 @@ import {
   buildStructuredTranscript,
   transcriptToText,
 } from "./utils/buildStructuredTranscript";
+import { generateRecordingSummary } from "./utils/generateRecordingSummary";
+import { generateOwnerAnalysis } from "./utils/generateOwnerAnalysis";
 
 const RECORDINGS_INDEX = "recordings";
 
-interface ProcessAudioData {
+export interface ProcessAudioData {
   recordingId: string;
   organizationId: string;
   userId: string;
@@ -129,6 +131,21 @@ export default inngest.createFunction(
 
     logger.info("Generated title", { recordingId, title });
 
+    const summary = await step.run("generate-summary", async () => {
+      return await generateRecordingSummary(transcriptText);
+    });
+
+    logger.info("Generated summary", { recordingId });
+
+    let ownerAnalysis: any = undefined;
+    if (speakerIdentification?.success) {
+      ownerAnalysis = await step.run("analyze-owner-patterns", async () => {
+        generateOwnerAnalysis(speakerIdentification, transcript);
+      });
+    }
+
+    logger.info("Analyzed owner patterns", { recordingId });
+
     // Update recording with all results
     await step.run("update-recording", async () => {
       await updateRecording(
@@ -141,6 +158,8 @@ export default inngest.createFunction(
           confidence: transcription.confidence,
           words: transcription.words,
           title: title.trim(),
+          summary: summary.trim(),
+          ownerAnalysis,
           speakerLabels: speakerLabelMap
             ? Object.fromEntries(speakerLabelMap)
             : undefined,
