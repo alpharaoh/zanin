@@ -4,9 +4,12 @@ import {
   useListRecordings,
   type ListRecordingsSortBy,
   type ListRecordingsSortOrder,
-  type Recording,
 } from "@/api";
 import { AskAI } from "@/components/ai/ask-ai";
+import {
+  RecordingRow,
+  RecordingsTableHeader,
+} from "@/components/recordings/recording-row";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,10 +27,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatDuration, formatRelativeDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
 import {
   ArrowDownIcon,
@@ -38,7 +40,6 @@ import {
   ClockIcon,
   Loader2Icon,
   SearchIcon,
-  TrashIcon,
   XIcon,
 } from "lucide-react";
 import debounce from "lodash/debounce";
@@ -283,19 +284,12 @@ function RecordingsPage() {
       ) : (
         <>
           <div className="border border-border">
-            {/* Table header */}
-            <div className="grid grid-cols-12 gap-4 border-b border-border bg-card px-4 py-2 text-xs text-muted-foreground">
-              <div className="col-span-5">title</div>
-              <div className="col-span-2">status</div>
-              <div className="col-span-2 text-right">duration</div>
-              <div className="col-span-2 text-right">date</div>
-              <div className="col-span-1"></div>
-            </div>
-            {/* Table rows */}
-            {recordings.map((recording, index) => (
+            <RecordingsTableHeader showDelete />
+            {recordings.map((recording) => (
               <RecordingRow
-                key={index}
+                key={recording.id}
                 recording={recording}
+                showDelete
                 onDelete={(id) => setDeleteRecordingId(id)}
               />
             ))}
@@ -376,71 +370,6 @@ function RecordingsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
-}
-
-interface RecordingRowProps {
-  recording: Recording;
-  onDelete: (id: string) => void;
-}
-
-function RecordingRow({ recording, onDelete }: RecordingRowProps) {
-  const [showActions, setShowActions] = useState(false);
-
-  return (
-    <div
-      className="group grid grid-cols-12 gap-4 border-b border-border px-4 py-3 text-sm transition-colors last:border-b-0 hover:bg-card"
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
-    >
-      <div className="col-span-5 min-w-0">
-        <Link
-          to="/dashboard/recordings/$recordingId"
-          params={{ recordingId: recording.id }}
-          className="inline-block max-w-full truncate text-muted-foreground hover:text-foreground"
-        >
-          {recording.title || "untitled"}
-        </Link>
-      </div>
-      <div className="col-span-2">
-        <StatusBadge status={recording.status} />
-      </div>
-      <div className="col-span-2 text-right text-muted-foreground">
-        {recording.originalDuration
-          ? formatDuration(recording.originalDuration)
-          : "—"}
-      </div>
-      <div className="col-span-2 text-right text-muted-foreground">
-        {recording.finishedAt ? formatRelativeDate(recording.finishedAt) : "—"}
-      </div>
-      <div className="col-span-1 flex justify-end">
-        <button
-          onClick={() => onDelete(recording.id)}
-          className={cn(
-            "p-1 text-muted-foreground transition-all hover:text-destructive",
-            showActions ? "opacity-100" : "opacity-0"
-          )}
-        >
-          <TrashIcon className="size-3.5" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const config = {
-    completed: { dot: "bg-emerald-500", text: "done" },
-    processing: { dot: "bg-primary animate-pulse", text: "proc" },
-    pending: { dot: "bg-amber-500", text: "queue" },
-    failed: { dot: "bg-red-500", text: "fail" },
-  }[status] || { dot: "bg-muted-foreground", text: status };
-
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs">
-      <span className={`size-1.5 rounded-full ${config.dot}`} />
-      <span className="text-muted-foreground">{config.text}</span>
-    </span>
   );
 }
 

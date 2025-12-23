@@ -1,6 +1,10 @@
-import { useListRecordings, type Recording } from "@/api";
+import { useListRecordings } from "@/api";
+import {
+  RecordingRow,
+  RecordingsTableHeader,
+} from "@/components/recordings/recording-row";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatDuration, formatRelativeDate } from "@/lib/format";
+import { formatDuration } from "@/lib/format";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 
@@ -126,16 +130,9 @@ function DashboardIndex() {
           </div>
         ) : (
           <div className="border border-border">
-            {/* Table header */}
-            <div className="grid grid-cols-12 gap-4 border-b border-border bg-card px-4 py-2 text-xs text-muted-foreground">
-              <div className="col-span-6">title</div>
-              <div className="col-span-2">status</div>
-              <div className="col-span-2 text-right">duration</div>
-              <div className="col-span-2 text-right">date</div>
-            </div>
-            {/* Table rows */}
-            {recentRecordings.map((recording, index) => (
-              <RecordingRow key={index} recording={recording} />
+            <RecordingsTableHeader />
+            {recentRecordings.map((recording) => (
+              <RecordingRow key={recording.id} recording={recording} />
             ))}
           </div>
         )}
@@ -164,49 +161,6 @@ function StatBox({ label, value, extra }: StatBoxProps) {
         <p className="mt-1 text-xs text-muted-foreground">{extra}</p>
       )}
     </div>
-  );
-}
-
-function RecordingRow({ recording }: { recording: Recording }) {
-  return (
-    <Link
-      to="/dashboard/recordings/$recordingId"
-      params={{ recordingId: recording.id }}
-      className="grid grid-cols-12 gap-4 border-b border-border px-4 py-3 text-sm transition-colors last:border-b-0 hover:bg-card"
-    >
-      <div className="col-span-6 truncate">
-        {recording.title || "untitled"}
-      </div>
-      <div className="col-span-2">
-        <StatusBadge status={recording.status} />
-      </div>
-      <div className="col-span-2 text-right text-muted-foreground">
-        {recording.originalDuration
-          ? formatDuration(recording.originalDuration)
-          : "—"}
-      </div>
-      <div className="col-span-2 text-right text-muted-foreground">
-        {recording.finishedAt
-          ? formatRelativeDate(recording.finishedAt)
-          : "—"}
-      </div>
-    </Link>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const config = {
-    completed: { dot: "bg-emerald-500", text: "done" },
-    processing: { dot: "bg-primary animate-pulse", text: "proc" },
-    pending: { dot: "bg-amber-500", text: "queue" },
-    failed: { dot: "bg-red-500", text: "fail" },
-  }[status] || { dot: "bg-muted-foreground", text: status };
-
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs">
-      <span className={`size-1.5 rounded-full ${config.dot}`} />
-      <span className="text-muted-foreground">{config.text}</span>
-    </span>
   );
 }
 

@@ -59,10 +59,6 @@ function DashboardLayout() {
         email: session.user.email,
         image: session.user.image,
       }}
-      organization={{
-        name: "My Organization",
-        plan: "Enterprise",
-      }}
       navItems={navItems}
       onSignOut={handleSignOut}
     >

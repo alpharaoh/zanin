@@ -127,7 +127,7 @@ function RecordingDetailPage() {
           className={cn(
             "flex-1 px-4 py-2 text-xs transition-colors",
             activeTab === "transcript"
-              ? "bg-primary text-primary-foreground"
+              ? "bg-neutral-700 text-neutral-200"
               : "bg-card text-muted-foreground hover:text-foreground"
           )}
         >
@@ -138,7 +138,7 @@ function RecordingDetailPage() {
           className={cn(
             "flex-1 px-4 py-2 text-xs transition-colors",
             activeTab === "analytics"
-              ? "bg-primary text-primary-foreground"
+              ? "bg-neutral-700 text-neutral-200"
               : "bg-card text-muted-foreground hover:text-foreground"
           )}
         >
