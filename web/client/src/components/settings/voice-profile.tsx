@@ -9,67 +9,249 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatRelativeDate } from "@/lib/format";
 import { useQueryClient } from "@tanstack/react-query";
-import { CheckIcon, Loader2Icon, TrashIcon, UploadIcon } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import {
+  CheckIcon,
+  Loader2Icon,
+  MicIcon,
+  PauseIcon,
+  PlayIcon,
+  RotateCcwIcon,
+  SquareIcon,
+  TrashIcon,
+  UploadIcon,
+} from "lucide-react";
+import { useCallback, useRef, useState, useEffect } from "react";
+import WaveSurfer from "wavesurfer.js";
+
+const RAINBOW_PASSAGE = `When the sunlight strikes raindrops in the air, they act like a prism and form a rainbow. The rainbow is a division of white light into many beautiful colors. These take the shape of a long round arch, with its path high above, and its two ends apparently beyond the horizon. There is, according to legend, a boiling pot of gold at one end. People look but no one ever finds it. When a man looks for something beyond his reach, his friends say he is looking for the pot of gold at the end of the rainbow.`;
 
 interface VoiceProfileProps {
   className?: string;
 }
 
+type RecordingState = "idle" | "recording" | "recorded";
+
 export function VoiceProfile({ className }: VoiceProfileProps) {
   const queryClient = useQueryClient();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEnrollDialog, setShowEnrollDialog] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Recording state
+  const [recordingState, setRecordingState] = useState<RecordingState>("idle");
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
+
+  // WaveSurfer state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isWaveformReady, setIsWaveformReady] = useState(false);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const waveformContainerRef = useRef<HTMLDivElement>(null);
+  const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
 
   const { data: profile, isLoading: isLoadingProfile } = useGetProfile();
   const enrollMutation = useEnroll();
   const deleteMutation = useDeleteProfile();
 
-  const handleFileSelect = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file) {
-        return;
+  // Initialize WaveSurfer when we have a recorded blob
+  useEffect(() => {
+    if (!recordedBlob || !waveformContainerRef.current || recordingState !== "recorded") {
+      return;
+    }
+
+    // Clean up previous instance
+    if (wavesurferRef.current) {
+      wavesurferRef.current.destroy();
+    }
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+    }
+
+    const blobUrl = URL.createObjectURL(recordedBlob);
+    blobUrlRef.current = blobUrl;
+
+    const wavesurfer = WaveSurfer.create({
+      container: waveformContainerRef.current,
+      waveColor: "#262626",
+      progressColor: "#00d4ff",
+      cursorColor: "#00d4ff",
+      cursorWidth: 1,
+      barWidth: 2,
+      barGap: 2,
+      barRadius: 0,
+      height: 48,
+      normalize: true,
+    });
+
+    wavesurfer.load(blobUrl);
+
+    wavesurfer.on("ready", () => {
+      setDuration(wavesurfer.getDuration());
+      setIsWaveformReady(true);
+      wavesurferRef.current = wavesurfer;
+    });
+
+    wavesurfer.on("timeupdate", (time) => {
+      setCurrentTime(time);
+    });
+
+    wavesurfer.on("play", () => setIsPlaying(true));
+    wavesurfer.on("pause", () => setIsPlaying(false));
+    wavesurfer.on("finish", () => setIsPlaying(false));
+
+    return () => {
+      wavesurfer.destroy();
+    };
+  }, [recordedBlob, recordingState]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
       }
-
-      if (!file.type.startsWith("audio/")) {
-        return;
+      if (wavesurferRef.current) {
+        wavesurferRef.current.destroy();
       }
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+      }
+    };
+  }, []);
 
-      setIsUploading(true);
-      setUploadProgress(0);
+  const startRecording = useCallback(async () => {
+    try {
+      setPermissionError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      try {
-        const progressInterval = setInterval(() => {
-          setUploadProgress((prev) => Math.min(prev + 10, 90));
-        }, 200);
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
 
-        await enrollMutation.mutateAsync({ data: { audio: file } });
-
-        clearInterval(progressInterval);
-        setUploadProgress(100);
-
-        queryClient.invalidateQueries({ queryKey: ["/v1/sid/profile"] });
-      } catch (error) {
-        console.error("Failed to enroll voice profile:", error);
-      } finally {
-        setIsUploading(false);
-        setUploadProgress(0);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
         }
-      }
-    },
-    [enrollMutation, queryClient]
-  );
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
+        setRecordedBlob(audioBlob);
+        setRecordingState("recorded");
+
+        // Stop all tracks
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      setRecordingState("recording");
+      setRecordingDuration(0);
+
+      // Start duration timer
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+    } catch (error) {
+      console.error("Failed to start recording:", error);
+      setPermissionError(
+        "Microphone access denied. Please allow microphone access to record."
+      );
+    }
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      mediaRecorderRef.current.stop();
+    }
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+  }, []);
+
+  const resetRecording = useCallback(() => {
+    // Stop and destroy wavesurfer
+    if (wavesurferRef.current) {
+      wavesurferRef.current.destroy();
+      wavesurferRef.current = null;
+    }
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+
+    setRecordedBlob(null);
+    setRecordingState("idle");
+    setRecordingDuration(0);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setIsWaveformReady(false);
+  }, []);
+
+  const handlePlayPause = useCallback(() => {
+    wavesurferRef.current?.playPause();
+  }, []);
+
+  const handleEnroll = useCallback(async () => {
+    if (!recordedBlob) {
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => Math.min(prev + 10, 90));
+      }, 200);
+
+      // Convert webm to a file
+      const file = new File([recordedBlob], "voice-sample.webm", {
+        type: "audio/webm",
+      });
+
+      await enrollMutation.mutateAsync({ data: { audio: file } });
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
+      queryClient.invalidateQueries({ queryKey: ["/v1/sid/profile"] });
+      setShowEnrollDialog(false);
+      resetRecording();
+    } catch (error) {
+      console.error("Failed to enroll voice profile:", error);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  }, [recordedBlob, enrollMutation, queryClient, resetRecording]);
 
   const handleDelete = useCallback(async () => {
     try {
@@ -80,6 +262,23 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
       console.error("Failed to delete voice profile:", error);
     }
   }, [deleteMutation, queryClient]);
+
+  const handleCloseEnrollDialog = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        resetRecording();
+        setPermissionError(null);
+      }
+      setShowEnrollDialog(open);
+    },
+    [resetRecording]
+  );
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   const hasProfile = profile?.exists;
 
@@ -124,37 +323,166 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
               )}
             </button>
           </div>
-        ) : isUploading ? (
-          <div className="space-y-3">
-            <Progress value={uploadProgress} className="h-1" />
-            <p className="text-xs text-muted-foreground">processing...</p>
-          </div>
         ) : (
           <button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => setShowEnrollDialog(true)}
             className="flex w-full items-center gap-3 border border-dashed border-border p-4 text-left transition-colors hover:border-primary/50"
           >
             <span className="flex size-8 items-center justify-center border border-border">
-              <UploadIcon className="size-4 text-muted-foreground" />
+              <MicIcon className="size-4 text-muted-foreground" />
             </span>
             <div>
-              <p className="text-sm">upload voice sample</p>
+              <p className="text-sm">enroll voice profile</p>
               <p className="text-xs text-muted-foreground">
-                30+ seconds of clear speech
+                record a sample to identify your voice
               </p>
             </div>
           </button>
         )}
       </div>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="audio/*"
-        onChange={handleFileSelect}
-        className="hidden"
-      />
+      {/* Enrollment Dialog */}
+      <Dialog open={showEnrollDialog} onOpenChange={handleCloseEnrollDialog}>
+        <DialogContent className="border border-border bg-background sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-sm">
+              {">"} voice_enrollment
+            </DialogTitle>
+            <DialogDescription>
+              Read the passage below clearly into your microphone. This helps us
+              identify your voice in recordings.
+            </DialogDescription>
+          </DialogHeader>
 
+          {/* Rainbow Passage */}
+          <div className="border border-border bg-card p-4">
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {RAINBOW_PASSAGE}
+            </p>
+          </div>
+
+          {/* Permission Error */}
+          {permissionError && (
+            <div className="border border-destructive/50 bg-destructive/10 p-3">
+              <p className="text-xs text-destructive">{permissionError}</p>
+            </div>
+          )}
+
+          {/* Recording Controls */}
+          <div className="space-y-4">
+            {/* Idle state - Record button */}
+            {recordingState === "idle" && (
+              <div className="flex flex-col items-center gap-4 py-4">
+                <button
+                  onClick={startRecording}
+                  className="flex items-center gap-2 border border-primary bg-primary/10 px-6 py-3 text-sm text-primary transition-colors hover:bg-primary/20"
+                >
+                  <MicIcon className="size-5" />
+                  Start Recording
+                </button>
+                <p className="text-xs text-muted-foreground">
+                  Click to begin recording your voice
+                </p>
+              </div>
+            )}
+
+            {/* Recording state */}
+            {recordingState === "recording" && (
+              <div className="flex flex-col items-center gap-4 py-4">
+                <div className="flex items-center gap-3">
+                  <span className="size-3 animate-pulse rounded-full bg-red-500" />
+                  <span className="font-mono text-lg text-red-500">
+                    {formatTime(recordingDuration)}
+                  </span>
+                </div>
+                <button
+                  onClick={stopRecording}
+                  className="flex items-center gap-2 border border-destructive bg-destructive/10 px-6 py-3 text-sm text-destructive transition-colors hover:bg-destructive/20"
+                >
+                  <SquareIcon className="size-5" />
+                  Stop Recording
+                </button>
+              </div>
+            )}
+
+            {/* Recorded state - WaveSurfer player */}
+            {recordingState === "recorded" && (
+              <div className="border border-border bg-card">
+                {/* Waveform */}
+                <div
+                  ref={waveformContainerRef}
+                  className={cn("w-full p-4", !isWaveformReady && "animate-pulse")}
+                />
+
+                {/* Controls */}
+                <div className="flex items-center justify-between border-t border-border px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    {/* Play/Pause */}
+                    <button
+                      onClick={handlePlayPause}
+                      disabled={!isWaveformReady}
+                      className="border border-primary bg-primary p-2 text-primary-foreground transition-opacity hover:opacity-80 disabled:opacity-30"
+                    >
+                      {isPlaying ? (
+                        <PauseIcon className="size-4" />
+                      ) : (
+                        <PlayIcon className="size-4" />
+                      )}
+                    </button>
+
+                    {/* Time */}
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {formatTime(currentTime)}
+                      <span className="mx-1 text-border">/</span>
+                      {formatTime(duration)}
+                    </span>
+                  </div>
+
+                  {/* Restart */}
+                  <button
+                    onClick={resetRecording}
+                    className="flex items-center gap-1.5 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+                  >
+                    <RotateCcwIcon className="size-3.5" />
+                    Restart
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Upload Progress */}
+            {isUploading && (
+              <div className="space-y-2">
+                <Progress value={uploadProgress} className="h-1" />
+                <p className="text-center text-xs text-muted-foreground">
+                  uploading...
+                </p>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            {recordingState === "recorded" && !isUploading && (
+              <button
+                onClick={handleEnroll}
+                disabled={recordingDuration < 10}
+                className={cn(
+                  "flex w-full items-center justify-center gap-2 border px-4 py-3 text-xs transition-colors",
+                  recordingDuration >= 10
+                    ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
+                    : "border-border bg-muted text-muted-foreground"
+                )}
+              >
+                <UploadIcon className="size-4" />
+                {recordingDuration < 10
+                  ? `Record at least ${10 - recordingDuration} more seconds`
+                  : "Save Voice Profile"}
+              </button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="border border-border bg-card">
           <AlertDialogHeader>
@@ -162,7 +490,8 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
               {">"} confirm_delete
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground">
-              remove voice profile? this will affect speaker identification in future recordings.
+              remove voice profile? this will affect speaker identification in
+              future recordings.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -173,7 +502,9 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
               onClick={handleDelete}
               className="border border-destructive bg-destructive/10 text-xs text-destructive hover:bg-destructive hover:text-white"
             >
-              {deleteMutation.isPending && <Loader2Icon className="size-3 animate-spin" />}
+              {deleteMutation.isPending && (
+                <Loader2Icon className="size-3 animate-spin" />
+              )}
               remove
             </AlertDialogAction>
           </AlertDialogFooter>
