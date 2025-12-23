@@ -1,6 +1,51 @@
 CompileFlags:
+  Add:
+    # C++ standard library (must come first!)
+    - "-I/Users/akaam/.espressif/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/picolibc/xtensa-esp-elf/include/c++/15.2.0"
+    - "-I/Users/akaam/.espressif/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/picolibc/xtensa-esp-elf/include/c++/15.2.0/xtensa-esp-elf"
+    # C library
+    - "-I/Users/akaam/.espressif/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/picolibc/include"
+    # ESP-IDF components
+    - "-I/Users/akaam/Projects/esp-idf/components/log/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/freertos/FreeRTOS-Kernel/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos"
+    - "-I/Users/akaam/Projects/esp-idf/components/freertos/esp_additions/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_common/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_hw_support/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/soc/esp32s3/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/soc/esp32s3/register"
+    - "-I/Users/akaam/Projects/esp-idf/components/soc/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/hal/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/hal/esp32s3/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_system/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_rom/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_rom/esp32s3/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/heap/include"
+    - "-I/Users/akaam/Projects/zanin/firmware/build/config"
+    - "-I/Users/akaam/Projects/esp-idf/components/freertos/config/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/freertos/config/include/freertos"
+    - "-I/Users/akaam/Projects/esp-idf/components/freertos/config/xtensa/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_libc/platform_include"
+    - "-I/Users/akaam/Projects/esp-idf/components/xtensa/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/xtensa/esp32s3/include"
+    - "-D__XTENSA__"
+    - "-DESP_PLATFORM"
+    - "-std=gnu++17"
   Remove:
-    - -mlongcalls
-    - -fno-tree-switch-conversion
-    - -fstrict-volatile-bitfields
-    - -fno-shrink-wrap
+    - "-mlongcalls"
+    - "-fno-tree-switch-conversion"
+    - "-fstrict-volatile-bitfields"
+    - "-fno-shrink-wrap"
+    - "-fno-jump-tables"
+    - "-fzero-init-padding-bits=all"
+    - "-fno-malloc-dce"
+    - "-mtext-section-literals"
+  Compiler: clang
+
+Diagnostics:
+  UnusedIncludes: None
+  Suppress:
+    - drv_unknown_argument
+    - drv_unknown_argument_with_suggestion
+    - attribute_not_type_attr
