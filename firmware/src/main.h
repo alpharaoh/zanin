@@ -1,12 +1,15 @@
-enum class ControlLoopState { Idle, Running, Stopped };
+#include <atomic>
+enum class ControlLoopState { Idle, Running, Finished, Stopped };
 
-class ControlLoop {
+class Count {
 private:
-  int count;
-  ControlLoopState state;
+  std::atomic<int> count;
+  std::atomic<ControlLoopState> state;
 
 public:
-  ControlLoop();
-  void run();
+  Count();
+  void increment();
   int getCount();
+  ControlLoopState getState();
+  void setState(ControlLoopState state);
 };
