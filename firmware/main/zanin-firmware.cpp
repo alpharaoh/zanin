@@ -6,5 +6,6 @@
 #include "freertos/task.h"
 
 extern "C" void app_main(void) {
-  std::cout << "Hello from ESP32-S3!" << std::endl;
+  char *tag = pcTaskGetName(NULL);
+  ESP_LOGI(tag, " -> Hello from ESP32-S3!\n");
 }
