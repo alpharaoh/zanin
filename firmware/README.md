@@ -2,6 +2,8 @@
 
 Firmware for the Zanin wearable audio recorder.
 
+> **📋 See [PLAN.md](./PLAN.md) for the complete development plan, architecture, and context for AI assistants.**
+
 ## Requirements
 
 - Microphone (high quality audio capture)
