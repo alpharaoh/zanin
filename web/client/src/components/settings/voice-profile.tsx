@@ -35,6 +35,72 @@ import {
 import { useCallback, useRef, useState, useEffect } from "react";
 import WaveSurfer from "wavesurfer.js";
 
+// Convert audio blob to WAV format
+async function convertToWav(blob: Blob): Promise<Blob> {
+  const audioContext = new AudioContext();
+  const arrayBuffer = await blob.arrayBuffer();
+  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+  // Create WAV file
+  const numberOfChannels = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const length = audioBuffer.length;
+
+  // Interleave channels
+  const interleaved = new Float32Array(length * numberOfChannels);
+  for (let channel = 0; channel < numberOfChannels; channel++) {
+    const channelData = audioBuffer.getChannelData(channel);
+    for (let i = 0; i < length; i++) {
+      interleaved[i * numberOfChannels + channel] = channelData[i];
+    }
+  }
+
+  // Convert to 16-bit PCM
+  const pcmData = new Int16Array(interleaved.length);
+  for (let i = 0; i < interleaved.length; i++) {
+    const s = Math.max(-1, Math.min(1, interleaved[i]));
+    pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+
+  // Create WAV header
+  const wavBuffer = new ArrayBuffer(44 + pcmData.length * 2);
+  const view = new DataView(wavBuffer);
+
+  // RIFF header
+  writeString(view, 0, "RIFF");
+  view.setUint32(4, 36 + pcmData.length * 2, true);
+  writeString(view, 8, "WAVE");
+
+  // fmt chunk
+  writeString(view, 12, "fmt ");
+  view.setUint32(16, 16, true); // chunk size
+  view.setUint16(20, 1, true); // PCM format
+  view.setUint16(22, numberOfChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numberOfChannels * 2, true); // byte rate
+  view.setUint16(32, numberOfChannels * 2, true); // block align
+  view.setUint16(34, 16, true); // bits per sample
+
+  // data chunk
+  writeString(view, 36, "data");
+  view.setUint32(40, pcmData.length * 2, true);
+
+  // Write PCM data
+  const pcmOffset = 44;
+  for (let i = 0; i < pcmData.length; i++) {
+    view.setInt16(pcmOffset + i * 2, pcmData[i], true);
+  }
+
+  await audioContext.close();
+  return new Blob([wavBuffer], { type: "audio/wav" });
+}
+
+function writeString(view: DataView, offset: number, str: string) {
+  for (let i = 0; i < str.length; i++) {
+    view.setUint8(offset + i, str.charCodeAt(i));
+  }
+}
+
 const RAINBOW_PASSAGE = `When the sunlight strikes raindrops in the air, they act like a prism and form a rainbow. The rainbow is a division of white light into many beautiful colors. These take the shape of a long round arch, with its path high above, and its two ends apparently beyond the horizon. There is, according to legend, a boiling pot of gold at one end. People look but no one ever finds it. When a man looks for something beyond his reach, his friends say he is looking for the pot of gold at the end of the rainbow.`;
 
 interface VoiceProfileProps {
@@ -232,9 +298,10 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
         setUploadProgress((prev) => Math.min(prev + 10, 90));
       }, 200);
 
-      // Convert webm to a file
-      const file = new File([recordedBlob], "voice-sample.webm", {
-        type: "audio/webm",
+      // Convert webm to WAV (server only accepts WAV, MP3, FLAC, OGG, M4A)
+      const wavBlob = await convertToWav(recordedBlob);
+      const file = new File([wavBlob], "voice-sample.wav", {
+        type: "audio/wav",
       });
 
       await enrollMutation.mutateAsync({ data: { audio: file } });
