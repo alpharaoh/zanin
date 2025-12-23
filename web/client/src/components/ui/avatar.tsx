@@ -1,26 +1,26 @@
-import * as React from "react"
-import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
+import * as React from "react";
+import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 function Avatar({
   className,
   size = "default",
   ...props
 }: AvatarPrimitive.Root.Props & {
-  size?: "default" | "sm" | "lg"
+  size?: "default" | "sm" | "lg";
 }) {
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"
       data-size={size}
       className={cn(
-        "size-8 rounded-full after:rounded-full data-[size=lg]:size-10 data-[size=sm]:size-6 after:border-border group/avatar relative flex shrink-0 select-none after:absolute after:inset-0 after:border after:mix-blend-darken dark:after:mix-blend-lighten",
+        "size-8 rounded-full after:rounded-full data-[size=lg]:size-10 data-[size=sm]:size-6 group/avatar relative flex shrink-0 select-none after:absolute after:inset-0 after:mix-blend-darken dark:after:mix-blend-lighten",
         className
       )}
       {...props}
     />
-  )
+  );
 }
 
 function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
@@ -33,7 +33,7 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
       )}
       {...props}
     />
-  )
+  );
 }
 
 function AvatarFallback({
@@ -49,7 +49,7 @@ function AvatarFallback({
       )}
       {...props}
     />
-  )
+  );
 }
 
 function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
@@ -65,7 +65,7 @@ function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
       )}
       {...props}
     />
-  )
+  );
 }
 
 function AvatarGroup({ className, ...props }: React.ComponentProps<"div">) {
@@ -78,7 +78,7 @@ function AvatarGroup({ className, ...props }: React.ComponentProps<"div">) {
       )}
       {...props}
     />
-  )
+  );
 }
 
 function AvatarGroupCount({
@@ -88,10 +88,13 @@ function AvatarGroupCount({
   return (
     <div
       data-slot="avatar-group-count"
-      className={cn("bg-muted text-muted-foreground size-8 rounded-full text-xs group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=sm]/avatar-group:size-6 [&>svg]:size-4 group-has-data-[size=lg]/avatar-group:[&>svg]:size-5 group-has-data-[size=sm]/avatar-group:[&>svg]:size-3 ring-background relative flex shrink-0 items-center justify-center ring-2", className)}
+      className={cn(
+        "bg-muted text-muted-foreground size-8 rounded-full text-xs group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=sm]/avatar-group:size-6 [&>svg]:size-4 group-has-data-[size=lg]/avatar-group:[&>svg]:size-5 group-has-data-[size=sm]/avatar-group:[&>svg]:size-3 ring-background relative flex shrink-0 items-center justify-center ring-2",
+        className
+      )}
       {...props}
     />
-  )
+  );
 }
 
 export {
@@ -101,4 +104,4 @@ export {
   AvatarGroup,
   AvatarGroupCount,
   AvatarBadge,
-}
+};

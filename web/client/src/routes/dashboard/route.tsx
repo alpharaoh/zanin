@@ -6,7 +6,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { authClient } from "@zanin/auth/client";
-import { LayoutDashboardIcon, SettingsIcon, UsersIcon } from "lucide-react";
+import { LayoutDashboardIcon, MicIcon, SettingsIcon } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
@@ -36,9 +36,9 @@ function DashboardLayout() {
       icon: <LayoutDashboardIcon />,
     },
     {
-      title: "Users",
-      url: "/dashboard/users",
-      icon: <UsersIcon />,
+      title: "Recordings",
+      url: "/dashboard/recordings",
+      icon: <MicIcon />,
     },
     {
       title: "Settings",
@@ -66,7 +66,7 @@ function DashboardLayout() {
       navItems={navItems}
       onSignOut={handleSignOut}
     >
-      <div className="flex flex-1 flex-col gap-4 p-4 max-w-7xl w-full mx-auto">
+      <div className="flex flex-1 flex-col gap-4 p-6 max-w-5xl w-full mx-auto">
         <Outlet />
       </div>
     </DashboardSidebar>

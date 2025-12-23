@@ -6,6 +6,12 @@ export const AXIOS_INSTANCE = Axios.create({
   withCredentials: true, // Send cookies with cross-origin requests
 });
 
+// API response envelope type
+interface ApiEnvelope<T> {
+  data: T;
+  error: null | { message: string };
+}
+
 export const axios = <T>(
   config: AxiosRequestConfig,
   options?: AxiosRequestConfig
@@ -13,7 +19,13 @@ export const axios = <T>(
   const promise = AXIOS_INSTANCE({
     ...config,
     ...options,
-  }).then(({ data }) => data);
+  }).then(({ data }) => {
+    // Unwrap API envelope format { data: T, error: null }
+    if (data && typeof data === "object" && "data" in data && "error" in data) {
+      return (data as ApiEnvelope<T>).data;
+    }
+    return data;
+  });
 
   return promise;
 };

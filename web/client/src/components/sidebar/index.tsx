@@ -1,31 +1,17 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Item,
-  ItemContent,
-  ItemDescription,
-  ItemMedia,
-  ItemTitle,
-} from '@/components/ui/item'
+} from "@/components/ui/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarHeader,
   SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
@@ -33,116 +19,81 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
-} from '@/components/ui/sidebar'
-import { cn } from '@/lib/utils'
-import { ChevronsUpDownIcon, LogOutIcon } from "lucide-react"
-import { type ReactNode } from 'react'
+} from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
+import { Link, useLocation } from "@tanstack/react-router";
+import { LogOutIcon, SettingsIcon } from "lucide-react";
+import { type ReactNode } from "react";
 
 interface NavItem {
-  title: string
-  url: string
-  icon: ReactNode
+  title: string;
+  url: string;
+  icon: ReactNode;
 }
 
 interface User {
-  name: string
-  email: string
-  image?: string | null
+  name: string;
+  email: string;
+  image?: string | null;
 }
 
 interface Organization {
-  name: string
-  plan: string
+  name: string;
+  plan: string;
 }
 
 interface DashboardSidebarProps {
-  user: User
-  organization: Organization
-  navItems: NavItem[]
-  onSignOut: () => void
-  children?: ReactNode
+  user: User;
+  organization: Organization;
+  navItems: NavItem[];
+  onSignOut: () => void;
+  children?: ReactNode;
 }
 
 export function DashboardSidebar({
   user,
-  organization,
   navItems,
   onSignOut,
   children,
 }: DashboardSidebarProps) {
-  const userInitials = user.name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  const location = useLocation();
+  const userInitials = user?.name
+    ?.split(" ")
+    ?.map((n) => n[0])
+    ?.join("")
+    ?.toUpperCase()
+    ?.slice(0, 2);
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <Sidebar collapsible="icon">
-        <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton size="lg">
-                <Button
-                  size="icon-sm"
-                  render={<span />}
-                  nativeButton={false}
-                  className="size-9"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 256 256"
-                  >
-                    <rect width="256" height="256" fill="none"></rect>
-                    <line
-                      x1="208"
-                      y1="128"
-                      x2="128"
-                      y2="208"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="32"
-                    ></line>
-                    <line
-                      x1="192"
-                      y1="40"
-                      x2="40"
-                      y2="192"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="32"
-                    ></line>
-                  </svg>
-                </Button>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">
-                    {organization.name}
-                  </span>
-                  <span className="truncate text-xs">{organization.plan}</span>
-                </div>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarHeader>
-        <SidebarContent>
+      <Sidebar collapsible="icon" className="border-r border-border">
+        <SidebarContent className="pt-2">
           <SidebarGroup>
             <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    tooltip={item.title}
-                    render={<a href={item.url} />}
-                  >
-                    {item.icon}
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {navItems.map((item) => {
+                const isActive =
+                  item.url === "/dashboard"
+                    ? location.pathname === "/dashboard"
+                    : location.pathname.startsWith(item.url);
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <Link to={item.url}>
+                      <SidebarMenuButton
+                        tooltip={item.title}
+                        isActive={isActive}
+                        className={cn(
+                          "text-muted-foreground transition-colors",
+                          isActive && "bg-primary/10 text-primary"
+                        )}
+                      >
+                        {item.icon}
+                        <span className="text-xs">{item.title}</span>
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
@@ -152,55 +103,53 @@ export function DashboardSidebar({
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={
-                    <SidebarMenuButton
-                      size='lg'
-                      className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground"
-                    >
+                    <SidebarMenuButton size="lg" className="data-open:bg-card">
                       <Avatar className="size-9">
                         {user.image && (
                           <AvatarImage src={user.image} alt={user.name} />
                         )}
-                        <AvatarFallback className="rounded-lg text-xs">
+                        <AvatarFallback className="bg-card text-[10px]">
                           {userInitials}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-medium">{user.name}</span>
-                        <span className="truncate text-xs">{user.email}</span>
+                      <div className="grid flex-1 text-left leading-tight">
+                        <span className="truncate text-xs">{user.name}</span>
+                        <span className="truncate text-[10px] text-muted-foreground">
+                          {user.email}
+                        </span>
                       </div>
-                      <ChevronsUpDownIcon />
                     </SidebarMenuButton>
                   }
                 />
-                <DropdownMenuContent className="w-fit" side="top" align="start">
-                  <DropdownMenuGroup className='pr-6'>
-                    <DropdownMenuLabel>
-                      <Item size="xs">
-                        <ItemMedia>
-                          <Avatar className="size-9">
-                            {user.image && (
-                              <AvatarImage src={user.image} alt={user.name} />
-                            )}
-                            <AvatarFallback>{userInitials}</AvatarFallback>
-                          </Avatar>
-                        </ItemMedia>
-                        <ItemContent>
-                          <ItemTitle>{user.name}</ItemTitle>
-                          <ItemDescription>{user.email}</ItemDescription>
-                        </ItemContent>
-                      </Item>
-                    </DropdownMenuLabel>
+                <DropdownMenuContent
+                  className="w-56 border border-border bg-card"
+                  side="top"
+                  align="start"
+                  sideOffset={8}
+                >
+                  <div className="border-b border-border px-3 py-2">
+                    <p className="text-xs">{user.name}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                  <DropdownMenuGroup className="p-1">
+                    <DropdownMenuItem
+                      render={<Link to="/dashboard/settings" />}
+                      className="text-xs"
+                    >
+                      <SettingsIcon className="size-3.5" />
+                      settings
+                    </DropdownMenuItem>
                   </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem>Account</DropdownMenuItem>
-                    <DropdownMenuItem>Settings</DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={onSignOut}>
-                      <LogOutIcon className="size-4" />
-                      Sign out
+                  <DropdownMenuSeparator className="bg-border" />
+                  <DropdownMenuGroup className="p-1">
+                    <DropdownMenuItem
+                      onClick={onSignOut}
+                      className="text-xs text-muted-foreground focus:text-destructive"
+                    >
+                      <LogOutIcon className="size-3.5" />
+                      sign_out
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
@@ -211,19 +160,14 @@ export function DashboardSidebar({
         <SidebarRail />
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b">
+        <header className="flex h-10 shrink-0 items-center border-b border-border">
           <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger />
+            <SidebarTrigger className="text-muted-foreground hover:text-primary" />
+            <span className="text-xs text-muted-foreground">zanin</span>
           </div>
         </header>
-        <div
-          className={cn(
-            "flex flex-1 flex-col w-full",
-          )}
-        >
-          {children}
-        </div>
+        <main className="flex-1 overflow-auto">{children}</main>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }

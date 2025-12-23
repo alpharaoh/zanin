@@ -26,15 +26,16 @@ app.use(
     origin: env.CLIENT_URL,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   }),
 );
+app.use(json({ limit: "200mb" }));
 app.use(
   urlencoded({
     extended: true,
   }),
 );
 app.all("/api/auth/*splat", authMiddleware);
-app.use(json({ limit: "200mb" }));
 app.use("/docs", swaggerUi.serve, async (_: Request, res: Response) => {
   return res.send(
     swaggerUi.generateHTML(await import("../build/swagger.json")),

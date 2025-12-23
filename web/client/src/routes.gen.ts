@@ -13,6 +13,9 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as DashboardRouteRouteImport } from './routes/dashboard/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
+import { Route as DashboardRecordingsIndexRouteImport } from './routes/dashboard/recordings/index'
+import { Route as DashboardRecordingsRecordingIdRouteImport } from './routes/dashboard/recordings/$recordingId'
 
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
@@ -34,31 +37,78 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardRecordingsIndexRoute =
+  DashboardRecordingsIndexRouteImport.update({
+    id: '/recordings/',
+    path: '/recordings/',
+    getParentRoute: () => DashboardRouteRoute,
+  } as any)
+const DashboardRecordingsRecordingIdRoute =
+  DashboardRecordingsRecordingIdRouteImport.update({
+    id: '/recordings/$recordingId',
+    path: '/recordings/$recordingId',
+    getParentRoute: () => DashboardRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteRouteWithChildren
   '/sign-in': typeof SignInRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/recordings/$recordingId': typeof DashboardRecordingsRecordingIdRoute
+  '/dashboard/recordings': typeof DashboardRecordingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sign-in': typeof SignInRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/recordings/$recordingId': typeof DashboardRecordingsRecordingIdRoute
+  '/dashboard/recordings': typeof DashboardRecordingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteRouteWithChildren
   '/sign-in': typeof SignInRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/recordings/$recordingId': typeof DashboardRecordingsRecordingIdRoute
+  '/dashboard/recordings/': typeof DashboardRecordingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/sign-in' | '/dashboard/'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/sign-in'
+    | '/dashboard/settings'
+    | '/dashboard/'
+    | '/dashboard/recordings/$recordingId'
+    | '/dashboard/recordings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sign-in' | '/dashboard'
-  id: '__root__' | '/' | '/dashboard' | '/sign-in' | '/dashboard/'
+  to:
+    | '/'
+    | '/sign-in'
+    | '/dashboard/settings'
+    | '/dashboard'
+    | '/dashboard/recordings/$recordingId'
+    | '/dashboard/recordings'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/sign-in'
+    | '/dashboard/settings'
+    | '/dashboard/'
+    | '/dashboard/recordings/$recordingId'
+    | '/dashboard/recordings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -97,15 +147,42 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/recordings/': {
+      id: '/dashboard/recordings/'
+      path: '/recordings'
+      fullPath: '/dashboard/recordings'
+      preLoaderRoute: typeof DashboardRecordingsIndexRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/recordings/$recordingId': {
+      id: '/dashboard/recordings/$recordingId'
+      path: '/recordings/$recordingId'
+      fullPath: '/dashboard/recordings/$recordingId'
+      preLoaderRoute: typeof DashboardRecordingsRecordingIdRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
   }
 }
 
 interface DashboardRouteRouteChildren {
+  DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardRecordingsRecordingIdRoute: typeof DashboardRecordingsRecordingIdRoute
+  DashboardRecordingsIndexRoute: typeof DashboardRecordingsIndexRoute
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
+  DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardRecordingsRecordingIdRoute: DashboardRecordingsRecordingIdRoute,
+  DashboardRecordingsIndexRoute: DashboardRecordingsIndexRoute,
 }
 
 const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
