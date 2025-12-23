@@ -29,6 +29,44 @@ CompileFlags:
     - "-I/Users/akaam/Projects/esp-idf/components/esp_libc/platform_include"
     - "-I/Users/akaam/Projects/esp-idf/components/xtensa/include"
     - "-I/Users/akaam/Projects/esp-idf/components/xtensa/esp32s3/include"
+    # GPIO
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_driver_gpio/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_hal_gpio/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_hal_gpio/esp32s3/include"
+    # I2S (audio)
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_driver_i2s/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_hal_i2s/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_hal_i2s/esp32s3/include"
+    # SPI
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_driver_spi/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_hal_gpspi/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_hal_gpspi/esp32s3/include"
+    # SD card
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_driver_sdmmc/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_driver_sdspi/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/sdmmc/include"
+    # FATFS (filesystem)
+    - "-I/Users/akaam/Projects/esp-idf/components/fatfs/src"
+    - "-I/Users/akaam/Projects/esp-idf/components/fatfs/vfs"
+    - "-I/Users/akaam/Projects/esp-idf/components/fatfs/diskio"
+    # VFS
+    - "-I/Users/akaam/Projects/esp-idf/components/vfs/include"
+    # USB
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_hal_usb/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_hal_usb/esp32s3/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_driver_usb_serial_jtag/include"
+    # Timer
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_timer/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_driver_gptimer/include"
+    # ADC (battery monitoring)
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_adc/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_adc/esp32s3/include"
+    # NVS (non-volatile storage)
+    - "-I/Users/akaam/Projects/esp-idf/components/nvs_flash/include"
+    # Events
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_event/include"
+    # Ringbuffer
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_ringbuf/include"
     - "-D__XTENSA__"
     - "-DESP_PLATFORM"
     - "-std=gnu++17"
