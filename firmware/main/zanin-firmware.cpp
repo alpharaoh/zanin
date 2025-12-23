@@ -6,6 +6,5 @@
 #include "freertos/task.h"
 
 extern "C" void app_main(void) {
-  char *p = pcTaskGetName(NULL);
-  std::cout << "This is very cool!\n" << p << std::endl;
+  std::cout << "Hello from ESP32-S3!" << std::endl;
 }
