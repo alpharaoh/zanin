@@ -1,6 +1,11 @@
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/lib/format";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   DownloadIcon,
   PauseIcon,
   PlayIcon,
@@ -8,6 +13,7 @@ import {
   RotateCwIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useStorageState } from "@/hooks/useStorageState";
 import WaveSurfer from "wavesurfer.js";
 
 interface RecordingPlayerProps {
@@ -31,9 +37,10 @@ export function RecordingPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [playbackRate, setPlaybackRate] = useState(1);
+  const [playbackRate, setPlaybackRate] = useStorageState("playback-rate", 1);
   const [isReady, setIsReady] = useState(false);
   const [useCleanedAudio, setUseCleanedAudio] = useState(!!cleanedAudioUrl);
+  const [speedPopoverOpen, setSpeedPopoverOpen] = useState(false);
 
   const activeUrl = useCleanedAudio && cleanedAudioUrl ? cleanedAudioUrl : audioUrl;
 
@@ -78,10 +85,10 @@ export function RecordingPlayer({
   }, [activeUrl, onTimeUpdate]);
 
   useEffect(() => {
-    if (wavesurferRef.current) {
+    if (wavesurferRef.current && isReady) {
       wavesurferRef.current.setPlaybackRate(playbackRate);
     }
-  }, [playbackRate]);
+  }, [playbackRate, isReady]);
 
   const handlePlayPause = useCallback(() => {
     wavesurferRef.current?.playPause();
@@ -115,12 +122,6 @@ export function RecordingPlayer({
       delete (window as unknown as { seekToTime?: (time: number) => void }).seekToTime;
     };
   }, [seekTo]);
-
-  const cycleSpeed = useCallback(() => {
-    const currentIndex = PLAYBACK_SPEEDS.indexOf(playbackRate);
-    const nextIndex = (currentIndex + 1) % PLAYBACK_SPEEDS.length;
-    setPlaybackRate(PLAYBACK_SPEEDS[nextIndex]);
-  }, [playbackRate]);
 
   return (
     <div className={cn("border border-border bg-card", className)}>
@@ -177,13 +178,36 @@ export function RecordingPlayer({
 
         <div className="flex items-center gap-2">
           {/* Speed */}
-          <button
-            onClick={cycleSpeed}
-            disabled={!isReady}
-            className="border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-30"
-          >
-            {playbackRate}x
-          </button>
+          <Popover open={speedPopoverOpen} onOpenChange={setSpeedPopoverOpen}>
+            <PopoverTrigger
+              disabled={!isReady}
+              className="border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-30"
+            >
+              {playbackRate}x
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-auto min-w-0 gap-0 p-1"
+            >
+              {PLAYBACK_SPEEDS.map((speed) => (
+                <button
+                  key={speed}
+                  onClick={() => {
+                    setPlaybackRate(speed);
+                    setSpeedPopoverOpen(false);
+                  }}
+                  className={cn(
+                    "w-full px-3 py-1.5 text-left text-xs transition-colors",
+                    speed === playbackRate
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  {speed}x
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
 
           {/* Audio source toggle */}
           {cleanedAudioUrl && (
