@@ -375,10 +375,10 @@ function StatusBadge({ status }: { status: string }) {
 function RecordingDetailSkeleton() {
   return (
     <div
-      className="mx-auto flex w-full max-w-7xl gap-6"
+      className="mx-auto flex w-full max-w-8xl gap-6"
       style={{ height: "calc(100vh - 88px)" }}
     >
-      <div className="w-[480px] shrink-0 space-y-6">
+      <div className="w-2/5 shrink-0 space-y-6">
         <div>
           <Skeleton className="h-3 w-20" />
           <Skeleton className="mt-3 h-5 w-48" />
