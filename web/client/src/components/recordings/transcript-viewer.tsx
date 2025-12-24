@@ -49,7 +49,7 @@ export function TranscriptViewer({
 
   return (
     <div className={cn("border border-border", className)}>
-      <ScrollArea className="h-[360px]">
+      <ScrollArea className="h-full">
         <div className="divide-y divide-border">
           {transcript.map((segment, index) => {
             const isActive = index === activeIndex;

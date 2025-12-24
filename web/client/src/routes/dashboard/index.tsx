@@ -69,7 +69,7 @@ function DashboardIndex() {
       : "—";
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-8">
       {/* Header */}
       <div>
         <span className="text-muted-foreground">~/</span>
@@ -166,7 +166,7 @@ function StatBox({ label, value, extra }: StatBoxProps) {
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-8">
       <Skeleton className="h-5 w-32" />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (

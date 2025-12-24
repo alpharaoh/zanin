@@ -13,7 +13,7 @@ function SettingsPage() {
   }, [navigate]);
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-8">
       {/* Header */}
       <div>
         <span className="text-muted-foreground">~/</span>

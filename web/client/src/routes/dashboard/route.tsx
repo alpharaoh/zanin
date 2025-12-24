@@ -62,7 +62,7 @@ function DashboardLayout() {
       navItems={navItems}
       onSignOut={handleSignOut}
     >
-      <div className="flex flex-1 flex-col gap-4 p-6 max-w-5xl w-full mx-auto">
+      <div className="flex flex-1 flex-col gap-4 p-6">
         <Outlet />
       </div>
     </DashboardSidebar>
