@@ -134,6 +134,8 @@ export type RecordingMetadata = {
 export interface Recording {
   id: string;
   status: RecordingStatus;
+  createdAt: string;
+  updatedAt: string;
   finishedAt?: string;
   processingError?: string;
   title?: string;

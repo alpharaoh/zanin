@@ -20,6 +20,8 @@ export interface OwnerAnalysis {
 export interface Recording {
   id: string;
   status: "pending" | "processing" | "completed" | "failed";
+  createdAt: Date;
+  updatedAt: Date;
   finishedAt: Date | undefined;
   processingError: string | undefined;
   title: string | undefined;
@@ -150,7 +152,7 @@ export const RecordingsService = {
     if (sortBy === "duration") {
       orderBy.originalDuration = sortOrder;
     } else {
-      orderBy.finishedAt = sortOrder;
+      orderBy.createdAt = sortOrder;
     }
 
     const { data, count } = await listRecordings(

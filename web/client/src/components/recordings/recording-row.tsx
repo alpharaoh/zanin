@@ -8,9 +8,9 @@ import { useState } from "react";
 function StatusBadge({ status }: { status: string }) {
   const config = {
     completed: { dot: "bg-emerald-500", text: "done" },
-    processing: { dot: "bg-primary animate-pulse", text: "proc" },
-    pending: { dot: "bg-amber-500", text: "queue" },
-    failed: { dot: "bg-red-500", text: "fail" },
+    processing: { dot: "bg-primary animate-pulse", text: "processing" },
+    pending: { dot: "bg-amber-500", text: "queued" },
+    failed: { dot: "bg-red-500", text: "failed" },
   }[status] || { dot: "bg-muted-foreground", text: status };
 
   return (
@@ -33,20 +33,21 @@ export function RecordingRow({
   showDelete = false,
 }: RecordingRowProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const isProcessing =
+    recording.status === "processing" || recording.status === "pending";
 
   const columns = showDelete ? "grid-cols-12" : "grid-cols-12";
 
-  return (
-    <Link
-      to="/dashboard/recordings/$recordingId"
-      params={{ recordingId: recording.id }}
-      className={cn(
-        "group grid gap-4 border-b border-border px-4 py-3 text-sm transition-colors last:border-b-0 hover:bg-neutral-800/50 no-underline",
-        columns
-      )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+  const rowClassName = cn(
+    "group grid gap-4 border-b border-border px-4 py-3 text-sm transition-colors last:border-b-0 no-underline",
+    columns,
+    isProcessing
+      ? "cursor-not-allowed opacity-60"
+      : "hover:bg-neutral-800/50 cursor-pointer"
+  );
+
+  const content = (
+    <>
       <div
         className={cn(
           "truncate transition-colors",
@@ -65,7 +66,7 @@ export function RecordingRow({
           : "—"}
       </div>
       <div className="col-span-2 text-right text-muted-foreground">
-        {recording.finishedAt ? formatRelativeDate(recording.finishedAt) : "—"}
+        {formatRelativeDate(recording.createdAt)}
       </div>
       {showDelete && onDelete && (
         <div className="col-span-1 flex justify-end">
@@ -84,6 +85,30 @@ export function RecordingRow({
           </button>
         </div>
       )}
+    </>
+  );
+
+  if (isProcessing) {
+    return (
+      <div
+        className={rowClassName}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to="/dashboard/recordings/$recordingId"
+      params={{ recordingId: recording.id }}
+      className={rowClassName}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {content}
     </Link>
   );
 }
