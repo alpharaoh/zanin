@@ -22,7 +22,7 @@ const unsigned int LED_STRIP_USE_DMA = 0;
 // let the driver choose a proper memory block size automatically
 const unsigned int LED_STRIP_MEMORY_BLOCK_WORDS = 0;
 
-static const char *TAG = "example";
+static const char *TAG = "zanin-led";
 
 led_strip_handle_t configure_led(void) {
   /// LED strip common configuration
@@ -65,7 +65,7 @@ extern "C" void app_main() {
   while (true) {
     if (led_on) {
       for (int i = 0; i < LED_STRIP_LED_COUNT; i++) {
-        ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, i, 5, 5, 5));
+        ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, i, 0, 5, 0));
       }
       // Refresh the strip to send the data
       ESP_ERROR_CHECK(led_strip_refresh(led_strip));
