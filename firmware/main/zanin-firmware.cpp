@@ -15,7 +15,7 @@ extern "C" void app_main() {
   Led led = Led(GPIO_RGB_LED_ID);
 
   while (true) {
-    if (led.isOn()) {
+    if (!led.isOn()) {
       led.setColor(0, 0, 255);
     } else {
       led.turnOff();
