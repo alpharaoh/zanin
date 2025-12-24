@@ -1,4 +1,5 @@
 import { askRecordings, useDeleteRecording, useGetRecording } from "@/api";
+import { toast } from "sonner";
 import { AskAI } from "@/components/ai/ask-ai";
 import { RecordingPlayer } from "@/components/recordings/recording-player";
 import { TranscriptViewer } from "@/components/recordings/transcript-viewer";
@@ -34,9 +35,11 @@ function RecordingDetailPage() {
     try {
       await deleteMutation.mutateAsync({ recordingId });
       queryClient.invalidateQueries({ queryKey: ["/v1/recordings"] });
+      toast.success("Recording deleted");
       navigate({ to: "/dashboard/recordings" });
     } catch (error) {
       console.error("Failed to delete recording:", error);
+      toast.error("Failed to delete recording");
     }
   }, [recordingId, deleteMutation, queryClient, navigate]);
 

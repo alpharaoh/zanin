@@ -5,6 +5,7 @@ import {
   type ListRecordingsSortBy,
   type ListRecordingsSortOrder,
 } from "@/api";
+import { toast } from "sonner";
 import { AskAI } from "@/components/ai/ask-ai";
 import {
   RecordingRow,
@@ -128,8 +129,10 @@ function RecordingsPage() {
       await deleteMutation.mutateAsync({ recordingId: deleteRecordingId });
       queryClient.invalidateQueries({ queryKey: ["/v1/recordings"] });
       setDeleteRecordingId(null);
+      toast.success("Recording deleted");
     } catch (error) {
       console.error("Failed to delete recording:", error);
+      toast.error("Failed to delete recording");
     }
   }, [deleteRecordingId, deleteMutation, queryClient]);
 

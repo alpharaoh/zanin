@@ -1,4 +1,5 @@
 import { useDeleteProfile, useEnroll, useGetProfile } from "@/api";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -374,8 +375,10 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
       queryClient.invalidateQueries({ queryKey: ["/v1/sid/profile"] });
       setShowEnrollDialog(false);
       resetRecording();
+      toast.success("Voice profile enrolled");
     } catch (error) {
       console.error("Failed to enroll voice profile:", error);
+      toast.error("Failed to enroll voice profile");
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -387,8 +390,10 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
       await deleteMutation.mutateAsync();
       queryClient.invalidateQueries({ queryKey: ["/v1/sid/profile"] });
       setShowDeleteDialog(false);
+      toast.success("Voice profile removed");
     } catch (error) {
       console.error("Failed to delete voice profile:", error);
+      toast.error("Failed to remove voice profile");
     }
   }, [deleteMutation, queryClient]);
 
