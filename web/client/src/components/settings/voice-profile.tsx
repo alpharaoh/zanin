@@ -16,7 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatDuration, formatRelativeDate } from "@/lib/format";
@@ -41,12 +40,10 @@ async function convertToWav(blob: Blob): Promise<Blob> {
   const arrayBuffer = await blob.arrayBuffer();
   const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-  // Create WAV file
   const numberOfChannels = audioBuffer.numberOfChannels;
   const sampleRate = audioBuffer.sampleRate;
   const length = audioBuffer.length;
 
-  // Interleave channels
   const interleaved = new Float32Array(length * numberOfChannels);
   for (let channel = 0; channel < numberOfChannels; channel++) {
     const channelData = audioBuffer.getChannelData(channel);
@@ -55,37 +52,29 @@ async function convertToWav(blob: Blob): Promise<Blob> {
     }
   }
 
-  // Convert to 16-bit PCM
   const pcmData = new Int16Array(interleaved.length);
   for (let i = 0; i < interleaved.length; i++) {
     const s = Math.max(-1, Math.min(1, interleaved[i]));
     pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
   }
 
-  // Create WAV header
   const wavBuffer = new ArrayBuffer(44 + pcmData.length * 2);
   const view = new DataView(wavBuffer);
 
-  // RIFF header
   writeString(view, 0, "RIFF");
   view.setUint32(4, 36 + pcmData.length * 2, true);
   writeString(view, 8, "WAVE");
-
-  // fmt chunk
   writeString(view, 12, "fmt ");
-  view.setUint32(16, 16, true); // chunk size
-  view.setUint16(20, 1, true); // PCM format
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
   view.setUint16(22, numberOfChannels, true);
   view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * numberOfChannels * 2, true); // byte rate
-  view.setUint16(32, numberOfChannels * 2, true); // block align
-  view.setUint16(34, 16, true); // bits per sample
-
-  // data chunk
+  view.setUint32(28, sampleRate * numberOfChannels * 2, true);
+  view.setUint16(32, numberOfChannels * 2, true);
+  view.setUint16(34, 16, true);
   writeString(view, 36, "data");
   view.setUint32(40, pcmData.length * 2, true);
 
-  // Write PCM data
   const pcmOffset = 44;
   for (let i = 0; i < pcmData.length; i++) {
     view.setInt16(pcmOffset + i * 2, pcmData[i], true);
@@ -109,6 +98,85 @@ interface VoiceProfileProps {
 
 type RecordingState = "idle" | "recording" | "recorded";
 
+// Animated sound wave bars component
+function SoundWaveBars({ isAnimating }: { isAnimating: boolean }) {
+  return (
+    <div className="flex items-center justify-center gap-0.5">
+      {[...Array(5)].map((_, i) => (
+        <div
+          key={i}
+          className={cn(
+            "w-0.5 bg-primary transition-all duration-150",
+            isAnimating ? "animate-sound-wave" : "h-1"
+          )}
+          style={{
+            animationDelay: isAnimating ? `${i * 0.1}s` : undefined,
+            height: isAnimating ? undefined : "4px",
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes sound-wave {
+          0%, 100% { height: 4px; }
+          50% { height: 16px; }
+        }
+        .animate-sound-wave {
+          animation: sound-wave 0.5s ease-in-out infinite;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// Pulsing ring animation for recording
+function PulseRings() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center">
+      {[...Array(3)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute size-full rounded-full border border-red-500/30"
+          style={{
+            animation: `pulse-ring 2s ease-out infinite`,
+            animationDelay: `${i * 0.4}s`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes pulse-ring {
+          0% {
+            transform: scale(1);
+            opacity: 0.6;
+          }
+          100% {
+            transform: scale(2.5);
+            opacity: 0;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// Scanline overlay effect
+function ScanlineOverlay() {
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 opacity-[0.03]"
+      style={{
+        backgroundImage: `repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 1px,
+          rgba(0, 212, 255, 0.1) 1px,
+          rgba(0, 212, 255, 0.1) 2px
+        )`,
+        backgroundSize: "100% 2px",
+      }}
+    />
+  );
+}
+
 export function VoiceProfile({ className }: VoiceProfileProps) {
   const queryClient = useQueryClient();
 
@@ -117,13 +185,11 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Recording state
   const [recordingState, setRecordingState] = useState<RecordingState>("idle");
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [permissionError, setPermissionError] = useState<string | null>(null);
 
-  // WaveSurfer state
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -140,13 +206,15 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
   const enrollMutation = useEnroll();
   const deleteMutation = useDeleteProfile();
 
-  // Initialize WaveSurfer when we have a recorded blob
   useEffect(() => {
-    if (!recordedBlob || !waveformContainerRef.current || recordingState !== "recorded") {
+    if (
+      !recordedBlob ||
+      !waveformContainerRef.current ||
+      recordingState !== "recorded"
+    ) {
       return;
     }
 
-    // Clean up previous instance
     if (wavesurferRef.current) {
       wavesurferRef.current.destroy();
     }
@@ -159,14 +227,14 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
 
     const wavesurfer = WaveSurfer.create({
       container: waveformContainerRef.current,
-      waveColor: "#262626",
+      waveColor: "#404040",
       progressColor: "#00d4ff",
       cursorColor: "#00d4ff",
-      cursorWidth: 1,
+      cursorWidth: 2,
       barWidth: 2,
       barGap: 2,
       barRadius: 0,
-      height: 48,
+      height: 64,
       normalize: true,
     });
 
@@ -191,7 +259,6 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
     };
   }, [recordedBlob, recordingState]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (recordingTimerRef.current) {
@@ -227,8 +294,6 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
         });
         setRecordedBlob(audioBlob);
         setRecordingState("recorded");
-
-        // Stop all tracks
         stream.getTracks().forEach((track) => track.stop());
       };
 
@@ -236,7 +301,6 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
       setRecordingState("recording");
       setRecordingDuration(0);
 
-      // Start duration timer
       recordingTimerRef.current = setInterval(() => {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
@@ -262,7 +326,6 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
   }, []);
 
   const resetRecording = useCallback(() => {
-    // Stop and destroy wavesurfer
     if (wavesurferRef.current) {
       wavesurferRef.current.destroy();
       wavesurferRef.current = null;
@@ -298,7 +361,6 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
         setUploadProgress((prev) => Math.min(prev + 10, 90));
       }, 200);
 
-      // Convert webm to WAV (server only accepts WAV, MP3, FLAC, OGG, M4A)
       const wavBlob = await convertToWav(recordedBlob);
       const file = new File([wavBlob], "voice-sample.wav", {
         type: "audio/wav",
@@ -344,14 +406,22 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
   const hasProfile = profile?.exists;
 
   return (
-    <div className={cn("border border-border", className)}>
+    <div
+      className={cn(
+        "group relative overflow-hidden border border-border bg-gradient-to-b from-card to-background",
+        className
+      )}
+    >
+      {/* Subtle grid pattern overlay */}
+      <div className="pointer-events-none absolute inset-0 opacity-30 grid-pattern" />
+
       {/* Header */}
-      <div className="border-b border-border bg-card px-4 py-3">
+      <div className="relative border-b border-border bg-card/80 px-4 py-3">
         <p className="text-xs text-muted-foreground">{">"} voice_profile</p>
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="relative p-4">
         {isLoadingProfile ? (
           <div className="space-y-3">
             <Skeleton className="h-4 w-32" />
@@ -359,12 +429,16 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
           </div>
         ) : hasProfile ? (
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="flex size-8 items-center justify-center border border-emerald-500/50 bg-emerald-500/10">
-                <CheckIcon className="size-4 text-emerald-500" />
+            <div className="flex items-center gap-4">
+              {/* Enrolled status indicator */}
+              <span className="flex size-10 items-center justify-center border border-emerald-500/50 bg-emerald-500/10">
+                <CheckIcon className="size-5 text-emerald-500" />
               </span>
-              <div>
-                <p className="text-sm">enrolled</p>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="size-1.5 rounded-full bg-emerald-500" />
+                  <p className="text-sm text-foreground">enrolled</p>
+                </div>
                 {profile.created_at && (
                   <p className="text-xs text-muted-foreground">
                     {formatRelativeDate(profile.created_at)}
@@ -372,173 +446,233 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
                 )}
               </div>
             </div>
+
             <button
               onClick={() => setShowDeleteDialog(true)}
               disabled={deleteMutation.isPending}
-              className="border border-border p-2 text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
+              className="group/btn relative border border-border bg-card/50 p-2.5 text-muted-foreground transition-all hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
             >
               {deleteMutation.isPending ? (
                 <Loader2Icon className="size-4 animate-spin" />
               ) : (
-                <TrashIcon className="size-4" />
+                <TrashIcon className="size-4 transition-transform group-hover/btn:scale-110" />
               )}
             </button>
           </div>
         ) : (
           <button
             onClick={() => setShowEnrollDialog(true)}
-            className="flex w-full items-center gap-3 border border-dashed border-border p-4 text-left transition-colors hover:border-primary/50"
+            className="group/enroll relative flex w-full items-center gap-4 border border-dashed border-border bg-card/30 p-5 text-left transition-all hover:border-primary/50 hover:bg-primary/5"
+            style={{
+              boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.02)",
+            }}
           >
-            <span className="flex size-8 items-center justify-center border border-border">
-              <MicIcon className="size-4 text-muted-foreground" />
-            </span>
-            <div>
-              <p className="text-sm">enroll voice profile</p>
+            {/* Microphone icon with animation */}
+            <div className="relative flex size-12 items-center justify-center border border-border bg-card transition-all group-hover/enroll:border-primary/30 group-hover/enroll:bg-primary/10">
+              <MicIcon className="size-5 text-muted-foreground transition-colors group-hover/enroll:text-primary" />
+              <SoundWaveBars isAnimating={false} />
+            </div>
+            <div className="flex-1 space-y-1">
+              <p className="text-sm text-foreground">enroll voice profile</p>
               <p className="text-xs text-muted-foreground">
                 record a sample to identify your voice
               </p>
             </div>
+            {/* Arrow indicator */}
+            <span className="text-muted-foreground transition-transform group-hover/enroll:translate-x-1 group-hover/enroll:text-primary">
+              {">"}
+            </span>
           </button>
         )}
       </div>
 
       {/* Enrollment Dialog */}
       <Dialog open={showEnrollDialog} onOpenChange={handleCloseEnrollDialog}>
-        <DialogContent className="border border-border bg-background sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-sm">
-              {">"} voice_enrollment
+        <DialogContent className="overflow-hidden border border-border bg-background p-0 sm:max-w-lg">
+          <ScanlineOverlay />
+
+          <DialogHeader className="border-b border-border bg-card/50 px-5 py-4">
+            <DialogTitle className="flex items-center gap-2 text-sm">
+              <MicIcon className="size-4 text-primary" />
+              <span className="text-primary">{">"}</span> voice_enrollment
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs">
               Read the passage below clearly into your microphone. This helps us
               identify your voice in recordings.
             </DialogDescription>
           </DialogHeader>
 
-          {/* Rainbow Passage */}
-          <div className="border border-border bg-card p-4">
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              {RAINBOW_PASSAGE}
-            </p>
-          </div>
-
-          {/* Permission Error */}
-          {permissionError && (
-            <div className="border border-destructive/50 bg-destructive/10 p-3">
-              <p className="text-xs text-destructive">{permissionError}</p>
+          <div className="space-y-5 p-5">
+            {/* Rainbow Passage with styled container */}
+            <div className="relative border border-border bg-card/50 p-4">
+              <div className="absolute left-0 top-0 h-full w-0.5 bg-gradient-to-b from-primary via-primary/50 to-transparent" />
+              <p className="pl-3 text-xs leading-relaxed text-muted-foreground">
+                {RAINBOW_PASSAGE}
+              </p>
             </div>
-          )}
 
-          {/* Recording Controls */}
-          <div className="space-y-4">
-            {/* Idle state - Record button */}
-            {recordingState === "idle" && (
-              <div className="flex flex-col items-center gap-4 py-4">
-                <button
-                  onClick={startRecording}
-                  className="flex items-center gap-2 border border-primary bg-primary/10 px-6 py-3 text-sm text-primary transition-colors hover:bg-primary/20"
-                >
-                  <MicIcon className="size-5" />
-                  Start Recording
-                </button>
-                <p className="text-xs text-muted-foreground">
-                  Click to begin recording your voice
-                </p>
+            {/* Permission Error */}
+            {permissionError && (
+              <div
+                className="border border-destructive/50 bg-destructive/10 p-3"
+                style={{
+                  boxShadow: "0 0 20px rgba(255, 68, 68, 0.1)",
+                }}
+              >
+                <p className="text-xs text-destructive">{permissionError}</p>
               </div>
             )}
 
-            {/* Recording state */}
-            {recordingState === "recording" && (
-              <div className="flex flex-col items-center gap-4 py-4">
-                <div className="flex items-center gap-3">
-                  <span className="size-3 animate-pulse rounded-full bg-red-500" />
-                  <span className="font-mono text-lg text-red-500">
-                    {formatDuration(recordingDuration)}
-                  </span>
+            {/* Recording Controls */}
+            <div className="space-y-4">
+              {/* Idle state */}
+              {recordingState === "idle" && (
+                <div className="flex flex-col items-center gap-5 py-6">
+                  <button
+                    onClick={startRecording}
+                    className="group/rec relative flex size-20 items-center justify-center border border-primary/50 bg-primary/10 transition-all hover:border-primary hover:bg-primary/20"
+                    style={{
+                      boxShadow: "0 0 30px rgba(0, 212, 255, 0.2)",
+                    }}
+                  >
+                    <MicIcon className="size-8 text-primary transition-transform group-hover/rec:scale-110" />
+                  </button>
+                  <p className="text-xs text-muted-foreground">
+                    Click to begin recording
+                  </p>
                 </div>
-                <button
-                  onClick={stopRecording}
-                  className="flex items-center gap-2 border border-destructive bg-destructive/10 px-6 py-3 text-sm text-destructive transition-colors hover:bg-destructive/20"
-                >
-                  <SquareIcon className="size-5" />
-                  Stop Recording
-                </button>
-              </div>
-            )}
+              )}
 
-            {/* Recorded state - WaveSurfer player */}
-            {recordingState === "recorded" && (
-              <div className="border border-border bg-card">
-                {/* Waveform */}
-                <div
-                  ref={waveformContainerRef}
-                  className={cn("w-full p-4", !isWaveformReady && "animate-pulse")}
-                />
-
-                {/* Controls */}
-                <div className="flex items-center justify-between border-t border-border px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    {/* Play/Pause */}
+              {/* Recording state */}
+              {recordingState === "recording" && (
+                <div className="flex flex-col items-center gap-5 py-6">
+                  {/* Animated recording indicator */}
+                  <div className="relative">
                     <button
-                      onClick={handlePlayPause}
-                      disabled={!isWaveformReady}
-                      className="border border-primary bg-primary p-2 text-primary-foreground transition-opacity hover:opacity-80 disabled:opacity-30"
+                      onClick={stopRecording}
+                      className="relative z-10 flex size-20 items-center justify-center border border-red-500/50 bg-red-500/10 transition-all hover:bg-red-500/20"
+                      style={{
+                        boxShadow: "0 0 30px rgba(239, 68, 68, 0.3)",
+                      }}
                     >
-                      {isPlaying ? (
-                        <PauseIcon className="size-4" />
-                      ) : (
-                        <PlayIcon className="size-4" />
-                      )}
+                      <SquareIcon className="size-6 text-red-500" />
+                      <PulseRings />
                     </button>
-
-                    {/* Time */}
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {formatDuration(currentTime)}
-                      <span className="mx-1 text-border">/</span>
-                      {formatDuration(duration)}
-                    </span>
                   </div>
 
-                  {/* Restart */}
-                  <button
-                    onClick={resetRecording}
-                    className="flex items-center gap-1.5 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
-                  >
-                    <RotateCcwIcon className="size-3.5" />
-                    Restart
-                  </button>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="flex items-center gap-3">
+                      <span className="size-2 animate-pulse rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
+                      <span className="font-mono text-xl tabular-nums text-red-500">
+                        {formatDuration(recordingDuration)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Click to stop recording
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Upload Progress */}
-            {isUploading && (
-              <div className="space-y-2">
-                <Progress value={uploadProgress} className="h-1" />
-                <p className="text-center text-xs text-muted-foreground">
-                  uploading...
-                </p>
-              </div>
-            )}
+              {/* Recorded state - WaveSurfer player */}
+              {recordingState === "recorded" && (
+                <div className="overflow-hidden border border-border bg-card/50">
+                  {/* Waveform with overlay effect */}
+                  <div className="relative">
+                    <div
+                      ref={waveformContainerRef}
+                      className={cn(
+                        "w-full px-4 py-5",
+                        !isWaveformReady && "animate-pulse"
+                      )}
+                    />
+                    {/* Gradient overlays */}
+                    <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-card/50 to-transparent" />
+                    <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-card/50 to-transparent" />
+                  </div>
 
-            {/* Submit Button */}
-            {recordingState === "recorded" && !isUploading && (
-              <button
-                onClick={handleEnroll}
-                disabled={recordingDuration < 10}
-                className={cn(
-                  "flex w-full items-center justify-center gap-2 border px-4 py-3 text-xs transition-colors",
-                  recordingDuration >= 10
-                    ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "border-border bg-muted text-muted-foreground"
-                )}
-              >
-                <UploadIcon className="size-4" />
-                {recordingDuration < 10
-                  ? `Record at least ${10 - recordingDuration} more seconds`
-                  : "Save Voice Profile"}
-              </button>
-            )}
+                  {/* Controls */}
+                  <div className="flex items-center justify-between border-t border-border bg-card/30 px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handlePlayPause}
+                        disabled={!isWaveformReady}
+                        className="flex size-9 items-center justify-center border border-primary bg-primary text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-30"
+                        style={{
+                          boxShadow: isWaveformReady
+                            ? "0 0 15px rgba(0, 212, 255, 0.3)"
+                            : undefined,
+                        }}
+                      >
+                        {isPlaying ? (
+                          <PauseIcon className="size-4" />
+                        ) : (
+                          <PlayIcon className="size-4" />
+                        )}
+                      </button>
+
+                      <div className="flex items-center gap-1.5 font-mono text-xs tabular-nums text-muted-foreground">
+                        <span className="text-foreground">
+                          {formatDuration(currentTime)}
+                        </span>
+                        <span className="text-border">/</span>
+                        <span>{formatDuration(duration)}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={resetRecording}
+                      className="flex items-center gap-1.5 border border-border px-3 py-1.5 text-xs text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground"
+                    >
+                      <RotateCcwIcon className="size-3.5" />
+                      Restart
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Upload Progress */}
+              {isUploading && (
+                <div className="space-y-3">
+                  <div className="relative h-1 overflow-hidden bg-border">
+                    <div
+                      className="absolute inset-y-0 left-0 bg-primary transition-all"
+                      style={{
+                        width: `${uploadProgress}%`,
+                        boxShadow: "0 0 10px rgba(0, 212, 255, 0.5)",
+                      }}
+                    />
+                  </div>
+                  <p className="text-center text-xs text-muted-foreground">
+                    uploading<span className="animate-pulse">...</span>
+                  </p>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              {recordingState === "recorded" && !isUploading && (
+                <button
+                  onClick={handleEnroll}
+                  disabled={recordingDuration < 10}
+                  className={cn(
+                    "flex w-full items-center justify-center gap-2 border px-4 py-3.5 text-xs transition-all",
+                    recordingDuration >= 10
+                      ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "border-border bg-muted text-muted-foreground"
+                  )}
+                  style={
+                    recordingDuration >= 10
+                      ? { boxShadow: "0 0 20px rgba(0, 212, 255, 0.2)" }
+                      : undefined
+                  }
+                >
+                  <UploadIcon className="size-4" />
+                  {recordingDuration < 10
+                    ? `Record at least ${10 - recordingDuration} more seconds`
+                    : "Save Voice Profile"}
+                </button>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -547,11 +681,12 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="border border-border bg-card">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-sm">
-              {">"} confirm_delete
+            <AlertDialogTitle className="flex items-center gap-2 text-sm">
+              <TrashIcon className="size-4 text-destructive" />
+              <span className="text-destructive">{">"}</span> confirm_delete
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground">
-              remove voice profile? this will affect speaker identification in
+              Remove voice profile? This will affect speaker identification in
               future recordings.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -562,9 +697,12 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
             <AlertDialogAction
               onClick={handleDelete}
               className="border border-destructive bg-destructive/10 text-xs text-destructive hover:bg-destructive hover:text-white"
+              style={{
+                boxShadow: "0 0 15px rgba(255, 68, 68, 0.1)",
+              }}
             >
               {deleteMutation.isPending && (
-                <Loader2Icon className="size-3 animate-spin" />
+                <Loader2Icon className="mr-1.5 size-3 animate-spin" />
               )}
               remove
             </AlertDialogAction>
