@@ -531,9 +531,6 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
                   <button
                     onClick={startRecording}
                     className="group/rec relative flex size-20 items-center justify-center border border-primary/50 bg-primary/10 transition-all hover:border-primary hover:bg-primary/20"
-                    style={{
-                      boxShadow: "0 0 30px rgba(0, 212, 255, 0.2)",
-                    }}
                   >
                     <MicIcon className="size-8 text-primary transition-transform group-hover/rec:scale-110" />
                   </button>
@@ -551,9 +548,6 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
                     <button
                       onClick={stopRecording}
                       className="relative z-10 flex size-20 items-center justify-center border border-red-500/50 bg-red-500/10 transition-all hover:bg-red-500/20"
-                      style={{
-                        boxShadow: "0 0 30px rgba(239, 68, 68, 0.3)",
-                      }}
                     >
                       <SquareIcon className="size-6 text-red-500" />
                       <PulseRings />
@@ -562,7 +556,7 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
 
                   <div className="flex flex-col items-center gap-2">
                     <div className="flex items-center gap-3">
-                      <span className="size-2 animate-pulse rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
+                      <span className="size-2 animate-pulse rounded-full bg-red-500" />
                       <span className="font-mono text-xl tabular-nums text-red-500">
                         {formatDuration(recordingDuration)}
                       </span>
@@ -598,11 +592,6 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
                         onClick={handlePlayPause}
                         disabled={!isWaveformReady}
                         className="flex size-9 items-center justify-center border border-primary bg-primary text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-30"
-                        style={{
-                          boxShadow: isWaveformReady
-                            ? "0 0 15px rgba(0, 212, 255, 0.3)"
-                            : undefined,
-                        }}
                       >
                         {isPlaying ? (
                           <PauseIcon className="size-4" />
@@ -637,10 +626,7 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
                   <div className="relative h-1 overflow-hidden bg-border">
                     <div
                       className="absolute inset-y-0 left-0 bg-primary transition-all"
-                      style={{
-                        width: `${uploadProgress}%`,
-                        boxShadow: "0 0 10px rgba(0, 212, 255, 0.5)",
-                      }}
+                      style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
                   <p className="text-center text-xs text-muted-foreground">
@@ -660,11 +646,6 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
                       ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
                       : "border-border bg-muted text-muted-foreground"
                   )}
-                  style={
-                    recordingDuration >= 10
-                      ? { boxShadow: "0 0 20px rgba(0, 212, 255, 0.2)" }
-                      : undefined
-                  }
                 >
                   <UploadIcon className="size-4" />
                   {recordingDuration < 10
@@ -697,9 +678,6 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
             <AlertDialogAction
               onClick={handleDelete}
               className="border border-destructive bg-destructive/10 text-xs text-destructive hover:bg-destructive hover:text-white"
-              style={{
-                boxShadow: "0 0 15px rgba(255, 68, 68, 0.1)",
-              }}
             >
               {deleteMutation.isPending && (
                 <Loader2Icon className="mr-1.5 size-3 animate-spin" />

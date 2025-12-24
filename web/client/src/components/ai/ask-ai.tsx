@@ -1,37 +1,19 @@
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
-import { ArrowUpIcon, Loader2Icon, XIcon } from "lucide-react";
-import { useState, useCallback, useEffect, type FormEvent } from "react";
+import { ArrowUpIcon, XIcon } from "lucide-react";
+import { useState, useCallback, type FormEvent } from "react";
 import type { RecordingAskResponse } from "@/api";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Spinner } from "@/components/ui/spinner";
 
 interface AskAIProps {
   onAsk: (query: string) => Promise<RecordingAskResponse>;
   placeholder?: string;
   className?: string;
-}
-
-const SPINNER_FRAMES = ["/", "—", "\\", "|"];
-
-function AsciiLoader() {
-  const [frame, setFrame] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFrame((f) => (f + 1) % SPINNER_FRAMES.length);
-    }, 100);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <span className="font-mono text-xs text-muted-foreground">
-      {SPINNER_FRAMES[frame]} processing
-    </span>
-  );
 }
 
 function truncateText(text: string, maxLength: number = 80): string {
@@ -90,17 +72,16 @@ export function AskAI({
   return (
     <div className={cn("space-y-3", className)}>
       {/* Input Box */}
-      <form onSubmit={handleSubmit} className="border border-border">
-        {/* Text input area */}
-        <div className="flex items-center gap-2 px-4 py-3">
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder={placeholder}
-            disabled={isLoading}
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/40 placeholder:italic disabled:opacity-50"
-          />
+      <form
+        onSubmit={handleSubmit}
+        className="group relative overflow-hidden border border-border bg-gradient-to-b from-card to-background"
+      >
+        {/* Grid pattern */}
+        <div className="pointer-events-none absolute inset-0 opacity-30 grid-pattern" />
+
+        {/* Header bar */}
+        <div className="relative flex items-center justify-between border-b border-border bg-card/80 px-4 py-2">
+          <span className="text-xs text-muted-foreground">{">"} ask_ai</span>
           {query && !isLoading && (
             <button
               type="button"
@@ -108,75 +89,121 @@ export function AskAI({
               className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               <XIcon className="size-3" />
-              Clear
+              clear
             </button>
           )}
         </div>
 
+        {/* Input area */}
+        <div className="relative px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-primary">$</span>
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder={placeholder}
+              disabled={isLoading}
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/40 placeholder:italic disabled:opacity-50"
+            />
+          </div>
+        </div>
+
         {/* Bottom bar */}
-        <div className="flex items-center justify-between border-t border-border px-3 py-2">
-          <span className="text-xs text-muted-foreground">AI</span>
+        <div className="relative flex items-center justify-between border-t border-border bg-card/50 px-3 py-2">
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              ai
+            </span>
+            <div className="flex items-center gap-1">
+              <span
+                className={cn(
+                  "size-1.5 rounded-full transition-colors",
+                  isLoading
+                    ? "animate-pulse bg-amber-500"
+                    : hasInput
+                      ? "bg-emerald-500"
+                      : "bg-muted-foreground/30"
+                )}
+              />
+              <span className="text-[10px] text-muted-foreground">
+                {isLoading ? "busy" : hasInput ? "ready" : "idle"}
+              </span>
+            </div>
+          </div>
 
           <button
             type="submit"
             disabled={!hasInput || isLoading}
             className={cn(
-              "flex size-7 items-center justify-center transition-colors",
+              "flex size-7 items-center justify-center border transition-all",
               hasInput && !isLoading
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground"
+                ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
+                : "border-border bg-muted text-muted-foreground"
             )}
           >
-            {isLoading ? (
-              <Loader2Icon className="size-4 animate-spin" />
-            ) : (
-              <ArrowUpIcon className="size-4" />
-            )}
+            <ArrowUpIcon className="size-4" />
           </button>
         </div>
       </form>
 
       {/* Response */}
       {(isLoading || response || error) && (
-        <div className="border border-border p-4">
-          {isLoading ? (
-            <AsciiLoader />
-          ) : error ? (
-            <p className="text-sm text-destructive">{error}</p>
-          ) : response ? (
-            <div className="space-y-3">
-              <p className="text-sm leading-relaxed">{response.answer}</p>
+        <div className="relative overflow-hidden border border-border bg-gradient-to-b from-card to-background">
+          {/* Grid pattern */}
+          <div className="pointer-events-none absolute inset-0 opacity-20 grid-pattern" />
 
-              {response.sources && response.sources.length > 0 && (
-                <div className="flex items-center gap-2 border-t border-border pt-3">
-                  <span className="text-xs text-muted-foreground">sources</span>
-                  <div className="flex flex-wrap gap-1">
+          {/* Header */}
+          <div className="relative flex items-center gap-2 border-b border-border bg-card/80 px-4 py-2">
+            <span className="text-xs text-muted-foreground">
+              {">"} {error ? "error" : "ai_response"}
+            </span>
+          </div>
+
+          {/* Content */}
+          <div className="relative p-4">
+            {isLoading ? (
+              <Spinner label="processing" />
+            ) : error ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-destructive">ERR:</span>
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            ) : response ? (
+              <div className="space-y-3">
+                <p className="text-xs leading-relaxed">{response.answer}</p>
+
+                {response.sources && response.sources.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      sources
+                    </span>
                     {response.sources.map((source, i) => (
                       <Tooltip key={i}>
-                        <TooltipTrigger asChild>
+                        <TooltipTrigger>
                           <Link
                             to="/dashboard/recordings/$recordingId"
                             params={{ recordingId: source.recordingId }}
-                            className="border border-border px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+                            className="border border-border bg-card/50 px-1.5 py-0.5 text-xs text-primary transition-colors hover:border-primary/50 hover:bg-primary/10"
                           >
                             [{i + 1}]
                           </Link>
                         </TooltipTrigger>
                         <TooltipContent
                           side="top"
-                          className="max-w-xs p-3"
+                          className="max-w-xs border border-border bg-card p-3"
                         >
-                          <p className="text-xs leading-snug text-neutral-300">
+                          <p className="text-xs leading-snug text-muted-foreground">
                             "{truncateText(source.text)}"
                           </p>
-                          <div className="mt-2 flex items-center justify-between text-[10px]">
+                          <div className="mt-2 flex items-center justify-between border-t border-border pt-2 text-[10px]">
                             <span className="text-muted-foreground">
                               {Math.round(source.score * 100)}% match
                             </span>
                             <Link
                               to="/dashboard/recordings/$recordingId"
                               params={{ recordingId: source.recordingId }}
-                              className="text-primary hover:underline"
+                              className="text-primary"
                             >
                               view recording →
                             </Link>
@@ -185,10 +212,10 @@ export function AskAI({
                       </Tooltip>
                     ))}
                   </div>
-                </div>
-              )}
-            </div>
-          ) : null}
+                )}
+              </div>
+            ) : null}
+          </div>
         </div>
       )}
     </div>
