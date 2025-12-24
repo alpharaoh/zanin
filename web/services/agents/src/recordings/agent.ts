@@ -1,6 +1,6 @@
 import { StateGraph, START, END } from "@langchain/langgraph";
 import { AIMessage } from "@langchain/core/messages";
-import { RecordingAgentState, RecordingAgentStateType } from "./state";
+import { RecordingAgentState, type RecordingAgentStateType } from "./state";
 import { toolNode } from "./nodes/toolNode";
 import { llmCall } from "./nodes/llmNode";
 

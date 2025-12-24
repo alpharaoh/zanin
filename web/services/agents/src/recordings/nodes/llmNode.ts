@@ -1,5 +1,5 @@
 import { SystemMessage } from "@langchain/core/messages";
-import { RecordingAgentStateType } from "../state";
+import type { RecordingAgentStateType } from "../state";
 import { modelWithTools } from "../tools";
 
 export async function llmCall(state: RecordingAgentStateType) {
