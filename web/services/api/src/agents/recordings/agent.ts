@@ -21,7 +21,7 @@ async function shouldContinue(state: RecordingAgentStateType) {
   return END;
 }
 
-export default new StateGraph(RecordingAgentState)
+export const graph = new StateGraph(RecordingAgentState)
   .addNode("llmCall", llmCall)
   .addNode("toolNode", toolNode)
   .addEdge(START, "llmCall")
