@@ -65,13 +65,10 @@ const SIDService = {
     formData.append("user_id", userId);
     formData.append("audio", blob, filename);
 
-    const response = await fetch(
-      `${env.SID_SERVICE_URL}/api/v1/sid/enroll`,
-      {
-        method: "POST",
-        body: formData,
-      },
-    );
+    const response = await fetch(`${env.SID_SERVICE_URL}/api/v1/sid/enroll`, {
+      method: "POST",
+      body: formData,
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -98,13 +95,10 @@ const SIDService = {
     formData.append("segments", JSON.stringify(segments));
     formData.append("audio", blob, filename);
 
-    const response = await fetch(
-      `${env.SID_SERVICE_URL}/api/v1/sid/identify`,
-      {
-        method: "POST",
-        body: formData,
-      },
-    );
+    const response = await fetch(`${env.SID_SERVICE_URL}/api/v1/sid/identify`, {
+      method: "POST",
+      body: formData,
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -154,7 +148,14 @@ const SIDService = {
       );
     }
 
-    return await response.json();
+    const data = await response.json();
+
+    // Convert Unix timestamp to ISO string
+    if (!!data.created_at) {
+      data.created_at = new Date(data.created_at * 1000).toISOString();
+    }
+
+    return data;
   },
 
   /**

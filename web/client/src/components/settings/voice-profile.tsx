@@ -19,7 +19,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { formatRelativeDate } from "@/lib/format";
+import { formatDuration, formatRelativeDate } from "@/lib/format";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   CheckIcon,
@@ -341,12 +341,6 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
     [resetRecording]
   );
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
   const hasProfile = profile?.exists;
 
   return (
@@ -459,7 +453,7 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
                 <div className="flex items-center gap-3">
                   <span className="size-3 animate-pulse rounded-full bg-red-500" />
                   <span className="font-mono text-lg text-red-500">
-                    {formatTime(recordingDuration)}
+                    {formatDuration(recordingDuration)}
                   </span>
                 </div>
                 <button
@@ -499,9 +493,9 @@ export function VoiceProfile({ className }: VoiceProfileProps) {
 
                     {/* Time */}
                     <span className="ml-2 text-xs text-muted-foreground">
-                      {formatTime(currentTime)}
+                      {formatDuration(currentTime)}
                       <span className="mx-1 text-border">/</span>
-                      {formatTime(duration)}
+                      {formatDuration(duration)}
                     </span>
                   </div>
 
