@@ -90,7 +90,7 @@ const SimpleVectorService = {
     const index = pinecone.index(indexName);
     const ns = index.namespace(namespace);
 
-    await ns.deleteMany({ filter });
+    await ns.deleteMany({ ...filter });
   },
 
   /**

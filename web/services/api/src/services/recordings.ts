@@ -185,6 +185,11 @@ export const RecordingsService = {
     id: string,
     organizationId: string,
   ): Promise<Recording | undefined> => {
+    // Delete vectors associated with this recording first
+    await SimpleVectorService.deleteByFilter(RECORDINGS_INDEX, organizationId, {
+      documentId: id,
+    });
+
     const recording = await updateRecording(
       {
         id,
@@ -199,11 +204,6 @@ export const RecordingsService = {
     if (!recording?.[0]) {
       return undefined;
     }
-
-    // Delete vectors associated with this recording
-    await SimpleVectorService.deleteByFilter(RECORDINGS_INDEX, organizationId, {
-      documentId: { $eq: id },
-    });
 
     return toRecordingResponse(recording[0]);
   },
