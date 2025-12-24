@@ -57,6 +57,26 @@ led_strip_handle_t configure_led(void) {
 }
 
 extern "C" void app_main() {
-  char *tag = pcTaskGetName(NULL);
-  ESP_LOGI(tag, " -> Hello from ESP32-S3!\n");
+  led_strip_handle_t led_strip = configure_led();
+  bool led_on = false;
+
+  ESP_LOGI(TAG, "Start blinking LED strip");
+
+  while (true) {
+    if (led_on) {
+      for (int i = 0; i < LED_STRIP_LED_COUNT; i++) {
+        ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, i, 5, 5, 5));
+      }
+      // Refresh the strip to send the data
+      ESP_ERROR_CHECK(led_strip_refresh(led_strip));
+      ESP_LOGI(TAG, "LED ON!");
+    } else {
+      /* Set all LED off to clear all pixels */
+      ESP_ERROR_CHECK(led_strip_clear(led_strip));
+      ESP_LOGI(TAG, "LED OFF!");
+    }
+
+    led_on = !led_on;
+    vTaskDelay(pdMS_TO_TICKS(2000));
+  }
 }
