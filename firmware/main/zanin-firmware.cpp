@@ -1,9 +1,12 @@
 #include <iostream>
 #include <stdio.h>
 
+#include "driver/gpio.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+
+const unsigned int GPIO_RGB_LED_ID = 38;
 
 extern "C" void app_main(void) {
   char *tag = pcTaskGetName(NULL);

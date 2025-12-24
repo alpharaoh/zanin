@@ -1,0 +1,25 @@
+# Build
+build/
+managed_components/
+
+# ESP-IDF
+sdkconfig.old
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# C++ artifacts
+*.o
+*.obj
+*.exe
+*.out
+*.a
+*.so
+*.dylib

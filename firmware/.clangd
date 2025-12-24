@@ -13,6 +13,7 @@ CompileFlags:
     - "-I/Users/akaam/Projects/esp-idf/components/freertos/esp_additions/include"
     - "-I/Users/akaam/Projects/esp-idf/components/esp_common/include"
     - "-I/Users/akaam/Projects/esp-idf/components/esp_hw_support/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_hw_support/etm/include"
     - "-I/Users/akaam/Projects/esp-idf/components/soc/esp32s3/include"
     - "-I/Users/akaam/Projects/esp-idf/components/soc/esp32s3/register"
     - "-I/Users/akaam/Projects/esp-idf/components/soc/include"
@@ -31,6 +32,8 @@ CompileFlags:
     - "-I/Users/akaam/Projects/esp-idf/components/xtensa/esp32s3/include"
     # GPIO
     - "-I/Users/akaam/Projects/esp-idf/components/esp_driver_gpio/include"
+    # LEDC (PWM for LED dimming)
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_driver_ledc/include"
     - "-I/Users/akaam/Projects/esp-idf/components/esp_hal_gpio/include"
     - "-I/Users/akaam/Projects/esp-idf/components/esp_hal_gpio/esp32s3/include"
     # I2S (audio)
