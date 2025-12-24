@@ -49,7 +49,10 @@ Led::Led(int gpio) : gpio(gpio), ledOn(false) {
 }
 
 void Led::setColor(int r, int g, int b) {
-  ESP_ERROR_CHECK(led_strip_set_pixel(ledStrip, LED_STRIP_LED_COUNT, g, r, b));
+  for (int i = 0; i < LED_STRIP_LED_COUNT; i++) {
+    ESP_ERROR_CHECK(led_strip_set_pixel(ledStrip, 0, g, r, b));
+  }
+  ESP_LOGI(TAG, "Led has been set to color R:%d, G:%d, B:%d.", r, g, b);
   // Refresh the strip to send the data
   ESP_ERROR_CHECK(led_strip_refresh(ledStrip));
   this->ledOn = true;
@@ -57,7 +60,7 @@ void Led::setColor(int r, int g, int b) {
 
 void Led::turnOff() {
   ESP_ERROR_CHECK(led_strip_clear(this->ledStrip));
-  ESP_LOGI(TAG, "LED OFF!");
+  ESP_LOGI(TAG, "Led has been turned off.");
   this->ledOn = false;
 }
 

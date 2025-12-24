@@ -16,7 +16,7 @@ extern "C" void app_main() {
 
   while (true) {
     if (!led.isOn()) {
-      led.setColor(0, 0, 255);
+      led.setColor(5, 0, 0);
     } else {
       led.turnOff();
     }
