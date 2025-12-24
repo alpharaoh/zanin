@@ -1,0 +1,9 @@
+{
+  "dependencies": [
+    "."
+  ],
+  "graphs": {
+    "customer_support": "./src/recordings/agent.ts:graph"
+  },
+  "env": "../../.env"
+}
