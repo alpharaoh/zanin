@@ -2,7 +2,10 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { tool } from "@langchain/core/tools";
 import * as z from "zod";
 
-const model = new ChatGoogleGenerativeAI({ model: "gemini-2.5-flash" });
+const model = new ChatGoogleGenerativeAI({
+  model: "gemini-2.5-flash",
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+});
 
 const add = tool(({ a, b }) => a + b, {
   name: "add",

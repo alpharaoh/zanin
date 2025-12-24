@@ -16,9 +16,10 @@
     "dev:api": "bun run services/api/src/dev.ts",
     "dev:client": "bun run --cwd client dev",
     "dev:vad": "cd services/vad && poetry run vad-service",
+    "dev:langgraph": "cd services/api && bunx @langchain/langgraph-cli dev",
     "dev:sid": "cd services/sid && poetry run sid-service",
     "dev:inngest": "cd services/api && npm exec --ignore-scripts=false -- inngest-cli@latest dev",
-    "dev": "concurrently \"bun run dev:api\" \"bun run dev:client\" \"bun run dev:vad\" \"bun run dev:inngest\" \"bun run dev:sid\" --names \"api,client,vad,inngest,sid\" --prefix-colors \"blue,magenta,green,yellow,red\"",
+    "dev": "concurrently \"bun run dev:api\" \"bun run dev:client\" \"bun run dev:vad\" \"bun run dev:inngest\" \"bun run dev:sid\" \"bun run dev:langgraph\" --names \"api,client,vad,inngest,sid,langgraph\" --prefix-colors \"blue,magenta,green,yellow,red,cyan\"",
     "db:generate": "bun run --cwd packages/db db:generate",
     "db:migrate": "bun run --cwd packages/db db:migrate",
     "client:generate": "bun run --cwd client orval"
