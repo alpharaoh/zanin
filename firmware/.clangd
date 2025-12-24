@@ -30,6 +30,11 @@ CompileFlags:
     - "-I/Users/akaam/Projects/esp-idf/components/esp_libc/platform_include"
     - "-I/Users/akaam/Projects/esp-idf/components/xtensa/include"
     - "-I/Users/akaam/Projects/esp-idf/components/xtensa/esp32s3/include"
+    # Managed components (external dependencies)
+    - "-I/Users/akaam/Projects/zanin/firmware/managed_components/espressif__led_strip/include"
+    # RMT (used by led_strip for WS2812)
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_driver_rmt/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_hal_rmt/include"
     # GPIO
     - "-I/Users/akaam/Projects/esp-idf/components/esp_driver_gpio/include"
     # LEDC (PWM for LED dimming)
