@@ -5,5 +5,5 @@
   "graphs": {
     "customer_support": "./src/agents/recordings/agent.ts:graph"
   },
-  "env": ".env"
+  "env": "../../.env"
 }
