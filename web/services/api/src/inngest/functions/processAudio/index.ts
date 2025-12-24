@@ -14,8 +14,7 @@ import {
 } from "./utils/buildStructuredTranscript";
 import { generateRecordingSummary } from "./utils/generateRecordingSummary";
 import { generateOwnerAnalysis } from "./utils/generateOwnerAnalysis";
-
-const RECORDINGS_INDEX = "recordings";
+import { RECORDINGS_INDEX } from "../../../services/recordings";
 
 export interface ProcessAudioData {
   recordingId: string;
@@ -69,14 +68,16 @@ export default inngest.createFunction(
     await step.run("update-vad-results", async () => {
       await updateRecording(
         { id: recordingId },
-        { cleanedAudioUrl, vadSegments },
+        {
+          cleanedAudioUrl,
+          vadSegments,
+          originalDuration: vadSegments.total_audio_duration,
+        },
       );
     });
 
-    // Transcribe with Deepgram
     const transcription = await step.run("transcribe-audio", async () => {
-      const result = await DeepgramService.transcribeUrl(cleanedAudioUrl);
-      return result;
+      return await DeepgramService.transcribeUrl(cleanedAudioUrl);
     });
 
     logger.info("Generated transcription", { recordingId });
@@ -98,13 +99,11 @@ export default inngest.createFunction(
           return undefined;
         }
 
-        const result = await SIDService.identifyFromUrl(
+        return await SIDService.identifyFromUrl(
           userId,
           segments,
           cleanedAudioUrl,
         );
-
-        return result;
       },
     );
 
@@ -140,7 +139,7 @@ export default inngest.createFunction(
     let ownerAnalysis: any = undefined;
     if (speakerIdentification?.success) {
       ownerAnalysis = await step.run("analyze-owner-patterns", async () => {
-        generateOwnerAnalysis(speakerIdentification, transcript);
+        return await generateOwnerAnalysis(speakerIdentification, transcript);
       });
     }
 
@@ -154,7 +153,6 @@ export default inngest.createFunction(
           status: "completed",
           finishedAt: new Date(),
           transcript,
-          originalDuration: vadSegments.total_audio_duration,
           confidence: transcription.confidence,
           words: transcription.words,
           title: title.trim(),

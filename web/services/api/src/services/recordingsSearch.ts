@@ -1,8 +1,7 @@
 import { VectorSearchService } from "./external/store/vector/search";
 import type { SearchableMetadata } from "./external/store/vector/search";
 import { SimpleLLMService } from "./external/llm/simple";
-
-const RECORDINGS_INDEX = "recordings";
+import { RECORDINGS_INDEX } from "./recordings";
 
 /**
  * Metadata stored with recording vectors

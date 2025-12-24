@@ -52,6 +52,8 @@ Provide a JSON analysis with these fields:
   "keyBehaviors": ["notable behavior 1", "notable behavior 2"]
 }
 
+Keep the response short, concise but informative.
+
 Only respond with valid JSON, no other text.`;
 
   const analysisText = await SimpleLLMService.generateText(analysisPrompt);

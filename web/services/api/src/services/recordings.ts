@@ -5,7 +5,10 @@ import { listRecordings } from "@zanin/db/queries/select/many/listRecordings";
 import { updateRecording } from "@zanin/db/queries/update/updateRecording";
 import { inngest } from "../inngest/client";
 import BlobStorageService from "./external/store/blob/service";
+import SimpleVectorService from "./external/store/vector/simple";
 import { SelectRecording } from "@zanin/db/schema";
+
+export const RECORDINGS_INDEX = "recordings";
 
 export interface OwnerAnalysis {
   communicationStyle: string;
@@ -176,7 +179,7 @@ export const RecordingsService = {
   },
 
   /**
-   * Soft delete a recording
+   * Soft delete a recording and its vectors
    */
   delete: async (
     id: string,
@@ -196,6 +199,11 @@ export const RecordingsService = {
     if (!recording?.[0]) {
       return undefined;
     }
+
+    // Delete vectors associated with this recording
+    await SimpleVectorService.deleteByFilter(RECORDINGS_INDEX, organizationId, {
+      documentId: { $eq: id },
+    });
 
     return toRecordingResponse(recording[0]);
   },
