@@ -74,7 +74,15 @@ void SDCard::unmount() {
 
 esp_err_t SDCard::write(const char *path, const char *data) {
   ESP_LOGI(TAG, "Opening file %s", path);
-  FILE *f = fopen(path, "w");
+
+  char *fullPathWithMountPoint =
+      new char[strlen(MOUNT_POINT) + strlen(path) + 1];
+
+  strcpy(fullPathWithMountPoint, MOUNT_POINT);
+  strcat(fullPathWithMountPoint, path);
+  ESP_LOGI(TAG, "Full path with mount point: %s", fullPathWithMountPoint);
+
+  FILE *f = fopen(fullPathWithMountPoint, "w");
 
   if (f == NULL) {
     ESP_LOGE(TAG, "Failed to open file for writing");

@@ -26,6 +26,8 @@ extern "C" void app_main() {
   SDCard sdcard = SDCard(SD_CARD_DO_GPIO_ID, SD_CARD_CLK_GPIO_ID,
                          SD_CARD_DI_GPIO_ID, SD_CARD_CS_GPIO_ID);
 
+  sdcard.write("/test.txt", "Hello world!");
+
   // Led led = Led(LED_GPIO_ID);
   //
   // while (true) {
