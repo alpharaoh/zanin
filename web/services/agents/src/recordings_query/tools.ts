@@ -101,9 +101,7 @@ const searchRecordings = tool(
       limit: z
         .number()
         .default(20)
-        .describe(
-          "Maximum number of vector results to retrieve (default: 20)",
-        ),
+        .describe("Maximum number of vector results to retrieve (default: 20)"),
     }),
   },
 );

@@ -15,7 +15,7 @@ When a user asks a question about their recordings:
 
 Always cite which recordings your information comes from. If you can't find relevant information, let the user know.
 
-Be conversational and helpful. If the user asks about something like "my argument with James today", search for relevant keywords like "James", "argument", "disagreement", etc.`;
+Be conversational and helpful. If the user asks about something like "my argument with James today", search for relevant keywords like "James", "argument", "disagreement", and query by the day,  etc.`;
 
 export async function llmCall(state: RecordingsQueryStateType) {
   const messagesWithOrg = state.messages.map((msg) => {

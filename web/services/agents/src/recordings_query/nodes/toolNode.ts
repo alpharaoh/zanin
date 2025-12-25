@@ -1,9 +1,6 @@
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import type { RecordingsQueryStateType } from "../state";
-import {
-  searchRecordingsTool,
-  getRecordingDetailsTool,
-} from "../tools";
+import { searchRecordingsTool, getRecordingDetailsTool } from "../tools";
 
 export async function toolNode(state: RecordingsQueryStateType) {
   const lastMessage = state.messages.at(-1);
@@ -32,7 +29,9 @@ export async function toolNode(state: RecordingsQueryStateType) {
         result.push(
           new ToolMessage({
             tool_call_id: toolCall.id ?? "",
-            content: JSON.stringify({ error: `Unknown tool: ${toolCall.name}` }),
+            content: JSON.stringify({
+              error: `Unknown tool: ${toolCall.name}`,
+            }),
           }),
         );
         continue;
