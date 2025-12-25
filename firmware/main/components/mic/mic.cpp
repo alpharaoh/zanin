@@ -25,11 +25,20 @@ Microphone::Microphone(gpio_num_t blck, gpio_num_t dio, gpio_num_t lrcl)
    * `i2s_std.h` which can only be used in STD mode. They can help to specify
    * the slot and clock configurations for initialization or updating */
   i2s_std_config_t std_cfg = {
-      .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000), // 16 kHz sample rate
-      .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(
-          I2S_DATA_BIT_WIDTH_32BIT,
-          I2S_SLOT_MODE_STEREO // mic uses LEFT slot
-          ),
+      .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000),
+      .slot_cfg =
+          {
+              .data_bit_width = I2S_DATA_BIT_WIDTH_32BIT,
+              .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO,
+              .slot_mode = I2S_SLOT_MODE_MONO,
+              .slot_mask = I2S_STD_SLOT_LEFT, // SEL=GND means left channel
+              .ws_width = 32,
+              .ws_pol = false,
+              .bit_shift = true, // Philips/I2S format
+              .left_align = true,
+              .big_endian = false,
+              .bit_order_lsb = false,
+          },
       .gpio_cfg =
           {
               .mclk = I2S_GPIO_UNUSED,

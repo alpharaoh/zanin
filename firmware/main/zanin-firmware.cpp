@@ -12,8 +12,8 @@
 
 const gpio_num_t LED_GPIO_ID = GPIO_NUM_38;
 
-const gpio_num_t MIC_BLCK_GPIO_ID = GPIO_NUM_15;
-const gpio_num_t MIC_DOUT_GPIO_ID = GPIO_NUM_16;
+const gpio_num_t MIC_DOUT_GPIO_ID = GPIO_NUM_15;
+const gpio_num_t MIC_BLCK_GPIO_ID = GPIO_NUM_16;
 const gpio_num_t MIC_LRCL_GPIO_ID = GPIO_NUM_17;
 
 extern "C" void app_main() {
@@ -34,13 +34,11 @@ extern "C" void app_main() {
     // Read audio data
     mic.read(buffer, sizeof(buffer), &bytes_read, 1000);
 
-    // Print how many bytes we got
-    ESP_LOGI("main", "Read %d bytes", bytes_read);
-
-    // Print first few samples to see if it's working
-    for (int i = 0; i < 10; i++) {
-      ESP_LOGI("main", "Sample %d: %ld", i, buffer[i]);
+    int total = 0;
+    for (int i = 0; i < BUFFER_SIZE; i++) {
+      total += buffer[i];
     }
+    ESP_LOGI("main", "Sample %d: %ld", total);
 
     vTaskDelay(pdMS_TO_TICKS(500)); // Don't flood the logs
     // if (!led.isOn()) {
