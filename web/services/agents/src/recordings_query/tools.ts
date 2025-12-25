@@ -153,24 +153,30 @@ const searchRecordings = tool(
 );
 
 /**
- * Tool to get detailed recording metadata from the database
+ * Tool to get detailed recording metadata from the database.
+ * Can query by recording IDs, date range, or both.
  */
 const getRecordingDetails = tool(
   async ({ recordingIds, organizationId, startDate, endDate }) => {
-    if (recordingIds.length === 0) {
+    const hasIds = recordingIds && recordingIds.length > 0;
+    const hasDateFilter = startDate || endDate;
+
+    if (!hasIds && !hasDateFilter) {
       return JSON.stringify({
-        success: true,
+        success: false,
         recordings: [],
-        message: "No recording IDs provided.",
+        message: "Please provide either recording IDs or a date range to query.",
       });
     }
 
     const conditions = [
-      inArray(recordings.id, recordingIds),
       eq(recordings.organizationId, organizationId),
       isNull(recordings.deletedAt),
     ];
 
+    if (hasIds) {
+      conditions.push(inArray(recordings.id, recordingIds!));
+    }
     if (startDate) {
       conditions.push(gte(recordings.createdAt, new Date(startDate)));
     }
@@ -181,7 +187,8 @@ const getRecordingDetails = tool(
     const results = await db
       .select()
       .from(recordings)
-      .where(and(...conditions));
+      .where(and(...conditions))
+      .orderBy(recordings.createdAt);
 
     const foundRecordings = (results as SelectRecording[]).map((recording) => ({
       id: recording.id,
@@ -195,24 +202,38 @@ const getRecordingDetails = tool(
       speakerLabels: recording.speakerLabels,
     }));
 
-    const foundIds = new Set(foundRecordings.map((r) => r.id));
-    const notFoundIds = recordingIds.filter((id) => !foundIds.has(id));
+    // Only track notFound if specific IDs were requested
+    let notFoundIds: string[] | undefined;
+    if (hasIds) {
+      const foundIds = new Set(foundRecordings.map((r) => r.id));
+      notFoundIds = recordingIds!.filter((id) => !foundIds.has(id));
+      if (notFoundIds.length === 0) {
+        notFoundIds = undefined;
+      }
+    }
+
+    const message = hasIds
+      ? `Found ${foundRecordings.length} of ${recordingIds!.length} recording(s).`
+      : `Found ${foundRecordings.length} recording(s) in the specified date range.`;
 
     return JSON.stringify({
       success: true,
       recordings: foundRecordings,
-      notFound: notFoundIds.length > 0 ? notFoundIds : undefined,
-      message: `Found ${foundRecordings.length} of ${recordingIds.length} recording(s).`,
+      notFound: notFoundIds,
+      message,
     });
   },
   {
     name: "get_recording_details",
     description:
-      "Get detailed information about multiple recordings including title, summary, transcript, speaker labels, and AI analysis. Use this after searching to get more context about relevant recordings. Supports optional date filtering.",
+      "Get detailed information about recordings including title, summary, transcript, speaker labels, and AI analysis. Can query by specific recording IDs, by date range, or both. Use date range without IDs to find all recordings in a time period (e.g., 'what happened yesterday').",
     schema: z.object({
       recordingIds: z
         .array(z.string())
-        .describe("The IDs of the recordings to fetch"),
+        .optional()
+        .describe(
+          "Optional list of recording IDs to fetch. If omitted, will query by date range instead.",
+        ),
       organizationId: z
         .string()
         .describe("The organization ID the recordings belong to"),
@@ -220,13 +241,13 @@ const getRecordingDetails = tool(
         .string()
         .optional()
         .describe(
-          "Optional start date filter in ISO format (e.g., '2024-01-15T00:00:00Z'). Only returns recordings created on or after this date.",
+          "Start date filter in ISO format (e.g., '2024-01-15T00:00:00Z'). Returns recordings created on or after this date.",
         ),
       endDate: z
         .string()
         .optional()
         .describe(
-          "Optional end date filter in ISO format (e.g., '2024-01-15T23:59:59Z'). Only returns recordings created on or before this date.",
+          "End date filter in ISO format (e.g., '2024-01-15T23:59:59Z'). Returns recordings created on or before this date.",
         ),
     }),
   },
