@@ -5,7 +5,7 @@ import { pinecone, RECORDINGS_INDEX } from "../lib/pinecone";
 import { embedText } from "../lib/embedding";
 import db from "../lib/db";
 import { recordings, type SelectRecording } from "../lib/schema";
-import { eq, and, isNull, inArray } from "drizzle-orm";
+import { eq, and, isNull, inArray, gte, lte } from "drizzle-orm";
 
 const model = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash",
@@ -13,19 +13,49 @@ const model = new ChatGoogleGenerativeAI({
 });
 
 /**
+ * Build Pinecone filter for date range queries
+ */
+function buildDateFilter(
+  startDate?: string,
+  endDate?: string,
+): Record<string, unknown> | undefined {
+  if (!startDate && !endDate) {
+    return undefined;
+  }
+
+  const filter: Record<string, unknown> = {};
+
+  if (startDate && endDate) {
+    filter.createdAt = {
+      $gte: startDate,
+      $lte: endDate,
+    };
+  } else if (startDate) {
+    filter.createdAt = { $gte: startDate };
+  } else if (endDate) {
+    filter.createdAt = { $lte: endDate };
+  }
+
+  return filter;
+}
+
+/**
  * Tool to search recordings by semantic query
  */
 const searchRecordings = tool(
-  async ({ query, organizationId, limit }) => {
+  async ({ query, organizationId, limit, startDate, endDate }) => {
     const queryEmbedding = await embedText(query);
 
     const index = pinecone.index(RECORDINGS_INDEX);
     const ns = index.namespace(organizationId);
 
+    const filter = buildDateFilter(startDate, endDate);
+
     const results = await ns.query({
       vector: queryEmbedding,
       topK: limit,
       includeMetadata: true,
+      filter,
     });
 
     if (!results.matches || results.matches.length === 0) {
@@ -88,7 +118,7 @@ const searchRecordings = tool(
   {
     name: "search_recordings",
     description:
-      "Search for recordings that match a query. Use this to find recordings related to specific topics, conversations, people, or events. Returns recording IDs and relevant text excerpts.",
+      "Search for recordings that match a query. Use this to find recordings related to specific topics, conversations, people, or events. Returns recording IDs and relevant text excerpts. Supports optional date filtering.",
     schema: z.object({
       query: z
         .string()
@@ -102,6 +132,18 @@ const searchRecordings = tool(
         .number()
         .default(20)
         .describe("Maximum number of vector results to retrieve (default: 20)"),
+      startDate: z
+        .string()
+        .optional()
+        .describe(
+          "Optional start date filter in ISO format (e.g., '2024-01-15T00:00:00Z'). Only returns recordings created on or after this date.",
+        ),
+      endDate: z
+        .string()
+        .optional()
+        .describe(
+          "Optional end date filter in ISO format (e.g., '2024-01-15T23:59:59Z'). Only returns recordings created on or before this date.",
+        ),
     }),
   },
 );
@@ -110,7 +152,7 @@ const searchRecordings = tool(
  * Tool to get detailed recording metadata from the database
  */
 const getRecordingDetails = tool(
-  async ({ recordingIds, organizationId }) => {
+  async ({ recordingIds, organizationId, startDate, endDate }) => {
     if (recordingIds.length === 0) {
       return JSON.stringify({
         success: true,
@@ -119,16 +161,23 @@ const getRecordingDetails = tool(
       });
     }
 
+    const conditions = [
+      inArray(recordings.id, recordingIds),
+      eq(recordings.organizationId, organizationId),
+      isNull(recordings.deletedAt),
+    ];
+
+    if (startDate) {
+      conditions.push(gte(recordings.createdAt, new Date(startDate)));
+    }
+    if (endDate) {
+      conditions.push(lte(recordings.createdAt, new Date(endDate)));
+    }
+
     const results = await db
       .select()
       .from(recordings)
-      .where(
-        and(
-          inArray(recordings.id, recordingIds),
-          eq(recordings.organizationId, organizationId),
-          isNull(recordings.deletedAt),
-        ),
-      );
+      .where(and(...conditions));
 
     const foundRecordings = (results as SelectRecording[]).map((recording) => ({
       id: recording.id,
@@ -155,7 +204,7 @@ const getRecordingDetails = tool(
   {
     name: "get_recording_details",
     description:
-      "Get detailed information about multiple recordings including title, summary, transcript, speaker labels, and AI analysis. Use this after searching to get more context about relevant recordings.",
+      "Get detailed information about multiple recordings including title, summary, transcript, speaker labels, and AI analysis. Use this after searching to get more context about relevant recordings. Supports optional date filtering.",
     schema: z.object({
       recordingIds: z
         .array(z.string())
@@ -163,6 +212,18 @@ const getRecordingDetails = tool(
       organizationId: z
         .string()
         .describe("The organization ID the recordings belong to"),
+      startDate: z
+        .string()
+        .optional()
+        .describe(
+          "Optional start date filter in ISO format (e.g., '2024-01-15T00:00:00Z'). Only returns recordings created on or after this date.",
+        ),
+      endDate: z
+        .string()
+        .optional()
+        .describe(
+          "Optional end date filter in ISO format (e.g., '2024-01-15T23:59:59Z'). Only returns recordings created on or before this date.",
+        ),
     }),
   },
 );
