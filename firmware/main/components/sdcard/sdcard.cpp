@@ -1,6 +1,7 @@
 #include "sdcard.h"
 #include "driver/sdspi_host.h"
 #include "driver/spi_common.h"
+#include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
@@ -15,6 +16,8 @@ SDCard::SDCard(gpio_num_t misoGPIO, gpio_num_t clkGPIO, gpio_num_t mosiGPIO,
       .format_if_mount_failed = false,
       .max_files = 5,
       .allocation_unit_size = 16 * 1024,
+      .disk_status_check_enable = false,
+      .use_one_fat = false,
   };
 
   ESP_LOGI(TAG, "Initializing SD card");
@@ -22,14 +25,13 @@ SDCard::SDCard(gpio_num_t misoGPIO, gpio_num_t clkGPIO, gpio_num_t mosiGPIO,
 
   sdmmc_host_t host = SDSPI_HOST_DEFAULT();
 
-  spi_bus_config_t bus_cfg = {
-      .mosi_io_num = mosiGPIO, // DI on SD card
-      .miso_io_num = misoGPIO, // DO on SD card
-      .sclk_io_num = clkGPIO,
-      .quadwp_io_num = -1,
-      .quadhd_io_num = -1,
-      .max_transfer_sz = 4000,
-  };
+  spi_bus_config_t bus_cfg = {};
+  bus_cfg.mosi_io_num = mosiGPIO; // DI on SD card
+  bus_cfg.miso_io_num = misoGPIO; // DO on SD card
+  bus_cfg.sclk_io_num = clkGPIO;
+  bus_cfg.quadwp_io_num = -1;
+  bus_cfg.quadhd_io_num = -1;
+  bus_cfg.max_transfer_sz = 4000;
 
   esp_err_t ret = spi_bus_initialize(static_cast<spi_host_device_t>(host.slot),
                                      &bus_cfg, SDSPI_DEFAULT_DMA);
