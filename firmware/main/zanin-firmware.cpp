@@ -18,37 +18,14 @@ const gpio_num_t MIC_LRCL_GPIO_ID = GPIO_NUM_17;
 
 extern "C" void app_main() {
   Led led = Led(LED_GPIO_ID);
-  Microphone mic =
-      Microphone(MIC_BLCK_GPIO_ID, MIC_DOUT_GPIO_ID, MIC_LRCL_GPIO_ID);
-
-  mic.start();
-  ESP_LOGI("zanin-mic", "Mic started");
-
-  // Create buffer ONCE outside the loop (static = not on stack)
-  const size_t BUFFER_SIZE = 1024;
-  static int32_t buffer[BUFFER_SIZE];
-  size_t bytes_read = 0;
 
   while (true) {
-
-    // Read audio data
-    mic.read(buffer, sizeof(buffer), &bytes_read, 1000);
-
-    int total = 0;
-    for (int i = 0; i < BUFFER_SIZE; i++) {
-      total += buffer[i];
+    if (!led.isOn()) {
+      led.setColor(5, 0, 0);
+    } else {
+      led.turnOff();
     }
-    ESP_LOGI("main", "Sample %d", total);
 
-    vTaskDelay(pdMS_TO_TICKS(500)); // Don't flood the logs
-    // if (!led.isOn()) {
-    //   led.setColor(5, 0, 0);
-    // } else {
-    //   led.turnOff();
-    // }
-    //
-    // vTaskDelay(pdMS_TO_TICKS(2000));
+    vTaskDelay(pdMS_TO_TICKS(2000));
   }
-
-  mic.stop();
 }
