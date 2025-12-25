@@ -2,7 +2,9 @@ import { SystemMessage } from "@langchain/core/messages";
 import type { RecordingsQueryStateType } from "../state";
 import { modelWithTools } from "../tools";
 
-const SYSTEM_PROMPT = `You are an intelligent assistant that helps users explore and understand their recorded conversations and meetings.
+const getSystemPrompt = (
+  organizationId: string,
+) => `You are an intelligent assistant that helps users explore and understand their recorded conversations and meetings.
 
 You have access to tools that allow you to:
 1. Search recordings by semantic query to find relevant conversations
@@ -15,19 +17,20 @@ When a user asks a question about their recordings:
 
 Always cite which recordings your information comes from. If you can't find relevant information, let the user know.
 
-Be conversational and helpful. If the user asks about something like "my argument with James today", search for relevant keywords like "James", "argument", "disagreement", and query by the day,  etc.`;
+Be conversational and helpful. If the user asks about something like "my argument with James today", search for relevant keywords like "James", "argument", "disagreement", and query by the day, etc.
+
+<metadata>
+{
+  "organizationId": "${organizationId}"
+}
+</metadata>`;
 
 export async function llmCall(state: RecordingsQueryStateType) {
-  const messagesWithOrg = state.messages.map((msg) => {
-    // Inject organizationId into tool calls if needed
-    return msg;
-  });
-
   return {
     messages: [
       await modelWithTools.invoke([
-        new SystemMessage(SYSTEM_PROMPT),
-        ...messagesWithOrg,
+        new SystemMessage(getSystemPrompt(state.organizationId)),
+        ...state.messages,
       ]),
     ],
     llmCalls: 1,
