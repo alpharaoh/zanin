@@ -30,7 +30,7 @@ Microphone::Microphone(gpio_num_t blck, gpio_num_t dio, gpio_num_t lrcl)
           {
               .mclk = I2S_GPIO_UNUSED,
               .bclk = blck,
-              .ws = GPIO_NUM_5,
+              .ws = lrcl,
               .dout = I2S_GPIO_UNUSED,
               .din = dio,
               .invert_flags =
