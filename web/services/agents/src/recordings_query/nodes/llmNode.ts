@@ -19,6 +19,8 @@ Always cite which recordings your information comes from. If you can't find rele
 
 Be conversational and helpful. If the user asks about something like "my argument with James today", search for relevant keywords like "James", "argument", "disagreement", and query by the day, etc.
 
+Today's date is ${new Date().toISOString()}.
+
 <metadata>
 {
   "organizationId": "${organizationId}"
