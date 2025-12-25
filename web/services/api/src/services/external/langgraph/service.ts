@@ -1,71 +1,60 @@
-import type {
-  Thread,
-  RunInput,
-  RunOutput,
-  ThreadState,
-  Assistant,
-  Message,
-} from "./types";
+import { Client } from "@langchain/langgraph-sdk";
 
 const LANGGRAPH_URL = process.env.LANGGRAPH_URL || "http://localhost:2024";
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${LANGGRAPH_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
+const client = new Client({ apiUrl: LANGGRAPH_URL });
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`LangGraph API error: ${response.status} - ${text}`);
-  }
+export interface Assistant {
+  assistant_id: string;
+  graph_id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  metadata: Record<string, unknown>;
+}
 
-  return response.json();
+export interface Thread {
+  thread_id: string;
+  created_at: string;
+  updated_at: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface Message {
+  role: "user" | "assistant" | "system";
+  content: string;
 }
 
 const LangGraphService = {
   /**
-   * List all assistants (graphs) available
+   * List all available assistants
    */
   listAssistants: async (): Promise<Assistant[]> => {
-    return request<Assistant[]>("/assistants/search", {
-      method: "POST",
-      body: JSON.stringify({}),
-    });
+    const assistants = await client.assistants.search();
+    return assistants as unknown as Assistant[];
   },
 
   /**
    * Create a new thread
    */
   createThread: async (metadata?: Record<string, unknown>): Promise<Thread> => {
-    return request<Thread>("/threads", {
-      method: "POST",
-      body: JSON.stringify({ metadata }),
-    });
+    const thread = await client.threads.create({ metadata });
+    return thread as unknown as Thread;
   },
 
   /**
    * Get a thread by ID
    */
   getThread: async (threadId: string): Promise<Thread> => {
-    return request<Thread>(`/threads/${threadId}`);
+    const thread = await client.threads.get(threadId);
+    return thread as unknown as Thread;
   },
 
   /**
    * Delete a thread
    */
   deleteThread: async (threadId: string): Promise<void> => {
-    await request(`/threads/${threadId}`, { method: "DELETE" });
-  },
-
-  /**
-   * Get the current state of a thread
-   */
-  getThreadState: async (threadId: string): Promise<ThreadState> => {
-    return request<ThreadState>(`/threads/${threadId}/state`);
+    await client.threads.delete(threadId);
   },
 
   /**
@@ -74,104 +63,28 @@ const LangGraphService = {
   run: async (options: {
     threadId: string;
     assistantId: string;
-    input: RunInput;
-  }): Promise<RunOutput> => {
+    input: Record<string, unknown>;
+  }): Promise<Record<string, unknown>> => {
     const { threadId, assistantId, input } = options;
 
-    return request<RunOutput>(`/threads/${threadId}/runs/wait`, {
-      method: "POST",
-      body: JSON.stringify({
-        assistant_id: assistantId,
-        input,
-      }),
-    });
+    const result = await client.runs.wait(threadId, assistantId, { input });
+    return result as Record<string, unknown>;
   },
 
   /**
-   * Run a graph and stream the response
+   * Stream a graph run
    */
-  stream: async function* (options: {
+  stream: (options: {
     threadId: string;
     assistantId: string;
-    input: RunInput;
-  }): AsyncGenerator<{ event: string; data: unknown }> {
+    input: Record<string, unknown>;
+  }): ReturnType<typeof client.runs.stream> => {
     const { threadId, assistantId, input } = options;
-
-    const response = await fetch(
-      `${LANGGRAPH_URL}/threads/${threadId}/runs/stream`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          assistant_id: assistantId,
-          input,
-          stream_mode: "events",
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`LangGraph API error: ${response.status} - ${text}`);
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error("No response body");
-    }
-
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
-      }
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
-
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          const data = line.slice(6);
-          if (data === "[DONE]") {
-            return;
-          }
-          try {
-            const parsed = JSON.parse(data);
-            yield parsed;
-          } catch {
-            // Skip malformed JSON
-          }
-        }
-      }
-    }
+    return client.runs.stream(threadId, assistantId, { input });
   },
 
   /**
-   * Convenience method: Create thread, run graph, return result
-   */
-  invoke: async (options: {
-    assistantId: string;
-    input: RunInput;
-    metadata?: Record<string, unknown>;
-  }): Promise<{ threadId: string; output: RunOutput }> => {
-    const { assistantId, input, metadata } = options;
-
-    const thread = await LangGraphService.createThread(metadata);
-    const output = await LangGraphService.run({
-      threadId: thread.thread_id,
-      assistantId,
-      input,
-    });
-
-    return { threadId: thread.thread_id, output };
-  },
-
-  /**
-   * Convenience method: Send a message and get a response
+   * Convenience: Send a message and get a response
    */
   chat: async (options: {
     assistantId: string;
@@ -187,17 +100,16 @@ const LangGraphService = {
       thread = await LangGraphService.createThread();
     }
 
-    const output = await LangGraphService.run({
-      threadId: thread.thread_id,
-      assistantId,
+    const result = await client.runs.wait(thread.thread_id, assistantId, {
       input: {
         messages: [{ role: "user", content: message }],
       },
     });
 
-    const messages = output.messages as Message[] | undefined;
+    const messages = (result as { messages?: Message[] }).messages;
     const lastMessage = messages?.[messages.length - 1];
-    const response = lastMessage?.content || "";
+    const response =
+      typeof lastMessage?.content === "string" ? lastMessage.content : "";
 
     return { threadId: thread.thread_id, response };
   },

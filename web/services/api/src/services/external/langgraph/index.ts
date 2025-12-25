@@ -1,2 +1,2 @@
 export { default as LangGraphService } from "./service";
-export * from "./types";
+export type { Assistant, Thread, Message } from "./service";
