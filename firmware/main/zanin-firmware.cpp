@@ -23,15 +23,33 @@ extern "C" void app_main() {
 
   mic.start();
   ESP_LOGI("zanin-mic", "Mic started");
-  mic.stop();
 
   while (true) {
-    if (!led.isOn()) {
-      led.setColor(5, 0, 0);
-    } else {
-      led.turnOff();
+    // Create a buffer to hold audio samples
+    const size_t BUFFER_SIZE = 1024;
+    int32_t buffer[BUFFER_SIZE]; // I2S uses 32-bit samples
+    size_t bytes_read = 0;
+
+    // Read audio data
+    mic.read(buffer, sizeof(buffer), &bytes_read, 1000);
+
+    // Print how many bytes we got
+    ESP_LOGI("main", "Read %d bytes", bytes_read);
+
+    // Print first few samples to see if it's working
+    for (int i = 0; i < 10; i++) {
+      ESP_LOGI("main", "Sample %d: %ld", i, buffer[i]);
     }
 
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    vTaskDelay(pdMS_TO_TICKS(500)); // Don't flood the logs
+    // if (!led.isOn()) {
+    //   led.setColor(5, 0, 0);
+    // } else {
+    //   led.turnOff();
+    // }
+    //
+    // vTaskDelay(pdMS_TO_TICKS(2000));
   }
+
+  mic.stop();
 }
