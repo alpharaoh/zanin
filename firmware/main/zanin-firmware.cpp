@@ -28,6 +28,10 @@ extern "C" void app_main() {
 
   sdcard.write("/test.txt", "Hello world!");
 
+  char buffer[100];
+
+  sdcard.read("/test.txt", buffer, 100);
+
   // Led led = Led(LED_GPIO_ID);
   //
   // while (true) {

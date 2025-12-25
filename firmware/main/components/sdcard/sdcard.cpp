@@ -83,6 +83,7 @@ esp_err_t SDCard::write(const char *path, const char *data) {
   ESP_LOGI(TAG, "Full path with mount point: %s", fullPathWithMountPoint);
 
   FILE *f = fopen(fullPathWithMountPoint, "w");
+  delete[] fullPathWithMountPoint;
 
   if (f == NULL) {
     ESP_LOGE(TAG, "Failed to open file for writing");
@@ -98,7 +99,15 @@ esp_err_t SDCard::write(const char *path, const char *data) {
 
 esp_err_t SDCard::read(const char *path, char *buffer, size_t bufferSize) {
   ESP_LOGI(TAG, "Reading file %s", path);
-  FILE *f = fopen(path, "r");
+
+  char *fullPathWithMountPoint =
+      new char[strlen(MOUNT_POINT) + strlen(path) + 1];
+  strcpy(fullPathWithMountPoint, MOUNT_POINT);
+  strcat(fullPathWithMountPoint, path);
+  ESP_LOGI(TAG, "Full path with mount point: %s", fullPathWithMountPoint);
+
+  FILE *f = fopen(fullPathWithMountPoint, "r");
+  delete[] fullPathWithMountPoint;
 
   if (f == NULL) {
     ESP_LOGE(TAG, "Failed to open file for reading");
