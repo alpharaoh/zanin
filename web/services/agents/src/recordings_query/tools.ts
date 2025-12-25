@@ -13,7 +13,8 @@ const model = new ChatGoogleGenerativeAI({
 });
 
 /**
- * Build Pinecone filter for date range queries
+ * Build Pinecone filter for date range queries.
+ * Converts ISO date strings to Unix timestamps (seconds) for Pinecone.
  */
 function buildDateFilter(
   startDate?: string,
@@ -25,15 +26,18 @@ function buildDateFilter(
 
   const filter: Record<string, unknown> = {};
 
-  if (startDate && endDate) {
-    filter.createdAt = {
-      $gte: startDate,
-      $lte: endDate,
+  const startTs = startDate ? Math.floor(new Date(startDate).getTime() / 1000) : undefined;
+  const endTs = endDate ? Math.floor(new Date(endDate).getTime() / 1000) : undefined;
+
+  if (startTs && endTs) {
+    filter.createdAtTs = {
+      $gte: startTs,
+      $lte: endTs,
     };
-  } else if (startDate) {
-    filter.createdAt = { $gte: startDate };
-  } else if (endDate) {
-    filter.createdAt = { $lte: endDate };
+  } else if (startTs) {
+    filter.createdAtTs = { $gte: startTs };
+  } else if (endTs) {
+    filter.createdAtTs = { $lte: endTs };
   }
 
   return filter;

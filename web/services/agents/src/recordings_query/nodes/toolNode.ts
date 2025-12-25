@@ -9,35 +9,35 @@ export async function toolNode(state: RecordingsQueryStateType) {
     return { messages: [] };
   }
 
+  const chosenToolCalls = lastMessage.tool_calls ?? [];
+
   const result: ToolMessage[] = [];
-  for (const toolCall of lastMessage.tool_calls ?? []) {
-    // Inject organizationId into tool args if not present
-    const args = {
-      ...toolCall.args,
-      organizationId: toolCall.args.organizationId || state.organizationId,
+  for (const toolCall of chosenToolCalls) {
+    const toolCallArgs = {
+      ...toolCall,
+      args: {
+        ...toolCall.args,
+        organizationId: state.organizationId,
+      },
     };
-    const modifiedToolCall = { ...toolCall, args };
 
     try {
-      let observation: ToolMessage;
-
       if (toolCall.name === "search_recordings") {
-        observation = await searchRecordingsTool.invoke(modifiedToolCall);
+        const observation = await searchRecordingsTool.invoke(toolCallArgs);
+        result.push(observation);
       } else if (toolCall.name === "get_recording_details") {
-        observation = await getRecordingDetailsTool.invoke(modifiedToolCall);
-      } else {
-        result.push(
-          new ToolMessage({
-            tool_call_id: toolCall.id ?? "",
-            content: JSON.stringify({
-              error: `Unknown tool: ${toolCall.name}`,
-            }),
-          }),
-        );
-        continue;
+        const observation = await getRecordingDetailsTool.invoke(toolCallArgs);
+        result.push(observation);
       }
 
-      result.push(observation);
+      result.push(
+        new ToolMessage({
+          tool_call_id: toolCall.id ?? "",
+          content: JSON.stringify({
+            error: `Unknown tool: ${toolCall.name}`,
+          }),
+        }),
+      );
     } catch (error) {
       result.push(
         new ToolMessage({

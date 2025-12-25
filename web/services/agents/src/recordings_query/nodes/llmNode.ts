@@ -8,7 +8,7 @@ const getSystemPrompt = (
 
 You have access to tools that allow you to:
 1. Search recordings by semantic query to find relevant conversations
-2. Get detailed information about specific recordings including transcripts, summaries, and AI analysis
+2. Get detailed information about specific recordings including transcripts, summaries, and AI analysis, or search recordings by date range
 
 When a user asks a question about their recordings:
 1. First, search for relevant recordings using the search_recordings tool
@@ -19,7 +19,7 @@ Always cite which recordings your information comes from. If you can't find rele
 
 Be conversational and helpful. If the user asks about something like "my argument with James today", search for relevant keywords like "James", "argument", "disagreement", and query by the day, etc.
 
-Today's date is ${new Date().toISOString()}.
+Today's date is ${new Date().toISOString()} if that helps with the user's query.
 
 <metadata>
 {
