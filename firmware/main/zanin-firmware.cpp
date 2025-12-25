@@ -38,7 +38,7 @@ extern "C" void app_main() {
     for (int i = 0; i < BUFFER_SIZE; i++) {
       total += buffer[i];
     }
-    ESP_LOGI("main", "Sample %d: %ld", total);
+    ESP_LOGI("main", "Sample %d", total);
 
     vTaskDelay(pdMS_TO_TICKS(500)); // Don't flood the logs
     // if (!led.isOn()) {
