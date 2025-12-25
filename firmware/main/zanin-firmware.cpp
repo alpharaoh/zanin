@@ -12,9 +12,9 @@
 
 const gpio_num_t LED_GPIO_ID = GPIO_NUM_38;
 
-const gpio_num_t MIC_BLCK_GPIO_ID = GPIO_NUM_17;
+const gpio_num_t MIC_BLCK_GPIO_ID = GPIO_NUM_15;
 const gpio_num_t MIC_DOUT_GPIO_ID = GPIO_NUM_16;
-const gpio_num_t MIC_LRCL_GPIO_ID = GPIO_NUM_15;
+const gpio_num_t MIC_LRCL_GPIO_ID = GPIO_NUM_17;
 
 extern "C" void app_main() {
   Led led = Led(LED_GPIO_ID);

@@ -1,7 +1,10 @@
 #include "mic.h"
+#include "FreeRTOSConfig.h"
 #include "driver/i2s_pdm.h"
 #include "driver/i2s_std.h"
 #include "esp_log.h"
+#include "freertos/projdefs.h"
+#include "portmacro.h"
 
 static const char *TAG = "zanin-mic";
 
@@ -15,7 +18,6 @@ Microphone::Microphone(gpio_num_t blck, gpio_num_t dio, gpio_num_t lrcl)
 
   /* Allocate a new RX channel and get the handle of this channel */
   i2s_new_channel(&chan_cfg, NULL, &(this->rx_handle));
-
   ESP_LOGI(TAG, "Created new i2s channel");
 
   /* Setting the configurations, the slot configuration and clock configuration
@@ -23,9 +25,11 @@ Microphone::Microphone(gpio_num_t blck, gpio_num_t dio, gpio_num_t lrcl)
    * `i2s_std.h` which can only be used in STD mode. They can help to specify
    * the slot and clock configurations for initialization or updating */
   i2s_std_config_t std_cfg = {
-      .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(48000),
-      .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT,
-                                                      I2S_SLOT_MODE_MONO),
+      .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000), // 16 kHz sample rate
+      .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(
+          I2S_DATA_BIT_WIDTH_32BIT,
+          I2S_SLOT_MODE_STEREO // mic uses LEFT slot
+          ),
       .gpio_cfg =
           {
               .mclk = I2S_GPIO_UNUSED,
@@ -53,8 +57,9 @@ void Microphone::start() {
 
 esp_err_t Microphone::read(void *buffer, size_t bytes_to_read,
                            size_t *bytes_read, uint32_t timeout_ms) {
+  TickType_t ticks = pdMS_TO_TICKS(timeout_ms);
   return i2s_channel_read(this->rx_handle, buffer, bytes_to_read, bytes_read,
-                          timeout_ms);
+                          ticks);
 }
 
 void Microphone::stop() {
