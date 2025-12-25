@@ -23,8 +23,6 @@ SDCard::SDCard(gpio_num_t misoGPIO, gpio_num_t clkGPIO, gpio_num_t mosiGPIO,
   ESP_LOGI(TAG, "Initializing SD card");
   ESP_LOGI(TAG, "Using SPI peripheral");
 
-  sdmmc_host_t host = SDSPI_HOST_DEFAULT();
-
   spi_bus_config_t bus_cfg = {};
   bus_cfg.mosi_io_num = mosiGPIO; // DI on SD card
   bus_cfg.miso_io_num = misoGPIO; // DO on SD card
@@ -51,8 +49,7 @@ SDCard::SDCard(gpio_num_t misoGPIO, gpio_num_t clkGPIO, gpio_num_t mosiGPIO,
   if (ret != ESP_OK) {
     if (ret == ESP_FAIL) {
       ESP_LOGE(TAG, "Failed to mount filesystem.");
-    }
-    else {
+    } else {
       ESP_LOGE(TAG,
                "Failed to initialize the card (%s). "
                "Make sure SD card lines have pull-up resistors in place.",
@@ -64,4 +61,50 @@ SDCard::SDCard(gpio_num_t misoGPIO, gpio_num_t clkGPIO, gpio_num_t mosiGPIO,
   mounted = true;
   ESP_LOGI(TAG, "Filesystem mounted");
   sdmmc_card_print_info(stdout, card);
+}
+
+void SDCard::unmount() {
+  // All done, unmount partition and disable SPI peripheral
+  esp_vfs_fat_sdcard_unmount(MOUNT_POINT, card);
+  ESP_LOGI(TAG, "Card unmounted");
+
+  // deinitialize the bus after all devices are removed
+  spi_bus_free(static_cast<spi_host_device_t>(host.slot));
+}
+
+esp_err_t SDCard::write(const char *path, const char *data) {
+  ESP_LOGI(TAG, "Opening file %s", path);
+  FILE *f = fopen(path, "w");
+
+  if (f == NULL) {
+    ESP_LOGE(TAG, "Failed to open file for writing");
+    return ESP_FAIL;
+  }
+
+  fprintf(f, "%s", data);
+  fclose(f);
+  ESP_LOGI(TAG, "File written");
+
+  return ESP_OK;
+}
+
+esp_err_t SDCard::read(const char *path, char *buffer, size_t bufferSize) {
+  ESP_LOGI(TAG, "Reading file %s", path);
+  FILE *f = fopen(path, "r");
+
+  if (f == NULL) {
+    ESP_LOGE(TAG, "Failed to open file for reading");
+    return ESP_FAIL;
+  }
+
+  fgets(buffer, bufferSize, f);
+  fclose(f);
+
+  char *pos = strchr(buffer, '\n');
+  if (pos) {
+    *pos = '\0';
+  }
+  ESP_LOGI(TAG, "Read from file: '%s'", buffer);
+
+  return ESP_OK;
 }
