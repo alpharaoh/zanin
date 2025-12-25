@@ -5,7 +5,7 @@ import { pinecone, RECORDINGS_INDEX } from "../lib/pinecone";
 import { embedText } from "../lib/embedding";
 import db from "../lib/db";
 import { recordings, type SelectRecording } from "../lib/schema";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, inArray } from "drizzle-orm";
 
 const model = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash",
@@ -110,53 +110,59 @@ const searchRecordings = tool(
  * Tool to get detailed recording metadata from the database
  */
 const getRecordingDetails = tool(
-  async ({ recordingId, organizationId }) => {
-    const result = await db
+  async ({ recordingIds, organizationId }) => {
+    if (recordingIds.length === 0) {
+      return JSON.stringify({
+        success: true,
+        recordings: [],
+        message: "No recording IDs provided.",
+      });
+    }
+
+    const results = await db
       .select()
       .from(recordings)
       .where(
         and(
-          eq(recordings.id, recordingId),
+          inArray(recordings.id, recordingIds),
           eq(recordings.organizationId, organizationId),
           isNull(recordings.deletedAt),
         ),
-      )
-      .limit(1);
+      );
 
-    const recording = result[0] as SelectRecording | undefined;
+    const foundRecordings = (results as SelectRecording[]).map((recording) => ({
+      id: recording.id,
+      title: recording.title,
+      createdAt: recording.createdAt,
+      finishedAt: recording.finishedAt,
+      duration: recording.originalDuration,
+      summary: recording.summary,
+      ownerAnalysis: recording.ownerAnalysis,
+      transcript: recording.transcript,
+      speakerLabels: recording.speakerLabels,
+    }));
 
-    if (!recording) {
-      return JSON.stringify({
-        success: false,
-        error: "Recording not found",
-      });
-    }
+    const foundIds = new Set(foundRecordings.map((r) => r.id));
+    const notFoundIds = recordingIds.filter((id) => !foundIds.has(id));
 
-    // Return relevant metadata for answering questions
     return JSON.stringify({
       success: true,
-      recording: {
-        id: recording.id,
-        title: recording.title,
-        createdAt: recording.createdAt,
-        finishedAt: recording.finishedAt,
-        duration: recording.originalDuration,
-        summary: recording.summary,
-        ownerAnalysis: recording.ownerAnalysis,
-        transcript: recording.transcript,
-        speakerLabels: recording.speakerLabels,
-      },
+      recordings: foundRecordings,
+      notFound: notFoundIds.length > 0 ? notFoundIds : undefined,
+      message: `Found ${foundRecordings.length} of ${recordingIds.length} recording(s).`,
     });
   },
   {
     name: "get_recording_details",
     description:
-      "Get detailed information about a specific recording including title, summary, transcript, speaker labels, and AI analysis. Use this after searching to get more context about a specific recording.",
+      "Get detailed information about multiple recordings including title, summary, transcript, speaker labels, and AI analysis. Use this after searching to get more context about relevant recordings.",
     schema: z.object({
-      recordingId: z.string().describe("The ID of the recording to fetch"),
+      recordingIds: z
+        .array(z.string())
+        .describe("The IDs of the recordings to fetch"),
       organizationId: z
         .string()
-        .describe("The organization ID the recording belongs to"),
+        .describe("The organization ID the recordings belong to"),
     }),
   },
 );
