@@ -14,6 +14,7 @@ CompileFlags:
     - "-I/Users/akaam/Projects/esp-idf/components/esp_common/include"
     - "-I/Users/akaam/Projects/esp-idf/components/esp_hw_support/include"
     - "-I/Users/akaam/Projects/esp-idf/components/esp_hw_support/etm/include"
+    # - "-I/Users/akaam/Projects/esp-idf/components/esp_hw_support/dma/include"
     - "-I/Users/akaam/Projects/esp-idf/components/soc/esp32s3/include"
     - "-I/Users/akaam/Projects/esp-idf/components/soc/esp32s3/register"
     - "-I/Users/akaam/Projects/esp-idf/components/soc/include"
@@ -95,3 +96,4 @@ Diagnostics:
     - drv_unknown_argument
     - drv_unknown_argument_with_suggestion
     - attribute_not_type_attr
+    - pp_file_not_found
