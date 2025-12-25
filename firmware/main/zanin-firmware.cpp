@@ -24,11 +24,12 @@ extern "C" void app_main() {
   mic.start();
   ESP_LOGI("zanin-mic", "Mic started");
 
+  // Create buffer ONCE outside the loop (static = not on stack)
+  const size_t BUFFER_SIZE = 1024;
+  static int32_t buffer[BUFFER_SIZE];
+  size_t bytes_read = 0;
+
   while (true) {
-    // Create a buffer to hold audio samples
-    const size_t BUFFER_SIZE = 1024;
-    int32_t buffer[BUFFER_SIZE]; // I2S uses 32-bit samples
-    size_t bytes_read = 0;
 
     // Read audio data
     mic.read(buffer, sizeof(buffer), &bytes_read, 1000);
