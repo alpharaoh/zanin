@@ -41,8 +41,8 @@ export class AgentsController extends Controller {
    * Run an agent with a message.
    * Optionally provide a threadId to continue an existing conversation.
    */
-  @Post("run")
-  public async run(
+  @Post("chat")
+  public async chat(
     @Request() _: ExpressRequest,
     @Body() body: RunAgentRequest,
   ): Promise<RunAgentResponse> {
