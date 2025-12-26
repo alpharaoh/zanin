@@ -57,21 +57,25 @@ const ChatService = {
   /**
    * Get or create a thread for a specific scope.
    * recordingId = undefined means "all recordings" scope
+   * forceNew = true will always create a new thread
    */
   getOrCreateThread: async (
     organizationId: string,
     userId: string,
     recordingId?: string,
+    forceNew?: boolean,
   ): Promise<ChatThread> => {
-    // Try to find existing thread
-    const existing = await selectChatThreadByScope(
-      organizationId,
-      userId,
-      recordingId,
-    );
+    // Try to find existing thread (unless forcing new)
+    if (!forceNew) {
+      const existing = await selectChatThreadByScope(
+        organizationId,
+        userId,
+        recordingId,
+      );
 
-    if (existing) {
-      return mapThread(existing);
+      if (existing) {
+        return mapThread(existing);
+      }
     }
 
     // Create new thread in LangGraph

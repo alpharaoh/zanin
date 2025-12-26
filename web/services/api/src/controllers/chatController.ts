@@ -18,6 +18,7 @@ import { NotFoundError } from "../errors";
 
 interface GetOrCreateThreadRequest {
   recordingId?: string;
+  forceNew?: boolean;
 }
 
 interface GetOrCreateThreadResponse {
@@ -66,6 +67,7 @@ export class ChatController extends Controller {
       organizationId,
       userId,
       body.recordingId,
+      body.forceNew,
     );
 
     return { thread };

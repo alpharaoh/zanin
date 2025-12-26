@@ -3,6 +3,7 @@ import { ArrowUpIcon } from "lucide-react";
 import {
   useState,
   useCallback,
+  useRef,
   type FormEvent,
   type KeyboardEvent,
 } from "react";
@@ -19,6 +20,7 @@ export function ChatInput({
   placeholder = "ask about your recordings...",
 }: ChatInputProps) {
   const [value, setValue] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = useCallback(
     (e: FormEvent) => {
@@ -29,6 +31,7 @@ export function ChatInput({
       }
       onSend(trimmed);
       setValue("");
+      textareaRef.current?.focus();
     },
     [value, disabled, onSend]
   );
@@ -41,6 +44,7 @@ export function ChatInput({
         if (trimmed && !disabled) {
           onSend(trimmed);
           setValue("");
+          textareaRef.current?.focus();
         }
       }
     },
@@ -56,6 +60,7 @@ export function ChatInput({
         <div className="flex flex-1 items-start gap-2">
           <span className="mt-0 text-xs text-primary">$</span>
           <textarea
+            ref={textareaRef}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}

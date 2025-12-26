@@ -216,10 +216,7 @@ function ChatPage() {
               messages={messages}
               isLoading={sendMessage.isPending}
             />
-            <ChatInput
-              onSend={handleSend}
-              disabled={sendMessage.isPending}
-            />
+            <ChatInput onSend={handleSend} />
           </>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">

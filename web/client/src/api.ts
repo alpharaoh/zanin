@@ -213,6 +213,7 @@ export interface GetOrCreateThreadResponse {
 
 export interface GetOrCreateThreadRequest {
   recordingId?: string;
+  forceNew?: boolean;
 }
 
 export interface ListThreadsResponse {
