@@ -76,6 +76,17 @@ CompileFlags:
     - "-I/Users/akaam/Projects/esp-idf/components/esp_event/include"
     # Ringbuffer
     - "-I/Users/akaam/Projects/esp-idf/components/esp_ringbuf/include"
+    # WiFi
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_wifi/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_wifi/include/local"
+    # Network interface
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_netif/include"
+    # LWIP
+    - "-I/Users/akaam/Projects/esp-idf/components/lwip/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/lwip/port/include"
+    - "-I/Users/akaam/Projects/esp-idf/components/lwip/lwip/src/include"
+    # WPA supplicant
+    - "-I/Users/akaam/Projects/esp-idf/components/wpa_supplicant/include"
     - "-D__XTENSA__"
     - "-DESP_PLATFORM"
     - "-std=gnu++17"
