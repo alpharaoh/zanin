@@ -195,6 +195,89 @@ export interface RecordingAskResponse {
   sources: AnswerSource[];
 }
 
+export interface ChatThread {
+  id: string;
+  /** @nullable */
+  recordingId: string | null;
+  /** @nullable */
+  referenceId: string | null;
+  /** @nullable */
+  title: string | null;
+  lastActivityAt: string;
+  createdAt: string;
+}
+
+export interface GetOrCreateThreadResponse {
+  thread: ChatThread;
+}
+
+export interface GetOrCreateThreadRequest {
+  recordingId?: string;
+}
+
+/**
+ * Construct a type with a set of properties K of type T
+ */
+export interface RecordStringUnknown {[key: string]: unknown}
+
+export type ChatMessageRole = typeof ChatMessageRole[keyof typeof ChatMessageRole];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const ChatMessageRole = {
+  user: 'user',
+  assistant: 'assistant',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ChatMessageMetadata = RecordStringUnknown | null;
+
+export interface ChatMessage {
+  id: string;
+  threadId: string;
+  role: ChatMessageRole;
+  content: string;
+  /** @nullable */
+  metadata: ChatMessageMetadata;
+  createdAt: string;
+}
+
+export interface GetMessagesResponse {
+  messages: ChatMessage[];
+  count: number;
+}
+
+export interface SendMessageResponse {
+  userMessage: ChatMessage;
+  assistantMessage: ChatMessage;
+}
+
+export interface SendMessageRequest {
+  content: string;
+}
+
+export interface Assistant {
+  assistant_id: string;
+  graph_id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  metadata: RecordStringUnknown;
+}
+
+export interface RunAgentResponse {
+  threadId: string;
+  response: string;
+}
+
+export interface RunAgentRequest {
+  assistantId: string;
+  message: string;
+  threadId?: string;
+}
+
 export type EnrollBody = {
   audio: Blob;
 };
@@ -245,6 +328,11 @@ recordingId?: string;
 startDate?: string;
 endDate?: string;
 maxSources?: number;
+};
+
+export type GetMessagesParams = {
+limit?: number;
+offset?: number;
 };
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -1044,6 +1132,536 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
 
       const mutationOptions = getDeleteRecordingMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
+/**
+ * Get or create a chat thread for the current user.
+If recordingId is provided, the thread is scoped to that recording.
+If not provided, the thread is scoped to all recordings.
+ */
+export const getOrCreateThread = (
+    getOrCreateThreadRequest: GetOrCreateThreadRequest,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<GetOrCreateThreadResponse>(
+      {url: `/v1/chat/threads`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: getOrCreateThreadRequest, signal
+    },
+      options);
+    }
+  
+
+
+export const getGetOrCreateThreadMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof getOrCreateThread>>, TError,{data: GetOrCreateThreadRequest}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof getOrCreateThread>>, TError,{data: GetOrCreateThreadRequest}, TContext> => {
+
+const mutationKey = ['getOrCreateThread'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof getOrCreateThread>>, {data: GetOrCreateThreadRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  getOrCreateThread(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GetOrCreateThreadMutationResult = NonNullable<Awaited<ReturnType<typeof getOrCreateThread>>>
+    export type GetOrCreateThreadMutationBody = GetOrCreateThreadRequest
+    export type GetOrCreateThreadMutationError = ErrorType<void>
+
+    export const useGetOrCreateThread = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof getOrCreateThread>>, TError,{data: GetOrCreateThreadRequest}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof getOrCreateThread>>,
+        TError,
+        {data: GetOrCreateThreadRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getGetOrCreateThreadMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
+/**
+ * Get a specific thread by ID.
+ */
+export const getThread = (
+    threadId: string,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<ChatThread>(
+      {url: `/v1/chat/threads/${threadId}`, method: 'GET', signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGetThreadQueryKey = (threadId?: string,) => {
+    return [
+    `/v1/chat/threads/${threadId}`
+    ] as const;
+    }
+
+    
+export const getGetThreadQueryOptions = <TData = Awaited<ReturnType<typeof getThread>>, TError = ErrorType<void>>(threadId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getThread>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetThreadQueryKey(threadId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getThread>>> = ({ signal }) => getThread(threadId, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(threadId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getThread>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetThreadQueryResult = NonNullable<Awaited<ReturnType<typeof getThread>>>
+export type GetThreadQueryError = ErrorType<void>
+
+
+export function useGetThread<TData = Awaited<ReturnType<typeof getThread>>, TError = ErrorType<void>>(
+ threadId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getThread>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getThread>>,
+          TError,
+          Awaited<ReturnType<typeof getThread>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetThread<TData = Awaited<ReturnType<typeof getThread>>, TError = ErrorType<void>>(
+ threadId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getThread>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getThread>>,
+          TError,
+          Awaited<ReturnType<typeof getThread>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetThread<TData = Awaited<ReturnType<typeof getThread>>, TError = ErrorType<void>>(
+ threadId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getThread>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetThread<TData = Awaited<ReturnType<typeof getThread>>, TError = ErrorType<void>>(
+ threadId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getThread>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetThreadQueryOptions(threadId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Delete a chat thread.
+This performs a soft delete.
+ */
+export const deleteThread = (
+    threadId: string,
+ options?: SecondParameter<typeof axios>,) => {
+      
+      
+      return axios<void>(
+      {url: `/v1/chat/threads/${threadId}`, method: 'DELETE'
+    },
+      options);
+    }
+  
+
+
+export const getDeleteThreadMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteThread>>, TError,{threadId: string}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteThread>>, TError,{threadId: string}, TContext> => {
+
+const mutationKey = ['deleteThread'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteThread>>, {threadId: string}> = (props) => {
+          const {threadId} = props ?? {};
+
+          return  deleteThread(threadId,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteThreadMutationResult = NonNullable<Awaited<ReturnType<typeof deleteThread>>>
+    
+    export type DeleteThreadMutationError = ErrorType<void>
+
+    export const useDeleteThread = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteThread>>, TError,{threadId: string}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteThread>>,
+        TError,
+        {threadId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteThreadMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
+/**
+ * Get messages for a thread.
+Returns messages ordered by creation time (oldest first).
+ */
+export const getMessages = (
+    threadId: string,
+    params?: GetMessagesParams,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<GetMessagesResponse>(
+      {url: `/v1/chat/threads/${threadId}/messages`, method: 'GET',
+        params, signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGetMessagesQueryKey = (threadId?: string,
+    params?: GetMessagesParams,) => {
+    return [
+    `/v1/chat/threads/${threadId}/messages`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetMessagesQueryOptions = <TData = Awaited<ReturnType<typeof getMessages>>, TError = ErrorType<void>>(threadId: string,
+    params?: GetMessagesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMessages>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMessagesQueryKey(threadId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMessages>>> = ({ signal }) => getMessages(threadId,params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(threadId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMessages>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof getMessages>>>
+export type GetMessagesQueryError = ErrorType<void>
+
+
+export function useGetMessages<TData = Awaited<ReturnType<typeof getMessages>>, TError = ErrorType<void>>(
+ threadId: string,
+    params: undefined |  GetMessagesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMessages>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMessages>>,
+          TError,
+          Awaited<ReturnType<typeof getMessages>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMessages<TData = Awaited<ReturnType<typeof getMessages>>, TError = ErrorType<void>>(
+ threadId: string,
+    params?: GetMessagesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMessages>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMessages>>,
+          TError,
+          Awaited<ReturnType<typeof getMessages>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMessages<TData = Awaited<ReturnType<typeof getMessages>>, TError = ErrorType<void>>(
+ threadId: string,
+    params?: GetMessagesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMessages>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMessages<TData = Awaited<ReturnType<typeof getMessages>>, TError = ErrorType<void>>(
+ threadId: string,
+    params?: GetMessagesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMessages>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMessagesQueryOptions(threadId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Send a message to a thread and receive an AI response.
+Both the user message and assistant response are stored.
+ */
+export const sendMessage = (
+    threadId: string,
+    sendMessageRequest: SendMessageRequest,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<SendMessageResponse>(
+      {url: `/v1/chat/threads/${threadId}/messages`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: sendMessageRequest, signal
+    },
+      options);
+    }
+  
+
+
+export const getSendMessageMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendMessage>>, TError,{threadId: string;data: SendMessageRequest}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendMessage>>, TError,{threadId: string;data: SendMessageRequest}, TContext> => {
+
+const mutationKey = ['sendMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendMessage>>, {threadId: string;data: SendMessageRequest}> = (props) => {
+          const {threadId,data} = props ?? {};
+
+          return  sendMessage(threadId,data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendMessageMutationResult = NonNullable<Awaited<ReturnType<typeof sendMessage>>>
+    export type SendMessageMutationBody = SendMessageRequest
+    export type SendMessageMutationError = ErrorType<void>
+
+    export const useSendMessage = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendMessage>>, TError,{threadId: string;data: SendMessageRequest}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof sendMessage>>,
+        TError,
+        {threadId: string;data: SendMessageRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getSendMessageMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
+/**
+ * List all available agents/assistants.
+ */
+export const listAgents = (
+    
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<Assistant[]>(
+      {url: `/v1/agents`, method: 'GET', signal
+    },
+      options);
+    }
+  
+
+
+
+export const getListAgentsQueryKey = () => {
+    return [
+    `/v1/agents`
+    ] as const;
+    }
+
+    
+export const getListAgentsQueryOptions = <TData = Awaited<ReturnType<typeof listAgents>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAgents>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAgentsQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAgents>>> = ({ signal }) => listAgents(requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAgents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListAgentsQueryResult = NonNullable<Awaited<ReturnType<typeof listAgents>>>
+export type ListAgentsQueryError = ErrorType<void>
+
+
+export function useListAgents<TData = Awaited<ReturnType<typeof listAgents>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAgents>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAgents>>,
+          TError,
+          Awaited<ReturnType<typeof listAgents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListAgents<TData = Awaited<ReturnType<typeof listAgents>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAgents>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAgents>>,
+          TError,
+          Awaited<ReturnType<typeof listAgents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListAgents<TData = Awaited<ReturnType<typeof listAgents>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAgents>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useListAgents<TData = Awaited<ReturnType<typeof listAgents>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAgents>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListAgentsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Run an agent with a message.
+Optionally provide a threadId to continue an existing conversation.
+ */
+export const chat = (
+    runAgentRequest: RunAgentRequest,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<RunAgentResponse>(
+      {url: `/v1/agents/chat`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: runAgentRequest, signal
+    },
+      options);
+    }
+  
+
+
+export const getChatMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof chat>>, TError,{data: RunAgentRequest}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof chat>>, TError,{data: RunAgentRequest}, TContext> => {
+
+const mutationKey = ['chat'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof chat>>, {data: RunAgentRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  chat(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ChatMutationResult = NonNullable<Awaited<ReturnType<typeof chat>>>
+    export type ChatMutationBody = RunAgentRequest
+    export type ChatMutationError = ErrorType<void>
+
+    export const useChat = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof chat>>, TError,{data: RunAgentRequest}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof chat>>,
+        TError,
+        {data: RunAgentRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getChatMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }
