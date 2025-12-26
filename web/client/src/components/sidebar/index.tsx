@@ -64,7 +64,7 @@ export function DashboardSidebar({
 
             return (
               <Tooltip key={item.title}>
-                <TooltipTrigger asChild>
+                <TooltipTrigger>
                   <Link
                     to={item.url}
                     className={cn(
@@ -102,7 +102,9 @@ export function DashboardSidebar({
             >
               <div className="border-b border-border px-3 py-2">
                 <p className="text-xs">{user.name}</p>
-                <p className="text-[10px] text-muted-foreground">{user.email}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {user.email}
+                </p>
               </div>
               <DropdownMenuGroup className="p-1">
                 <DropdownMenuItem
