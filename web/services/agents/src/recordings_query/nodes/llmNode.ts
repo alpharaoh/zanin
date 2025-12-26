@@ -1,11 +1,13 @@
 import { SystemMessage } from "@langchain/core/messages";
+import { format, startOfDay, endOfDay } from "date-fns";
 import type { RecordingsQueryStateType } from "../state";
 import { modelWithTools } from "../tools";
 
 const getSystemPrompt = (organizationId: string) => {
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
+  const todayStart = startOfDay(now).toISOString();
+  const todayEnd = endOfDay(now).toISOString();
+  const todayFormatted = format(now, "yyyy-MM-dd");
 
   return `You are an intelligent assistant that helps users explore and understand their recorded conversations and meetings.
 
@@ -56,7 +58,7 @@ Example 4: "Find where we discussed the marketing budget"
 - Be conversational and helpful
 
 ## Current Context
-- Today's date: ${now.toISOString().split('T')[0]}
+- Today's date: ${todayFormatted}
 - Today's date range: ${todayStart} to ${todayEnd}
 - Organization ID: ${organizationId}
 

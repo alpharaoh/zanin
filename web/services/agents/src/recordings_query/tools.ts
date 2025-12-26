@@ -1,6 +1,7 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { tool } from "@langchain/core/tools";
 import * as z from "zod";
+import { parseISO, getUnixTime } from "date-fns";
 import { pinecone, RECORDINGS_INDEX } from "../lib/pinecone";
 import { embedText } from "../lib/embedding";
 import db from "../lib/db";
@@ -26,12 +27,8 @@ function buildDateFilter(
 
   const filter: Record<string, unknown> = {};
 
-  const startTs = startDate
-    ? Math.floor(new Date(startDate).getTime() / 1000)
-    : undefined;
-  const endTs = endDate
-    ? Math.floor(new Date(endDate).getTime() / 1000)
-    : undefined;
+  const startTs = startDate ? getUnixTime(parseISO(startDate)) : undefined;
+  const endTs = endDate ? getUnixTime(parseISO(endDate)) : undefined;
 
   if (startTs && endTs) {
     filter.createdAtTs = {
@@ -183,10 +180,10 @@ const getRecordingDetails = tool(
       conditions.push(inArray(recordings.id, recordingIds!));
     }
     if (startDate) {
-      conditions.push(gte(recordings.createdAt, new Date(startDate)));
+      conditions.push(gte(recordings.createdAt, parseISO(startDate)));
     }
     if (endDate) {
-      conditions.push(lte(recordings.createdAt, new Date(endDate)));
+      conditions.push(lte(recordings.createdAt, parseISO(endDate)));
     }
 
     const results = await db
