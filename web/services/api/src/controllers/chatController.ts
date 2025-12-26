@@ -165,12 +165,11 @@ export class ChatController extends Controller {
     @Path() threadId: string,
     @Body() body: SendMessageRequest,
   ): Promise<SendMessageResponse> {
-    const { userId, organizationId } = request.user!;
+    const { organizationId } = request.user!;
 
     const result = await ChatService.sendMessage(
       threadId,
       organizationId,
-      userId,
       body.content,
     );
 

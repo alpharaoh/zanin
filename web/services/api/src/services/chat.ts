@@ -4,10 +4,7 @@ import { selectChatThread } from "@zanin/db/queries/select/one/selectChatThread"
 import { listChatMessages } from "@zanin/db/queries/select/many/listChatMessages";
 import { listChatThreads } from "@zanin/db/queries/select/many/listChatThreads";
 import { updateChatThread } from "@zanin/db/queries/update/updateChatThread";
-import {
-  SelectChatThread,
-  SelectChatMessage,
-} from "@zanin/db/schema";
+import { SelectChatThread, SelectChatMessage } from "@zanin/db/schema";
 import LangGraphService from "./external/langgraph/service";
 
 const RECORDINGS_QUERY_ASSISTANT = "recordings_query";
@@ -154,7 +151,6 @@ const ChatService = {
   sendMessage: async (
     threadId: string,
     organizationId: string,
-    userId: string,
     content: string,
   ): Promise<{ userMessage: ChatMessage; assistantMessage: ChatMessage }> => {
     // Get the thread to find the LangGraph reference
@@ -182,7 +178,9 @@ const ChatService = {
     });
 
     // Extract assistant response
-    const messages = (result as { messages?: { role: string; content: string }[] }).messages;
+    const messages = (
+      result as { messages?: { role: string; content: string }[] }
+    ).messages;
     const lastMessage = messages?.[messages.length - 1];
     const responseContent =
       typeof lastMessage?.content === "string"
