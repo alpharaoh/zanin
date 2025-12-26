@@ -4,6 +4,7 @@ import { selectChatThread } from "@zanin/db/queries/select/one/selectChatThread"
 import { insertChatMessage } from "@zanin/db/queries/insert/insertChatMessage";
 import { updateChatThread } from "@zanin/db/queries/update/updateChatThread";
 import LangGraphService from "../services/external/langgraph/service";
+import { inngest } from "../inngest/client";
 
 const RECORDINGS_QUERY_ASSISTANT = "recordings";
 const router = Router();
@@ -310,6 +311,17 @@ router.post(
       await updateChatThread(threadId, organizationId, {
         lastActivityAt: new Date(),
       });
+
+      // Generate title if thread doesn't have one yet
+      if (!thread.title) {
+        await inngest.send({
+          name: "chat/generate-title",
+          data: {
+            threadId,
+            organizationId,
+          },
+        });
+      }
 
       send(res, {
         type: "assistant_message",

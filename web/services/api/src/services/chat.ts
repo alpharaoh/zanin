@@ -6,6 +6,7 @@ import { listChatThreads } from "@zanin/db/queries/select/many/listChatThreads";
 import { updateChatThread } from "@zanin/db/queries/update/updateChatThread";
 import { SelectChatThread, SelectChatMessage } from "@zanin/db/schema";
 import LangGraphService from "./external/langgraph/service";
+import { inngest } from "../inngest/client";
 
 const RECORDINGS_QUERY_ASSISTANT = "recordings";
 
@@ -196,10 +197,20 @@ const ChatService = {
       metadata: null,
     });
 
-    // Update thread's last activity
-    await updateChatThread(threadId, organizationId, {
+    const chatThread = await updateChatThread(threadId, organizationId, {
       lastActivityAt: new Date(),
     });
+
+    // Generate title if thread doesn't have one yet
+    if (!chatThread.title) {
+      await inngest.send({
+        name: "chat/generate-title",
+        data: {
+          threadId,
+          organizationId,
+        },
+      });
+    }
 
     return {
       userMessage: mapMessage(userMessage),
