@@ -277,13 +277,16 @@ function ThreadRow({
 }) {
   const { data: recording } = useGetRecording(thread.recordingId ?? "", {
     query: {
-      enabled: !!thread.recordingId,
+      enabled: !!thread.recordingId && !thread.title,
     },
   });
 
-  const title = thread.recordingId
-    ? recording?.title || "untitled"
-    : "all recordings";
+  // Priority: thread title > recording title > fallback
+  const title = thread.title
+    ? thread.title
+    : thread.recordingId
+      ? recording?.title || "untitled"
+      : "all recordings";
 
   return (
     <div
