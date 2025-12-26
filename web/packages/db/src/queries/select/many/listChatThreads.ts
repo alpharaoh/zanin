@@ -1,21 +1,30 @@
-import { and, count, desc, isNull } from "drizzle-orm";
+import { and, count, inArray, isNull } from "drizzle-orm";
 import { chatThreads, InsertChatThread } from "../../../schema";
+import { buildOrderBy } from "../../../utils/buildOrderBy";
 import { buildWhere } from "../../../utils/buildWhere";
 import db from "../../..";
 
 export const listChatThreads = async (
-  where?: Partial<InsertChatThread>,
+  where?: Partial<InsertChatThread> & { ids?: string[] },
+  orderBy?: Partial<Record<keyof InsertChatThread, "asc" | "desc">>,
   limit?: number,
   offset?: number,
 ) => {
-  const baseWhere = buildWhere(chatThreads, where || {});
-  const whereCondition = and(baseWhere, isNull(chatThreads.deletedAt));
+  const { ids, ...rest } = where || {};
+  let whereCondition = and(
+    buildWhere(chatThreads, rest),
+    isNull(chatThreads.deletedAt),
+  );
 
-  const dataQuery = db
-    .select()
-    .from(chatThreads)
-    .where(whereCondition)
-    .orderBy(desc(chatThreads.lastActivityAt));
+  if (ids) {
+    whereCondition = and(whereCondition, inArray(chatThreads.id, ids));
+  }
+
+  const dataQuery = db.select().from(chatThreads).where(whereCondition);
+
+  if (orderBy) {
+    dataQuery.orderBy(...buildOrderBy(chatThreads, orderBy));
+  }
 
   if (limit) {
     dataQuery.limit(limit);

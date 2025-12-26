@@ -115,7 +115,12 @@ const ChatService = {
       where.recordingId = recordingId;
     }
 
-    const result = await listChatThreads(where, limit, offset);
+    const result = await listChatThreads(
+      where,
+      { lastActivityAt: "desc" },
+      limit,
+      offset,
+    );
     return {
       threads: result.data.map(mapThread),
       count: result.count,
@@ -130,7 +135,12 @@ const ChatService = {
     limit?: number,
     offset?: number,
   ): Promise<{ messages: ChatMessage[]; count: number }> => {
-    const result = await listChatMessages(threadId, limit, offset);
+    const result = await listChatMessages(
+      { threadId },
+      { createdAt: "asc" },
+      limit,
+      offset,
+    );
     return {
       messages: result.data.map(mapMessage),
       count: result.count,
