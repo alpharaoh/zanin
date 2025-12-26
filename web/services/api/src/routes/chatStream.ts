@@ -123,8 +123,6 @@ router.post(
           organizationId,
           recordingId: thread.recordingId,
         },
-        // If your LangGraphService supports it, this is ideal:
-        // streamMode: ["messages", "updates"],
       });
 
       // This tracks the *full* assistant text as we go
@@ -137,6 +135,7 @@ router.post(
         event: string;
         data: unknown;
       }>) {
+        console.log("\n\nevent:", event, "\n\n\n");
         if (event.event === "messages/partial") {
           /**
            * messages/partial:
@@ -192,6 +191,19 @@ router.post(
             assistantContent = extractTextFromContent(lastAiMessage.content);
           }
         } else if (event.event === "updates") {
+          // [api] event: {
+          // [api]   id: "4",
+          // [api]   event: "updates",
+          // [api]   data: {
+          // [api]     llmCall: {
+          // [api]       messages: [
+          // [api]         [Object ...]
+          // [api]       ],
+          // [api]       llmCalls: 1,
+          // [api]     },
+          // [api]   },
+          // [api] }
+          // [api]
           /**
            * updates:
            *   node-specific updates. Tool results usually show up under a `tools` key.
