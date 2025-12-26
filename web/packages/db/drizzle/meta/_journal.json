@@ -36,6 +36,13 @@
       "when": 1766498673207,
       "tag": "0004_slow_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1766710751855,
+      "tag": "0005_safe_trish_tilby",
+      "breakpoints": true
     }
   ]
 }
