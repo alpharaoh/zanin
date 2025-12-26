@@ -7,7 +7,7 @@ import { updateChatThread } from "@zanin/db/queries/update/updateChatThread";
 import { SelectChatThread, SelectChatMessage } from "@zanin/db/schema";
 import LangGraphService from "./external/langgraph/service";
 
-const RECORDINGS_QUERY_ASSISTANT = "recordings_query";
+const RECORDINGS_QUERY_ASSISTANT = "recordings";
 
 export interface ChatThread {
   id: string;
@@ -174,6 +174,7 @@ const ChatService = {
       input: {
         messages: [{ role: "user", content }],
         organizationId,
+        recordingId: thread.recordingId,
       },
     });
 
