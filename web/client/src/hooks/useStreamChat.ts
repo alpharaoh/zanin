@@ -156,6 +156,10 @@ export function useStreamChat(options: UseStreamChatOptions = {}) {
 
                   case "assistant_message":
                     if (event.message) {
+                      // Clear streaming state BEFORE adding the message to prevent duplicate tool calls
+                      setIsStreaming(false);
+                      setStreamingContent("");
+                      setToolCalls([]);
                       options.onAssistantMessage?.(event.message);
                     }
                     break;
