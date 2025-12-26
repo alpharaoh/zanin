@@ -3,7 +3,7 @@ import { format, startOfDay, endOfDay } from "date-fns";
 import type { RecordingsQueryStateType } from "../state";
 import { modelWithTools } from "../tools";
 
-const getSystemPrompt = (organizationId: string) => {
+const getSystemPrompt = (organizationId: string, recordingId?: string) => {
   const now = new Date();
   const todayStart = startOfDay(now).toISOString();
   const todayEnd = endOfDay(now).toISOString();
@@ -34,6 +34,8 @@ const getSystemPrompt = (organizationId: string) => {
 - The question can be answered from recording summaries/metadata alone
 - The date range is narrow enough that fetching all recordings is sufficient
 
+${recordingId ? `You are given a recording ID by the user to use for this query: ${recordingId}` : ""}
+
 ## Workflow Examples
 
 Example 1: "What happened yesterday?"
@@ -61,6 +63,7 @@ Example 4: "Find where we discussed the marketing budget"
 - Today's date: ${todayFormatted}
 - Today's date range: ${todayStart} to ${todayEnd}
 - Organization ID: ${organizationId}
+${recordingId ? `Recording ID: ${recordingId}` : ""}
 
 <metadata>
 {
@@ -73,7 +76,9 @@ export async function llmCall(state: RecordingsQueryStateType) {
   return {
     messages: [
       await modelWithTools.invoke([
-        new SystemMessage(getSystemPrompt(state.organizationId)),
+        new SystemMessage(
+          getSystemPrompt(state.organizationId, state.recordingId),
+        ),
         ...state.messages,
       ]),
     ],

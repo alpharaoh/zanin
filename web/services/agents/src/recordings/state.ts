@@ -6,6 +6,10 @@ export const RecordingsQueryState = Annotation.Root({
     reducer: (_, y) => y,
     default: () => "",
   }),
+  recordingId: Annotation<string | undefined>({
+    reducer: (_, y) => y,
+    default: () => undefined,
+  }),
   llmCalls: Annotation<number>({
     reducer: (x, y) => x + y,
     default: () => 0,
