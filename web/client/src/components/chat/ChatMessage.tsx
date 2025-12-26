@@ -1,7 +1,8 @@
+import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { ChatMessage as ChatMessageType } from "@/api";
 import { ToolCallCard } from "./ToolCallCard";
-import type { ToolCall } from "@/hooks/useStreamChat";
+import type { ToolCall, ToolCallResult } from "@/hooks/useStreamChat";
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -9,8 +10,46 @@ interface ChatMessageProps {
   isStreaming?: boolean;
 }
 
+// Extract tool calls from message metadata (for persisted messages)
+function getToolCallsFromMetadata(
+  metadata: Record<string, unknown> | null
+): ToolCall[] | undefined {
+  if (!metadata || !("toolCalls" in metadata)) {
+    return undefined;
+  }
+  const stored = metadata.toolCalls as Array<{
+    id: string;
+    name: string;
+    result?: {
+      name: string;
+      count?: number;
+      recordings?: Array<{
+        id: string;
+        title: string | null;
+        createdAt: string;
+        relevanceScore?: number;
+        excerpts?: string[];
+      }>;
+    };
+  }>;
+  return stored.map((tc) => ({
+    id: tc.id,
+    name: tc.name,
+    status: "completed" as const,
+    result: tc.result,
+  }));
+}
+
 export function ChatMessage({ message, toolCalls, isStreaming }: ChatMessageProps) {
   const isUser = message.role === "user";
+
+  // Use passed toolCalls (streaming) or extract from metadata (persisted)
+  const displayToolCalls = useMemo(() => {
+    if (toolCalls && toolCalls.length > 0) {
+      return toolCalls;
+    }
+    return getToolCallsFromMetadata(message.metadata);
+  }, [toolCalls, message.metadata]);
 
   return (
     <div
@@ -38,9 +77,9 @@ export function ChatMessage({ message, toolCalls, isStreaming }: ChatMessageProp
       </div>
 
       {/* Tool calls */}
-      {toolCalls && toolCalls.length > 0 && (
+      {displayToolCalls && displayToolCalls.length > 0 && (
         <div className="relative mb-3 flex flex-col gap-1.5">
-          {toolCalls.map((toolCall) => (
+          {displayToolCalls.map((toolCall) => (
             <ToolCallCard key={toolCall.id} toolCall={toolCall} />
           ))}
         </div>

@@ -8,14 +8,72 @@ import LangGraphService from "../services/external/langgraph/service";
 const RECORDINGS_QUERY_ASSISTANT = "recordings";
 const router = Router();
 
+interface ToolResult {
+  name: string;
+  count?: number;
+  recordings?: Array<{
+    id: string;
+    title: string | null;
+    createdAt: string;
+    relevanceScore?: number;
+    excerpts?: string[];
+  }>;
+}
+
 type StreamEvent =
   | { type: "user_message"; message: unknown }
   | { type: "token"; content: string }
   | { type: "tool_start"; toolCallId: string; name: string }
-  | { type: "tool_end"; toolCallId: string }
+  | { type: "tool_end"; toolCallId: string; result?: ToolResult }
   | { type: "assistant_message"; message: unknown }
   | { type: "error"; message: string }
   | { type: "done" };
+
+function parseToolResult(
+  name: string,
+  content: string,
+): ToolResult | undefined {
+  try {
+    const data = JSON.parse(content);
+
+    if (name === "get_recording_details" && data.recordings) {
+      return {
+        name,
+        count: data.recordings.length,
+        recordings: data.recordings.map(
+          (r: { id: string; title: string | null; createdAt: string }) => ({
+            id: r.id,
+            title: r.title,
+            createdAt: r.createdAt,
+          }),
+        ),
+      };
+    }
+
+    if (name === "search_recordings" && data.results) {
+      return {
+        name,
+        count: data.results.length,
+        recordings: data.results.map(
+          (r: {
+            recordingId: string;
+            relevanceScore?: number;
+            relevantExcerpts?: string[];
+          }) => ({
+            id: r.recordingId,
+            title: null,
+            createdAt: "",
+            relevanceScore: r.relevanceScore,
+            excerpts: r.relevantExcerpts,
+          }),
+        ),
+      };
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return undefined;
+}
 
 function send(res: Response, event: StreamEvent) {
   res.write(`data: ${JSON.stringify(event)}\n\n`);
@@ -100,7 +158,10 @@ router.post(
       });
 
       let assistantContent = "";
-      const tools = new Map<string, boolean>(); // id -> completed
+      const tools = new Map<
+        string,
+        { name: string; completed: boolean; result?: ToolResult }
+      >();
 
       for await (const event of stream as AsyncIterable<{
         event: string;
@@ -130,7 +191,7 @@ router.post(
             if (aiMsg.tool_calls?.length) {
               for (const tc of aiMsg.tool_calls) {
                 if (!tools.has(tc.id)) {
-                  tools.set(tc.id, false);
+                  tools.set(tc.id, { name: tc.name, completed: false });
                   send(res, {
                     type: "tool_start",
                     toolCallId: tc.id,
@@ -144,6 +205,7 @@ router.post(
           const messages = data as Array<{
             type?: string;
             content?: unknown;
+            name?: string;
             tool_calls?: Array<{ id: string; name: string }>;
             tool_call_id?: string;
           }>;
@@ -153,7 +215,7 @@ router.post(
             if (msg.type === "ai" && msg.tool_calls?.length) {
               for (const tc of msg.tool_calls) {
                 if (!tools.has(tc.id)) {
-                  tools.set(tc.id, false);
+                  tools.set(tc.id, { name: tc.name, completed: false });
                   send(res, {
                     type: "tool_start",
                     toolCallId: tc.id,
@@ -164,10 +226,20 @@ router.post(
             }
 
             // Tool result
-            if (msg.type === "tool" && msg.tool_call_id) {
-              if (tools.has(msg.tool_call_id) && !tools.get(msg.tool_call_id)) {
-                tools.set(msg.tool_call_id, true);
-                send(res, { type: "tool_end", toolCallId: msg.tool_call_id });
+            if (msg.type === "tool" && msg.tool_call_id && msg.name) {
+              const tool = tools.get(msg.tool_call_id);
+              if (tool && !tool.completed) {
+                const result = parseToolResult(
+                  msg.name,
+                  typeof msg.content === "string" ? msg.content : "",
+                );
+                tool.completed = true;
+                tool.result = result;
+                send(res, {
+                  type: "tool_end",
+                  toolCallId: msg.tool_call_id,
+                  result,
+                });
               }
             }
 
@@ -180,11 +252,31 @@ router.post(
           // Tool node completion
           const updates = data as Record<string, unknown>;
           if ("toolNode" in updates) {
-            // Mark all pending tools as completed
-            for (const [id, completed] of tools) {
-              if (!completed) {
-                tools.set(id, true);
-                send(res, { type: "tool_end", toolCallId: id });
+            console.log("updates", JSON.stringify(updates));
+            const toolNode = updates.toolNode as {
+              messages?: Array<{
+                type?: string;
+                name?: string;
+                content?: string;
+                tool_call_id?: string;
+              }>;
+            };
+            // Parse results from toolNode messages
+            if (toolNode.messages) {
+              for (const msg of toolNode.messages) {
+                if (msg.type === "tool" && msg.tool_call_id && msg.name) {
+                  const tool = tools.get(msg.tool_call_id);
+                  if (tool && !tool.completed) {
+                    const result = parseToolResult(msg.name, msg.content || "");
+                    tool.completed = true;
+                    tool.result = result;
+                    send(res, {
+                      type: "tool_end",
+                      toolCallId: msg.tool_call_id,
+                      result,
+                    });
+                  }
+                }
               }
             }
           }
@@ -192,20 +284,26 @@ router.post(
       }
 
       // Mark any tools that didn't get an explicit end
-      for (const [id, completed] of tools) {
-        if (!completed) {
+      for (const [id, tool] of tools) {
+        if (!tool.completed) {
           send(res, { type: "tool_end", toolCallId: id });
         }
       }
 
-      // Store assistant message
+      // Store assistant message with tool results in metadata
       const assistantMessage = await insertChatMessage({
         threadId,
         role: "assistant",
         content: assistantContent,
         metadata:
           tools.size > 0
-            ? { toolCalls: Array.from(tools.keys()).map((id) => ({ id })) }
+            ? {
+                toolCalls: Array.from(tools.entries()).map(([id, tool]) => ({
+                  id,
+                  name: tool.name,
+                  result: tool.result,
+                })),
+              }
             : null,
       });
 
@@ -238,7 +336,7 @@ router.post(
       });
       res.end();
     }
-  }
+  },
 );
 
 export default router;

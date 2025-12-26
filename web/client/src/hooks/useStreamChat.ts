@@ -2,10 +2,25 @@ import { useState, useCallback, useRef } from "react";
 import { env } from "@zanin/env/client";
 import type { ChatMessage } from "@/api";
 
+export interface ToolCallRecording {
+  id: string;
+  title: string | null;
+  createdAt: string;
+  relevanceScore?: number;
+  excerpts?: string[];
+}
+
+export interface ToolCallResult {
+  name: string;
+  count?: number;
+  recordings?: ToolCallRecording[];
+}
+
 export interface ToolCall {
   id: string;
   name: string;
   status: "running" | "completed";
+  result?: ToolCallResult;
 }
 
 interface StreamEvent {
@@ -21,6 +36,7 @@ interface StreamEvent {
   content?: string;
   toolCallId?: string;
   name?: string;
+  result?: ToolCallResult;
 }
 
 interface UseStreamChatOptions {
@@ -127,7 +143,11 @@ export function useStreamChat(options: UseStreamChatOptions = {}) {
                       setToolCalls((prev) =>
                         prev.map((tc) =>
                           tc.id === event.toolCallId
-                            ? { ...tc, status: "completed" as const }
+                            ? {
+                                ...tc,
+                                status: "completed" as const,
+                                result: event.result,
+                              }
                             : tc
                         )
                       );
@@ -141,8 +161,10 @@ export function useStreamChat(options: UseStreamChatOptions = {}) {
                     break;
 
                   case "error":
-                    setError(event.message || "Unknown error");
-                    options.onError?.(event.message || "Unknown error");
+                    setError(event.message?.content || "Unknown error");
+                    options.onError?.(
+                      event.message?.content || "Unknown error"
+                    );
                     break;
 
                   case "done":
