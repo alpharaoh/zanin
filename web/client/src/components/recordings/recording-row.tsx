@@ -1,7 +1,8 @@
 import { type Recording } from "@/api";
-import { formatDuration, formatRelativeDate } from "@/lib/format";
+import { formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
+import { formatDistance } from "date-fns";
 import { TrashIcon } from "lucide-react";
 import { useState } from "react";
 
@@ -66,7 +67,7 @@ export function RecordingRow({
           : "—"}
       </div>
       <div className="col-span-2 text-right text-muted-foreground">
-        {formatRelativeDate(recording.createdAt)}
+        {formatDistance(recording.createdAt, new Date(), { addSuffix: true })}
       </div>
       {showDelete && onDelete && (
         <div className="col-span-1 flex justify-end">
