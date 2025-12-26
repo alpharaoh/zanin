@@ -1,11 +1,15 @@
 import { cn } from "@/lib/utils";
 import type { ChatMessage as ChatMessageType } from "@/api";
+import { ToolCallCard } from "./ToolCallCard";
+import type { ToolCall } from "@/hooks/useStreamChat";
 
 interface ChatMessageProps {
   message: ChatMessageType;
+  toolCalls?: ToolCall[];
+  isStreaming?: boolean;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, toolCalls, isStreaming }: ChatMessageProps) {
   const isUser = message.role === "user";
 
   return (
@@ -33,9 +37,21 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </span>
       </div>
 
+      {/* Tool calls */}
+      {toolCalls && toolCalls.length > 0 && (
+        <div className="relative mb-3 flex flex-col gap-1.5">
+          {toolCalls.map((toolCall) => (
+            <ToolCallCard key={toolCall.id} toolCall={toolCall} />
+          ))}
+        </div>
+      )}
+
       {/* Content */}
       <p className="relative whitespace-pre-wrap text-xs leading-relaxed">
         {message.content}
+        {isStreaming && (
+          <span className="ml-0.5 inline-block h-3 w-1.5 animate-pulse bg-primary" />
+        )}
       </p>
     </div>
   );

@@ -80,7 +80,10 @@ const LangGraphService = {
     input: Record<string, unknown>;
   }): ReturnType<typeof client.runs.stream> => {
     const { threadId, assistantId, input } = options;
-    return client.runs.stream(threadId, assistantId, { input });
+    return client.runs.stream(threadId, assistantId, {
+      input,
+      streamMode: ["messages", "updates"],
+    });
   },
 
   /**

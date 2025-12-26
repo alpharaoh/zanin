@@ -3,7 +3,6 @@ import {
   useListThreads,
   useCreateThread,
   useGetMessages,
-  useSendMessage,
   useGetRecording,
   type ChatMessage,
 } from "@/api";
@@ -11,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { ChatHeader } from "./ChatHeader";
 import { ChatMessages } from "./ChatMessages";
 import { ChatInput } from "./ChatInput";
+import { useStreamChat } from "@/hooks/useStreamChat";
 
 interface ChatPanelProps {
   recordingId?: string;
@@ -26,6 +26,7 @@ export function ChatPanel({
   const [threadId, setThreadId] = useState<string | null>(null);
   const [isNewThreadMode, setIsNewThreadMode] = useState(false);
   const hasSyncedRef = useRef<string | null>(null);
+  const tempUserMessageIdRef = useRef<string | null>(null);
 
   // Fetch recording details if we have a recordingId
   const { data: recording } = useGetRecording(recordingId ?? "", {
@@ -53,6 +54,40 @@ export function ChatPanel({
     }
   );
 
+  // Streaming chat hook
+  const {
+    sendMessage: streamMessage,
+    isStreaming,
+    streamingContent,
+    toolCalls,
+  } = useStreamChat({
+    onUserMessage: (message) => {
+      // Replace temp user message with real one
+      if (tempUserMessageIdRef.current) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempUserMessageIdRef.current ? message : m
+          )
+        );
+        tempUserMessageIdRef.current = null;
+      }
+    },
+    onAssistantMessage: (message) => {
+      // Add the final assistant message
+      setMessages((prev) => [...prev, message]);
+    },
+    onError: (error) => {
+      console.error("Stream error:", error);
+      // Remove temp user message on error
+      if (tempUserMessageIdRef.current) {
+        setMessages((prev) =>
+          prev.filter((m) => m.id !== tempUserMessageIdRef.current)
+        );
+        tempUserMessageIdRef.current = null;
+      }
+    },
+  });
+
   // Reset on recordingId change
   useEffect(() => {
     setThreadId(null);
@@ -78,19 +113,22 @@ export function ChatPanel({
 
   // Mutations
   const createThread = useCreateThread();
-  const sendMessage = useSendMessage();
 
   // Handle sending a message
   const handleSend = useCallback(
     async (content: string) => {
+      const tempId = `temp-${Date.now()}`;
       const tempUserMessage: ChatMessage = {
-        id: `temp-${Date.now()}`,
+        id: tempId,
         threadId: threadId ?? "temp",
         role: "user",
         content,
         metadata: null,
         createdAt: new Date().toISOString(),
       };
+
+      // Store temp ID for later replacement
+      tempUserMessageIdRef.current = tempId;
 
       // Show user message immediately
       setMessages((prev) => [...prev, tempUserMessage]);
@@ -110,30 +148,16 @@ export function ChatPanel({
           setIsNewThreadMode(false);
         } catch (error) {
           console.error("Failed to create thread:", error);
-          setMessages((prev) => prev.filter((m) => m.id !== tempUserMessage.id));
+          setMessages((prev) => prev.filter((m) => m.id !== tempId));
+          tempUserMessageIdRef.current = null;
           return;
         }
       }
 
-      // Send message
-      try {
-        const result = await sendMessage.mutateAsync({
-          threadId: currentThreadId,
-          data: { content },
-        });
-
-        // Replace temp message with real messages
-        setMessages((prev) => [
-          ...prev.filter((m) => m.id !== tempUserMessage.id),
-          result.userMessage,
-          result.assistantMessage,
-        ]);
-      } catch (error) {
-        console.error("Failed to send message:", error);
-        setMessages((prev) => prev.filter((m) => m.id !== tempUserMessage.id));
-      }
+      // Stream message
+      await streamMessage(currentThreadId, content);
     },
-    [threadId, createThread, sendMessage, recordingId]
+    [threadId, createThread, streamMessage, recordingId]
   );
 
   // Handle new thread - just clear messages and enter new thread mode
@@ -164,12 +188,14 @@ export function ChatPanel({
 
       <ChatMessages
         messages={messages}
-        isLoading={sendMessage.isPending}
+        streamingContent={streamingContent}
+        streamingToolCalls={toolCalls}
+        isStreaming={isStreaming}
       />
 
       <ChatInput
         onSend={handleSend}
-        disabled={isInitializing}
+        disabled={isInitializing || isStreaming}
       />
     </div>
   );

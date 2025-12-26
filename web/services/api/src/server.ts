@@ -9,6 +9,7 @@ import { inngestHandler } from "./handlers/inngestHandler";
 import { notFoundHandler } from "./handlers/notFoundHandler";
 import { responseHandler } from "./handlers/responseHandler";
 import { authMiddleware } from "@zanin/auth";
+import chatStreamRouter from "./routes/chatStream";
 
 export const app = express();
 
@@ -42,6 +43,10 @@ app.use("/docs", swaggerUi.serve, async (_: Request, res: Response) => {
   );
 });
 app.use("/api/inngest", inngestHandler);
+
+// Streaming routes - must be before responseHandler (SSE doesn't use response envelope)
+app.use("/api/v1/chat", chatStreamRouter);
+
 app.use(responseHandler);
 
 RegisterRoutes(app);

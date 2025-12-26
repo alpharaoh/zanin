@@ -1,23 +1,32 @@
 import { useEffect, useRef } from "react";
 import type { ChatMessage as ChatMessageType } from "@/api";
 import { ChatMessage } from "./ChatMessage";
-import { Spinner } from "@/components/ui/spinner";
+import type { ToolCall } from "@/hooks/useStreamChat";
 
 interface ChatMessagesProps {
   messages: ChatMessageType[];
-  isLoading?: boolean;
+  streamingContent?: string;
+  streamingToolCalls?: ToolCall[];
+  isStreaming?: boolean;
 }
 
-export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
+export function ChatMessages({
+  messages,
+  streamingContent,
+  streamingToolCalls,
+  isStreaming,
+}: ChatMessagesProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages or streaming content changes
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "instant" });
-  }, [messages, isLoading]);
+  }, [messages, streamingContent, isStreaming]);
 
-  if (messages.length === 0 && !isLoading) {
+  const showEmpty = messages.length === 0 && !isStreaming;
+
+  if (showEmpty) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-6 text-center">
         <div className="space-y-2">
@@ -36,11 +45,20 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
         <ChatMessage key={message.id} message={message} />
       ))}
 
-      {isLoading && (
-        <div className="border border-border bg-gradient-to-b from-card to-background p-3">
-          <div className="pointer-events-none absolute inset-0 opacity-10 grid-pattern" />
-          <Spinner label="thinking" />
-        </div>
+      {/* Streaming message */}
+      {isStreaming && (
+        <ChatMessage
+          message={{
+            id: "streaming",
+            threadId: "streaming",
+            role: "assistant",
+            content: streamingContent || "",
+            metadata: null,
+            createdAt: new Date().toISOString(),
+          }}
+          toolCalls={streamingToolCalls}
+          isStreaming
+        />
       )}
 
       <div ref={bottomRef} />
