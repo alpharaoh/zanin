@@ -1,13 +1,10 @@
-import { useCallback, useState, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useState, useEffect, useRef } from "react";
 import {
   useListThreads,
   useCreateThread,
   useGetMessages,
   useSendMessage,
   useGetRecording,
-  getGetMessagesQueryKey,
-  getListThreadsQueryKey,
   type ChatMessage,
 } from "@/api";
 import { cn } from "@/lib/utils";
@@ -24,13 +21,11 @@ export function ChatPanel({
   recordingId,
   className,
 }: ChatPanelProps) {
-  const queryClient = useQueryClient();
-
-  // Local state for the active thread - this is the source of truth
-  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
-
-  // Optimistic messages shown before server responds
-  const [optimisticMessages, setOptimisticMessages] = useState<ChatMessage[]>([]);
+  // Local messages state - source of truth for display
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const [isNewThreadMode, setIsNewThreadMode] = useState(false);
+  const hasSyncedRef = useRef<string | null>(null);
 
   // Fetch recording details if we have a recordingId
   const { data: recording } = useGetRecording(recordingId ?? "", {
@@ -39,132 +34,111 @@ export function ChatPanel({
     },
   });
 
-  // List threads for this scope (get most recent one)
+  // List threads to get the most recent one for this scope
   const threadsQuery = useListThreads({ recordingId, limit: 1 });
   const latestThread = threadsQuery.data?.threads?.[0];
 
-  // Set active thread from query on initial load or when recordingId changes
-  useEffect(() => {
-    if (latestThread && !activeThreadId) {
-      setActiveThreadId(latestThread.id);
-    }
-  }, [latestThread, activeThreadId]);
-
-  // Reset when recordingId changes
-  useEffect(() => {
-    setActiveThreadId(null);
-    setOptimisticMessages([]);
-  }, [recordingId]);
-
-  // Create thread mutation
-  const createThread = useCreateThread();
-
-  // Get messages for active thread
+  // Fetch messages for the current thread
   const messagesQuery = useGetMessages(
-    activeThreadId ?? "",
+    threadId ?? "",
     undefined,
     {
       query: {
-        enabled: !!activeThreadId,
+        enabled: !!threadId,
       },
     }
   );
 
-  // Send message mutation
-  const sendMessage = useSendMessage();
+  // Reset on recordingId change
+  useEffect(() => {
+    setThreadId(null);
+    setMessages([]);
+    setIsNewThreadMode(false);
+    hasSyncedRef.current = null;
+  }, [recordingId]);
 
-  // Combine server messages with optimistic messages
-  const serverMessages = messagesQuery.data?.messages ?? [];
-  const messages = optimisticMessages.length > 0 ? optimisticMessages : serverMessages;
+  // Auto-select latest thread on initial load (but not in new thread mode)
+  useEffect(() => {
+    if (latestThread && !threadId && !isNewThreadMode) {
+      setThreadId(latestThread.id);
+    }
+  }, [latestThread, threadId, isNewThreadMode]);
+
+  // Sync messages from server ONLY once per thread (on initial load)
+  useEffect(() => {
+    if (threadId && messagesQuery.data?.messages && hasSyncedRef.current !== threadId) {
+      setMessages(messagesQuery.data.messages);
+      hasSyncedRef.current = threadId;
+    }
+  }, [threadId, messagesQuery.data?.messages]);
+
+  // Mutations
+  const createThread = useCreateThread();
+  const sendMessage = useSendMessage();
 
   // Handle sending a message
   const handleSend = useCallback(
     async (content: string) => {
       const tempUserMessage: ChatMessage = {
-        id: `temp-user-${Date.now()}`,
-        threadId: activeThreadId ?? "temp",
+        id: `temp-${Date.now()}`,
+        threadId: threadId ?? "temp",
         role: "user",
         content,
         metadata: null,
         createdAt: new Date().toISOString(),
       };
 
-      // If no active thread, create one first
-      if (!activeThreadId) {
-        // Show optimistic message immediately
-        setOptimisticMessages([tempUserMessage]);
+      // Show user message immediately
+      setMessages((prev) => [...prev, tempUserMessage]);
 
+      let currentThreadId = threadId;
+
+      // Create thread if needed
+      if (!currentThreadId) {
         try {
-          // Create thread
           const result = await createThread.mutateAsync({
             data: { recordingId },
           });
-          const newThread = result.thread;
-
-          // Update active thread
-          setActiveThreadId(newThread.id);
-
-          // Send message
-          const sendResult = await sendMessage.mutateAsync({
-            threadId: newThread.id,
-            data: { content },
-          });
-
-          // Update caches
-          queryClient.setQueryData(
-            getListThreadsQueryKey({ recordingId, limit: 1 }),
-            { threads: [newThread], count: 1 }
-          );
-          queryClient.setQueryData(
-            getGetMessagesQueryKey(newThread.id),
-            { messages: [sendResult.userMessage, sendResult.assistantMessage], count: 2 }
-          );
-
-          // Clear optimistic messages (server data will take over)
-          setOptimisticMessages([]);
+          currentThreadId = result.thread.id;
+          setThreadId(currentThreadId);
+          setIsNewThreadMode(false);
         } catch (error) {
-          console.error("Failed to send message:", error);
-          setOptimisticMessages([]);
+          console.error("Failed to create thread:", error);
+          setMessages((prev) => prev.filter((m) => m.id !== tempUserMessage.id));
+          return;
         }
-        return;
       }
 
-      // Existing thread - optimistic update
-      setOptimisticMessages([...serverMessages, tempUserMessage]);
-
+      // Send message
       try {
         const result = await sendMessage.mutateAsync({
-          threadId: activeThreadId,
+          threadId: currentThreadId,
           data: { content },
         });
 
-        // Update cache with real messages
-        queryClient.setQueryData(
-          getGetMessagesQueryKey(activeThreadId),
-          {
-            messages: [...serverMessages, result.userMessage, result.assistantMessage],
-            count: serverMessages.length + 2,
-          }
-        );
-
-        // Clear optimistic messages
-        setOptimisticMessages([]);
+        // Replace temp message with real messages
+        setMessages((prev) => [
+          ...prev.filter((m) => m.id !== tempUserMessage.id),
+          result.userMessage,
+          result.assistantMessage,
+        ]);
       } catch (error) {
-        // Revert optimistic update
-        setOptimisticMessages([]);
         console.error("Failed to send message:", error);
+        setMessages((prev) => prev.filter((m) => m.id !== tempUserMessage.id));
       }
     },
-    [activeThreadId, serverMessages, queryClient, sendMessage, createThread, recordingId]
+    [threadId, createThread, sendMessage, recordingId]
   );
 
-  // Handle starting a new thread
+  // Handle new thread - just clear messages and enter new thread mode
   const handleNewThread = useCallback(() => {
-    setActiveThreadId(null);
-    setOptimisticMessages([]);
+    setMessages([]);
+    setThreadId(null);
+    setIsNewThreadMode(true);
+    hasSyncedRef.current = null;
   }, []);
 
-  const isInitializing = threadsQuery.isLoading && !activeThreadId;
+  const isInitializing = threadsQuery.isLoading;
 
   return (
     <div
@@ -173,7 +147,6 @@ export function ChatPanel({
         className
       )}
     >
-      {/* Grid pattern background */}
       <div className="pointer-events-none absolute inset-0 opacity-5 grid-pattern" />
 
       <ChatHeader
