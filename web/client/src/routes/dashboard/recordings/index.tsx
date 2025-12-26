@@ -1,12 +1,10 @@
 import {
-  askRecordings,
   useDeleteRecording,
   useListRecordings,
   type ListRecordingsSortBy,
   type ListRecordingsSortOrder,
 } from "@/api";
 import { toast } from "sonner";
-import { AskAI } from "@/components/ai/ask-ai";
 import {
   RecordingRow,
   RecordingsTableHeader,
@@ -92,10 +90,6 @@ function RecordingsPage() {
 
   const deleteMutation = useDeleteRecording();
 
-  const handleAskAI = useCallback(async (query: string) => {
-    return askRecordings({ query });
-  }, []);
-
   const toggleSort = useCallback(
     (field: ListRecordingsSortBy) => {
       if (sortBy === field) {
@@ -149,9 +143,6 @@ function RecordingsPage() {
         <span className="text-muted-foreground">~/</span>
         <span className="text-primary">recordings</span>
       </div>
-
-      {/* AI Chat */}
-      <AskAI onAsk={handleAskAI} />
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">

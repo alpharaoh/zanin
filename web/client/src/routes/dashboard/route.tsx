@@ -1,12 +1,20 @@
 import { DashboardSidebar } from "@/components/sidebar";
+import { ChatPanel } from "@/components/chat";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 import {
   createFileRoute,
   Outlet,
   redirect,
   useNavigate,
+  useMatches,
 } from "@tanstack/react-router";
 import { authClient } from "@zanin/auth/client";
 import { LayoutDashboardIcon, MicIcon, SettingsIcon } from "lucide-react";
+import { useMemo } from "react";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
@@ -28,6 +36,15 @@ export const Route = createFileRoute("/dashboard")({
 function DashboardLayout() {
   const { session } = Route.useRouteContext();
   const navigate = useNavigate();
+  const matches = useMatches();
+
+  // Extract recordingId from route params if on a recording detail page
+  const recordingId = useMemo(() => {
+    const recordingMatch = matches.find(
+      (match) => match.routeId === "/dashboard/recordings/$recordingId"
+    );
+    return recordingMatch?.params?.recordingId as string | undefined;
+  }, [matches]);
 
   const navItems = [
     {
@@ -62,9 +79,21 @@ function DashboardLayout() {
       navItems={navItems}
       onSignOut={handleSignOut}
     >
-      <div className="flex flex-1 flex-col gap-4 p-6">
-        <Outlet />
-      </div>
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        {/* Main content area */}
+        <ResizablePanel defaultSize={75}>
+          <div className="flex h-full flex-1 flex-col gap-4 overflow-y-auto p-6">
+            <Outlet />
+          </div>
+        </ResizablePanel>
+
+        <ResizableHandle withHandle />
+
+        {/* Chat panel */}
+        <ResizablePanel defaultSize={25}>
+          <ChatPanel recordingId={recordingId} className="h-full" />
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </DashboardSidebar>
   );
 }

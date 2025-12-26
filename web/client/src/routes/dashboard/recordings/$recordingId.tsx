@@ -1,6 +1,5 @@
-import { askRecordings, useDeleteRecording, useGetRecording } from "@/api";
+import { useDeleteRecording, useGetRecording } from "@/api";
 import { toast } from "sonner";
-import { AskAI } from "@/components/ai/ask-ai";
 import { RecordingPlayer } from "@/components/recordings/recording-player";
 import { TranscriptViewer } from "@/components/recordings/transcript-viewer";
 import {
@@ -51,13 +50,6 @@ function RecordingDetailPage() {
       seekFn(time);
     }
   }, []);
-
-  const handleAskAI = useCallback(
-    async (query: string) => {
-      return askRecordings({ query, recordingId });
-    },
-    [recordingId]
-  );
 
   if (isLoading) {
     return <RecordingDetailSkeleton />;
@@ -122,9 +114,6 @@ function RecordingDetailPage() {
             <p className="text-xs leading-relaxed">{recording.summary}</p>
           </div>
         )}
-
-        {/* AI Chat */}
-        <AskAI onAsk={handleAskAI} placeholder="ask about this recording..." />
 
         {/* Speaking Time */}
         <div className="border border-border p-4">
