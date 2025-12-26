@@ -10,6 +10,9 @@ static const char *TAG = "http-client";
 // Static member initialization
 int HttpClient::lastStatusCode_ = 0;
 
+// API key for authentication
+static const char *AUTH_HEADER = "Bearer zn_SSmyPalpgabfPrhODhfDTSzpZfbZrLSbopUIJzIZvezTlWlzaIxfomzMhxLuZIou";
+
 // Boundary for multipart form data
 static const char *BOUNDARY = "----ESP32FormBoundary7MA4YWxkTrZu0gW";
 
@@ -24,6 +27,8 @@ esp_err_t HttpClient::get(const char *url, char *responseBuffer,
     ESP_LOGE(TAG, "Failed to initialize HTTP client");
     return ESP_FAIL;
   }
+
+  esp_http_client_set_header(client, "Authorization", AUTH_HEADER);
 
   esp_err_t err = esp_http_client_open(client, 0);
   if (err != ESP_OK) {
@@ -66,6 +71,7 @@ esp_err_t HttpClient::post(const char *url, const char *postData,
   }
 
   esp_http_client_set_header(client, "Content-Type", "application/json");
+  esp_http_client_set_header(client, "Authorization", AUTH_HEADER);
   esp_http_client_set_post_field(client, postData, strlen(postData));
 
   esp_err_t err = esp_http_client_perform(client);
@@ -155,6 +161,7 @@ esp_err_t HttpClient::uploadFile(const char *url, const char *filePath,
   snprintf(contentTypeHeader, sizeof(contentTypeHeader),
            "multipart/form-data; boundary=%s", BOUNDARY);
   esp_http_client_set_header(client, "Content-Type", contentTypeHeader);
+  esp_http_client_set_header(client, "Authorization", AUTH_HEADER);
 
   // Open connection with content length
   esp_err_t err = esp_http_client_open(client, totalLen);
