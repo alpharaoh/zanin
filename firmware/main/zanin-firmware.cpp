@@ -50,7 +50,7 @@ extern "C" void app_main() {
 
   // Configure sync service
   sync::SyncConfig syncConfig;
-  syncConfig.syncIntervalSeconds = 3600;  // 1 hour
+  syncConfig.syncIntervalSeconds = 3600; // 1 hour
   syncConfig.serverBaseUrl = "http://192.168.0.105:8081";
   syncConfig.uploadEndpoint = "/v1/recordings";
   syncConfig.recordingsDir = "/sdcard/recordings";
@@ -73,8 +73,7 @@ extern "C" void app_main() {
     if (syncService.wasLastSyncSuccessful()) {
       ESP_LOGI(TAG, "Sync completed successfully. Uploaded %d file(s)",
                uploadedCount);
-    }
-    else {
+    } else {
       ESP_LOGW(TAG, "Sync completed with errors. Uploaded %d file(s)",
                uploadedCount);
     }

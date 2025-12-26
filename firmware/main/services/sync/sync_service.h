@@ -3,8 +3,8 @@
 #include "components/wifi/wifi.h"
 #include "file_tracker.h"
 #include "sync_config.h"
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace sync {
 
@@ -34,7 +34,9 @@ public:
   /**
    * Get the configured sync interval in seconds
    */
-  uint32_t getSyncIntervalSeconds() const { return config_.syncIntervalSeconds; }
+  uint32_t getSyncIntervalSeconds() const {
+    return config_.syncIntervalSeconds;
+  }
 
   /**
    * Get the number of files uploaded in the last sync

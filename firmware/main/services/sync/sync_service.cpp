@@ -1,8 +1,8 @@
 #include "sync_service.h"
-#include "services/http/http.h"
 #include "esp_log.h"
-#include <dirent.h>
+#include "services/http/http.h"
 #include <cstring>
+#include <dirent.h>
 #include <sys/stat.h>
 
 static const char *TAG = "sync-service";
@@ -12,7 +12,8 @@ namespace sync {
 SyncService::SyncService(const SyncConfig &config, Wifi &wifi)
     : config_(config), wifi_(wifi), fileTracker_(config.processedLogFile) {
   ESP_LOGI(TAG, "SyncService initialized");
-  ESP_LOGI(TAG, "  Server: %s%s", config_.serverBaseUrl, config_.uploadEndpoint);
+  ESP_LOGI(TAG, "  Server: %s%s", config_.serverBaseUrl,
+           config_.uploadEndpoint);
   ESP_LOGI(TAG, "  Recordings dir: %s", config_.recordingsDir);
   ESP_LOGI(TAG, "  Sync interval: %lu seconds", config_.syncIntervalSeconds);
 }
@@ -56,7 +57,8 @@ int SyncService::performSync() {
     ESP_LOGI(TAG, "Processing: %s", filePath.c_str());
 
     bool uploaded = false;
-    for (uint8_t attempt = 0; attempt < config_.maxRetries && !uploaded; attempt++) {
+    for (uint8_t attempt = 0; attempt < config_.maxRetries && !uploaded;
+         attempt++) {
       if (attempt > 0) {
         ESP_LOGI(TAG, "Retry attempt %d/%d for %s", attempt + 1,
                  config_.maxRetries, filePath.c_str());
@@ -74,10 +76,9 @@ int SyncService::performSync() {
       }
       successCount++;
       ESP_LOGI(TAG, "Successfully uploaded: %s", filePath.c_str());
-    }
-    else {
-      ESP_LOGE(TAG, "Failed to upload after %d attempts: %s", config_.maxRetries,
-               filePath.c_str());
+    } else {
+      ESP_LOGE(TAG, "Failed to upload after %d attempts: %s",
+               config_.maxRetries, filePath.c_str());
     }
   }
 
@@ -86,7 +87,8 @@ int SyncService::performSync() {
   wifi_.disconnect();
 
   lastSyncCount_ = successCount;
-  lastSyncSuccess_ = (successCount == static_cast<int>(unprocessedFiles.size()));
+  lastSyncSuccess_ =
+      (successCount == static_cast<int>(unprocessedFiles.size()));
 
   ESP_LOGI(TAG, "Sync cycle complete: %d/%zu files uploaded", successCount,
            unprocessedFiles.size());
@@ -141,9 +143,9 @@ bool SyncService::uploadRecording(const std::string &filePath) {
   // Response buffer for server reply
   char responseBuffer[512] = {0};
 
-  esp_err_t err = HttpClient::uploadFile(uploadUrl.c_str(), filePath.c_str(),
-                                         "audio", responseBuffer,
-                                         sizeof(responseBuffer));
+  esp_err_t err =
+      HttpClient::uploadFile(uploadUrl.c_str(), filePath.c_str(), "audio",
+                             responseBuffer, sizeof(responseBuffer));
 
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "Upload failed for %s: %s", filePath.c_str(),

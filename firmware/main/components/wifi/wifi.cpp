@@ -35,22 +35,19 @@ void Wifi::eventHandler(void *arg, esp_event_base_t event_base,
                         int32_t event_id, void *event_data) {
   if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
     esp_wifi_connect();
-  }
-  else if (event_base == WIFI_EVENT &&
-           event_id == WIFI_EVENT_STA_DISCONNECTED) {
+  } else if (event_base == WIFI_EVENT &&
+             event_id == WIFI_EVENT_STA_DISCONNECTED) {
     connected_ = false;
     if (s_retry_num < MAX_RETRY) {
       esp_wifi_connect();
       s_retry_num++;
       ESP_LOGI(TAG, "Retrying connection to AP (attempt %d/%d)", s_retry_num,
                MAX_RETRY);
-    }
-    else {
+    } else {
       xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
       ESP_LOGW(TAG, "Failed to connect after %d attempts", MAX_RETRY);
     }
-  }
-  else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+  } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
     ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
     s_retry_num = 0;
@@ -142,12 +139,10 @@ esp_err_t Wifi::waitForConnection() {
   if (bits & WIFI_CONNECTED_BIT) {
     ESP_LOGI(TAG, "Connected to SSID: %s", WIFI_SSID);
     return ESP_OK;
-  }
-  else if (bits & WIFI_FAIL_BIT) {
+  } else if (bits & WIFI_FAIL_BIT) {
     ESP_LOGW(TAG, "Failed to connect to SSID: %s", WIFI_SSID);
     return ESP_FAIL;
-  }
-  else {
+  } else {
     ESP_LOGE(TAG, "Connection timeout");
     return ESP_ERR_TIMEOUT;
   }

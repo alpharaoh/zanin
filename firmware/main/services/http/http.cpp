@@ -41,8 +41,7 @@ esp_err_t HttpClient::get(const char *url, char *responseBuffer,
   if (read_len >= 0) {
     responseBuffer[read_len] = '\0';
     ESP_LOGI(TAG, "Response: %s", responseBuffer);
-  }
-  else {
+  } else {
     ESP_LOGE(TAG, "Failed to read HTTP response");
     err = ESP_FAIL;
   }
@@ -76,13 +75,11 @@ esp_err_t HttpClient::post(const char *url, const char *postData,
     ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %d", lastStatusCode_,
              content_length);
 
-    int read_len =
-        esp_http_client_read(client, responseBuffer, bufferSize - 1);
+    int read_len = esp_http_client_read(client, responseBuffer, bufferSize - 1);
     if (read_len >= 0) {
       responseBuffer[read_len] = '\0';
     }
-  }
-  else {
+  } else {
     ESP_LOGE(TAG, "HTTP POST failed: %s", esp_err_to_name(err));
   }
 
@@ -112,8 +109,7 @@ esp_err_t HttpClient::uploadFile(const char *url, const char *filePath,
   const char *filename = strrchr(filePath, '/');
   if (filename) {
     filename++; // Skip the '/'
-  }
-  else {
+  } else {
     filename = filePath;
   }
 
@@ -121,19 +117,18 @@ esp_err_t HttpClient::uploadFile(const char *url, const char *filePath,
   const char *contentType = "application/octet-stream";
   if (strstr(filename, ".wav") != NULL) {
     contentType = "audio/wav";
-  }
-  else if (strstr(filename, ".mp3") != NULL) {
+  } else if (strstr(filename, ".mp3") != NULL) {
     contentType = "audio/mpeg";
   }
 
   // Build multipart header
   char header[512];
-  int headerLen =
-      snprintf(header, sizeof(header),
-               "--%s\r\n"
-               "Content-Disposition: form-data; name=\"%s\"; filename=\"%s\"\r\n"
-               "Content-Type: %s\r\n\r\n",
-               BOUNDARY, fieldName, filename, contentType);
+  int headerLen = snprintf(
+      header, sizeof(header),
+      "--%s\r\n"
+      "Content-Disposition: form-data; name=\"%s\"; filename=\"%s\"\r\n"
+      "Content-Type: %s\r\n\r\n",
+      BOUNDARY, fieldName, filename, contentType);
 
   // Build multipart footer
   char footer[64];

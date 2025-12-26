@@ -2,8 +2,8 @@
 
 #include "esp_err.h"
 #include <cstddef>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace sync {
 
