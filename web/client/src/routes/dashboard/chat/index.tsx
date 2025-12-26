@@ -1,18 +1,19 @@
 import {
   useListThreads,
   useGetMessages,
-  useSendMessage,
   useDeleteThread,
   useGetRecording,
   getGetMessagesQueryKey,
   getListThreadsQueryKey,
   type ChatThread,
+  type ChatMessage,
 } from "@/api";
+import { useStreamChat } from "@/hooks/useStreamChat";
 import { cn } from "@/lib/utils";
 import { formatRelativeDate } from "@/lib/format";
 import { createFileRoute } from "@tanstack/react-router";
 import { MessageSquareIcon, TrashIcon } from "lucide-react";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChatMessages } from "@/components/chat/ChatMessages";
 import { ChatInput } from "@/components/chat/ChatInput";
@@ -32,6 +33,9 @@ import { toast } from "sonner";
 function ChatPage() {
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [deleteThreadId, setDeleteThreadId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const hasSyncedRef = useRef<string | null>(null);
+  const tempUserMessageIdRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: threadsData, isLoading: isLoadingThreads } = useListThreads();
@@ -57,6 +61,21 @@ function ChatPage() {
     }
   );
 
+  // Sync messages from server when thread changes
+  useEffect(() => {
+    if (selectedThreadId && messagesData?.messages && hasSyncedRef.current !== selectedThreadId) {
+      setMessages(messagesData.messages);
+      hasSyncedRef.current = selectedThreadId;
+    }
+  }, [selectedThreadId, messagesData?.messages]);
+
+  // Reset messages when thread changes
+  useEffect(() => {
+    if (selectedThreadId !== hasSyncedRef.current) {
+      setMessages([]);
+    }
+  }, [selectedThreadId]);
+
   // Get recording title if thread is scoped to a recording
   const { data: recording } = useGetRecording(
     selectedThread?.recordingId ?? "",
@@ -67,7 +86,42 @@ function ChatPage() {
     }
   );
 
-  const sendMessage = useSendMessage();
+  // Streaming chat
+  const {
+    sendMessage: streamMessage,
+    isStreaming,
+    streamingContent,
+    toolCalls,
+  } = useStreamChat({
+    onUserMessage: (message) => {
+      // Replace temp user message with real one
+      if (tempUserMessageIdRef.current) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempUserMessageIdRef.current ? message : m
+          )
+        );
+        tempUserMessageIdRef.current = null;
+      }
+    },
+    onAssistantMessage: (message) => {
+      // Add the final assistant message
+      setMessages((prev) => [...prev, message]);
+      // Refresh threads list to update lastActivityAt and title
+      queryClient.invalidateQueries({ queryKey: getListThreadsQueryKey() });
+    },
+    onError: (error) => {
+      console.error("Stream error:", error);
+      // Remove temp user message on error
+      if (tempUserMessageIdRef.current) {
+        setMessages((prev) =>
+          prev.filter((m) => m.id !== tempUserMessageIdRef.current)
+        );
+        tempUserMessageIdRef.current = null;
+      }
+    },
+  });
+
   const deleteThread = useDeleteThread();
 
   const handleSend = useCallback(
@@ -76,47 +130,26 @@ function ChatPage() {
         return;
       }
 
-      const previousMessages = messagesData?.messages ?? [];
-      const tempUserMessage = {
-        id: `temp-user-${Date.now()}`,
+      const tempId = `temp-${Date.now()}`;
+      const tempUserMessage: ChatMessage = {
+        id: tempId,
         threadId: selectedThreadId,
-        role: "user" as const,
+        role: "user",
         content,
         metadata: null,
         createdAt: new Date().toISOString(),
       };
 
-      queryClient.setQueryData(getGetMessagesQueryKey(selectedThreadId), {
-        messages: [...previousMessages, tempUserMessage],
-        count: previousMessages.length + 1,
-      });
+      // Store temp ID for later replacement
+      tempUserMessageIdRef.current = tempId;
 
-      try {
-        const result = await sendMessage.mutateAsync({
-          threadId: selectedThreadId,
-          data: { content },
-        });
+      // Show user message immediately
+      setMessages((prev) => [...prev, tempUserMessage]);
 
-        queryClient.setQueryData(getGetMessagesQueryKey(selectedThreadId), {
-          messages: [
-            ...previousMessages,
-            result.userMessage,
-            result.assistantMessage,
-          ],
-          count: previousMessages.length + 2,
-        });
-
-        // Refresh threads list to update lastActivityAt
-        queryClient.invalidateQueries({ queryKey: getListThreadsQueryKey() });
-      } catch (error) {
-        queryClient.setQueryData(getGetMessagesQueryKey(selectedThreadId), {
-          messages: previousMessages,
-          count: previousMessages.length,
-        });
-        console.error("Failed to send message:", error);
-      }
+      // Stream message
+      await streamMessage(selectedThreadId, content);
     },
-    [selectedThreadId, messagesData?.messages, queryClient, sendMessage]
+    [selectedThreadId, streamMessage]
   );
 
   const handleDelete = useCallback(async () => {
@@ -137,8 +170,6 @@ function ChatPage() {
       toast.error("Failed to delete thread");
     }
   }, [deleteThreadId, deleteThread, queryClient, selectedThreadId]);
-
-  const messages = messagesData?.messages ?? [];
 
   return (
     <div
@@ -215,9 +246,11 @@ function ChatPage() {
           <>
             <ChatMessages
               messages={messages}
-              isLoading={sendMessage.isPending}
+              streamingContent={streamingContent}
+              streamingToolCalls={toolCalls}
+              isStreaming={isStreaming}
             />
-            <ChatInput onSend={handleSend} />
+            <ChatInput onSend={handleSend} disabled={isStreaming} />
           </>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
