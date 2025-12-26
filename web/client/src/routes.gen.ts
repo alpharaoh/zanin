@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
 import { Route as DashboardRecordingsIndexRouteImport } from './routes/dashboard/recordings/index'
+import { Route as DashboardChatIndexRouteImport } from './routes/dashboard/chat/index'
 import { Route as DashboardRecordingsRecordingIdRouteImport } from './routes/dashboard/recordings/$recordingId'
 
 const SignInRoute = SignInRouteImport.update({
@@ -48,6 +49,11 @@ const DashboardRecordingsIndexRoute =
     path: '/recordings/',
     getParentRoute: () => DashboardRouteRoute,
   } as any)
+const DashboardChatIndexRoute = DashboardChatIndexRouteImport.update({
+  id: '/chat/',
+  path: '/chat/',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
 const DashboardRecordingsRecordingIdRoute =
   DashboardRecordingsRecordingIdRouteImport.update({
     id: '/recordings/$recordingId',
@@ -62,6 +68,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/recordings/$recordingId': typeof DashboardRecordingsRecordingIdRoute
+  '/dashboard/chat': typeof DashboardChatIndexRoute
   '/dashboard/recordings': typeof DashboardRecordingsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/recordings/$recordingId': typeof DashboardRecordingsRecordingIdRoute
+  '/dashboard/chat': typeof DashboardChatIndexRoute
   '/dashboard/recordings': typeof DashboardRecordingsIndexRoute
 }
 export interface FileRoutesById {
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/recordings/$recordingId': typeof DashboardRecordingsRecordingIdRoute
+  '/dashboard/chat/': typeof DashboardChatIndexRoute
   '/dashboard/recordings/': typeof DashboardRecordingsIndexRoute
 }
 export interface FileRouteTypes {
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/'
     | '/dashboard/recordings/$recordingId'
+    | '/dashboard/chat'
     | '/dashboard/recordings'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard'
     | '/dashboard/recordings/$recordingId'
+    | '/dashboard/chat'
     | '/dashboard/recordings'
   id:
     | '__root__'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/'
     | '/dashboard/recordings/$recordingId'
+    | '/dashboard/chat/'
     | '/dashboard/recordings/'
   fileRoutesById: FileRoutesById
 }
@@ -161,6 +173,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRecordingsIndexRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
+    '/dashboard/chat/': {
+      id: '/dashboard/chat/'
+      path: '/chat'
+      fullPath: '/dashboard/chat'
+      preLoaderRoute: typeof DashboardChatIndexRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
     '/dashboard/recordings/$recordingId': {
       id: '/dashboard/recordings/$recordingId'
       path: '/recordings/$recordingId'
@@ -175,6 +194,7 @@ interface DashboardRouteRouteChildren {
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardRecordingsRecordingIdRoute: typeof DashboardRecordingsRecordingIdRoute
+  DashboardChatIndexRoute: typeof DashboardChatIndexRoute
   DashboardRecordingsIndexRoute: typeof DashboardRecordingsIndexRoute
 }
 
@@ -182,6 +202,7 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardRecordingsRecordingIdRoute: DashboardRecordingsRecordingIdRoute,
+  DashboardChatIndexRoute: DashboardChatIndexRoute,
   DashboardRecordingsIndexRoute: DashboardRecordingsIndexRoute,
 }
 

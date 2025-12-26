@@ -13,7 +13,7 @@ import {
   useMatches,
 } from "@tanstack/react-router";
 import { authClient } from "@zanin/auth/client";
-import { LayoutDashboardIcon, MicIcon, SettingsIcon } from "lucide-react";
+import { LayoutDashboardIcon, MessageSquareIcon, MicIcon, SettingsIcon } from "lucide-react";
 import { useMemo } from "react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -46,6 +46,11 @@ function DashboardLayout() {
     return recordingMatch?.params?.recordingId as string | undefined;
   }, [matches]);
 
+  // Hide chat panel on the chat page (it has its own chat interface)
+  const isOnChatPage = matches.some((match) =>
+    match.routeId.startsWith("/dashboard/chat")
+  );
+
   const navItems = [
     {
       title: "Dashboard",
@@ -56,6 +61,11 @@ function DashboardLayout() {
       title: "Recordings",
       url: "/dashboard/recordings",
       icon: <MicIcon />,
+    },
+    {
+      title: "Chat",
+      url: "/dashboard/chat",
+      icon: <MessageSquareIcon />,
     },
     {
       title: "Settings",
@@ -79,21 +89,27 @@ function DashboardLayout() {
       navItems={navItems}
       onSignOut={handleSignOut}
     >
-      <ResizablePanelGroup direction="horizontal" className="h-full">
-        {/* Main content area */}
-        <ResizablePanel defaultSize={75}>
-          <div className="flex h-full flex-1 flex-col gap-4 overflow-y-auto p-6">
-            <Outlet />
-          </div>
-        </ResizablePanel>
+      {isOnChatPage ? (
+        <div className="flex h-full flex-1 flex-col gap-4 overflow-y-auto p-6">
+          <Outlet />
+        </div>
+      ) : (
+        <ResizablePanelGroup direction="horizontal" className="h-full">
+          {/* Main content area */}
+          <ResizablePanel defaultSize={75}>
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-y-auto p-6">
+              <Outlet />
+            </div>
+          </ResizablePanel>
 
-        <ResizableHandle withHandle />
+          <ResizableHandle withHandle />
 
-        {/* Chat panel */}
-        <ResizablePanel defaultSize={30}>
-          <ChatPanel recordingId={recordingId} className="h-full" />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+          {/* Chat panel */}
+          <ResizablePanel defaultSize={30}>
+            <ChatPanel recordingId={recordingId} className="h-full" />
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      )}
     </DashboardSidebar>
   );
 }
