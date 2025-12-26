@@ -104,6 +104,8 @@ export function ChatPanel({
             data: { recordingId },
           });
           currentThreadId = result.thread.id;
+          // Mark as synced BEFORE setting threadId to prevent the sync effect from running
+          hasSyncedRef.current = currentThreadId;
           setThreadId(currentThreadId);
           setIsNewThreadMode(false);
         } catch (error) {
