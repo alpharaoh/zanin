@@ -5,6 +5,7 @@
 #include "components/mic/mic.h"
 #include "components/sdcard/sdcard.h"
 
+#include "components/wifi/wifi.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -23,6 +24,8 @@ const gpio_num_t SD_CARD_DI_GPIO_ID = GPIO_NUM_37;
 const gpio_num_t SD_CARD_CS_GPIO_ID = GPIO_NUM_38;
 
 extern "C" void app_main() {
+  Wifi wifi = Wifi();
+
   SDCard sdcard = SDCard(SD_CARD_DO_GPIO_ID, SD_CARD_CLK_GPIO_ID,
                          SD_CARD_DI_GPIO_ID, SD_CARD_CS_GPIO_ID);
 
