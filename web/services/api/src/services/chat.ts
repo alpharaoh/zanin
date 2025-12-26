@@ -3,6 +3,7 @@ import { insertChatMessage } from "@zanin/db/queries/insert/insertChatMessage";
 import { selectChatThread } from "@zanin/db/queries/select/one/selectChatThread";
 import { selectChatThreadByScope } from "@zanin/db/queries/select/one/selectChatThreadByScope";
 import { listChatMessages } from "@zanin/db/queries/select/many/listChatMessages";
+import { listChatThreads } from "@zanin/db/queries/select/many/listChatThreads";
 import { updateChatThread } from "@zanin/db/queries/update/updateChatThread";
 import {
   SelectChatThread,
@@ -102,6 +103,22 @@ const ChatService = {
   ): Promise<ChatThread | undefined> => {
     const thread = await selectChatThread(threadId, organizationId);
     return thread ? mapThread(thread) : undefined;
+  },
+
+  /**
+   * List all threads for a user
+   */
+  listThreads: async (
+    organizationId: string,
+    userId: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<{ threads: ChatThread[]; count: number }> => {
+    const result = await listChatThreads(organizationId, userId, limit, offset);
+    return {
+      threads: result.data.map(mapThread),
+      count: result.count,
+    };
   },
 
   /**

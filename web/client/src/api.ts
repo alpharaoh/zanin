@@ -215,6 +215,11 @@ export interface GetOrCreateThreadRequest {
   recordingId?: string;
 }
 
+export interface ListThreadsResponse {
+  threads: ChatThread[];
+  count: number;
+}
+
 /**
  * Construct a type with a set of properties K of type T
  */
@@ -328,6 +333,11 @@ recordingId?: string;
 startDate?: string;
 endDate?: string;
 maxSources?: number;
+};
+
+export type ListThreadsParams = {
+limit?: number;
+offset?: number;
 };
 
 export type GetMessagesParams = {
@@ -1200,6 +1210,98 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(mutationOptions, queryClient);
     }
     
+/**
+ * List all chat threads for the current user.
+Returns threads ordered by last activity (most recent first).
+ */
+export const listThreads = (
+    params?: ListThreadsParams,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<ListThreadsResponse>(
+      {url: `/v1/chat/threads`, method: 'GET',
+        params, signal
+    },
+      options);
+    }
+  
+
+
+
+export const getListThreadsQueryKey = (params?: ListThreadsParams,) => {
+    return [
+    `/v1/chat/threads`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListThreadsQueryOptions = <TData = Awaited<ReturnType<typeof listThreads>>, TError = ErrorType<void>>(params?: ListThreadsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listThreads>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListThreadsQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listThreads>>> = ({ signal }) => listThreads(params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listThreads>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListThreadsQueryResult = NonNullable<Awaited<ReturnType<typeof listThreads>>>
+export type ListThreadsQueryError = ErrorType<void>
+
+
+export function useListThreads<TData = Awaited<ReturnType<typeof listThreads>>, TError = ErrorType<void>>(
+ params: undefined |  ListThreadsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listThreads>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listThreads>>,
+          TError,
+          Awaited<ReturnType<typeof listThreads>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListThreads<TData = Awaited<ReturnType<typeof listThreads>>, TError = ErrorType<void>>(
+ params?: ListThreadsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listThreads>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listThreads>>,
+          TError,
+          Awaited<ReturnType<typeof listThreads>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListThreads<TData = Awaited<ReturnType<typeof listThreads>>, TError = ErrorType<void>>(
+ params?: ListThreadsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listThreads>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useListThreads<TData = Awaited<ReturnType<typeof listThreads>>, TError = ErrorType<void>>(
+ params?: ListThreadsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listThreads>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListThreadsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
 /**
  * Get a specific thread by ID.
  */

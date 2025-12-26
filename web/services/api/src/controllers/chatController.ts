@@ -38,6 +38,11 @@ interface SendMessageResponse {
   assistantMessage: ChatMessage;
 }
 
+interface ListThreadsResponse {
+  threads: ChatThread[];
+  count: number;
+}
+
 @Security("default")
 @Response(401, "Unauthorized")
 @Response(400, "No active organization")
@@ -64,6 +69,31 @@ export class ChatController extends Controller {
     );
 
     return { thread };
+  }
+
+  /**
+   * List all chat threads for the current user.
+   * Returns threads ordered by last activity (most recent first).
+   */
+  @Get("threads")
+  public async listThreads(
+    @Request() request: ExpressRequest,
+    @Query() limit?: number,
+    @Query() offset?: number,
+  ): Promise<ListThreadsResponse> {
+    const { userId, organizationId } = request.user!;
+
+    const result = await ChatService.listThreads(
+      organizationId,
+      userId,
+      limit,
+      offset,
+    );
+
+    return {
+      threads: result.threads,
+      count: result.count,
+    };
   }
 
   /**
