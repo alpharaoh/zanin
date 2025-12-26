@@ -121,8 +121,8 @@ export function ChatPanel({
     [thread?.id, messagesQuery.data?.messages, queryClient, sendMessage]
   );
 
-  // Handle clearing the thread
-  const handleClearThread = useCallback(async () => {
+  // Handle creating a new thread
+  const handleNewThread = useCallback(async () => {
     if (!thread?.id) {
       return;
     }
@@ -157,7 +157,7 @@ export function ChatPanel({
       <ChatHeader
         scope={recordingId ? "recording" : "all"}
         recordingTitle={recording?.title ?? undefined}
-        onClearThread={handleClearThread}
+        onNewThread={handleNewThread}
         hasMessages={messages.length > 0}
       />
 

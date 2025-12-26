@@ -90,7 +90,7 @@ function DashboardLayout() {
         <ResizableHandle withHandle />
 
         {/* Chat panel */}
-        <ResizablePanel defaultSize={25}>
+        <ResizablePanel defaultSize={30}>
           <ChatPanel recordingId={recordingId} className="h-full" />
         </ResizablePanel>
       </ResizablePanelGroup>
