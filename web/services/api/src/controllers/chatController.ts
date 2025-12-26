@@ -16,12 +16,11 @@ import type { Request as ExpressRequest } from "express";
 import ChatService, { ChatThread, ChatMessage } from "../services/chat";
 import { NotFoundError } from "../errors";
 
-interface GetOrCreateThreadRequest {
+interface CreateThreadRequest {
   recordingId?: string;
-  forceNew?: boolean;
 }
 
-interface GetOrCreateThreadResponse {
+interface CreateThreadResponse {
   thread: ChatThread;
 }
 
@@ -51,35 +50,14 @@ interface ListThreadsResponse {
 @Route("v1/chat")
 export class ChatController extends Controller {
   /**
-   * Get or create a chat thread for the current user.
-   * If recordingId is provided, the thread is scoped to that recording.
-   * If not provided, the thread is scoped to all recordings.
-   */
-  @Post("threads")
-  @SuccessResponse(200, "OK")
-  public async getOrCreateThread(
-    @Request() request: ExpressRequest,
-    @Body() body: GetOrCreateThreadRequest,
-  ): Promise<GetOrCreateThreadResponse> {
-    const { userId, organizationId } = request.user!;
-
-    const thread = await ChatService.getOrCreateThread(
-      organizationId,
-      userId,
-      body.recordingId,
-      body.forceNew,
-    );
-
-    return { thread };
-  }
-
-  /**
    * List all chat threads for the current user.
+   * Optionally filter by recordingId.
    * Returns threads ordered by last activity (most recent first).
    */
   @Get("threads")
   public async listThreads(
     @Request() request: ExpressRequest,
+    @Query() recordingId?: string,
     @Query() limit?: number,
     @Query() offset?: number,
   ): Promise<ListThreadsResponse> {
@@ -88,6 +66,7 @@ export class ChatController extends Controller {
     const result = await ChatService.listThreads(
       organizationId,
       userId,
+      recordingId,
       limit,
       offset,
     );
@@ -96,6 +75,29 @@ export class ChatController extends Controller {
       threads: result.threads,
       count: result.count,
     };
+  }
+
+  /**
+   * Create a new chat thread.
+   * If recordingId is provided, the thread is scoped to that recording.
+   * If not provided, the thread is scoped to all recordings.
+   */
+  @Post("threads")
+  @SuccessResponse(201, "Created")
+  public async createThread(
+    @Request() request: ExpressRequest,
+    @Body() body: CreateThreadRequest,
+  ): Promise<CreateThreadResponse> {
+    const { userId, organizationId } = request.user!;
+
+    const thread = await ChatService.createThread(
+      organizationId,
+      userId,
+      body.recordingId,
+    );
+
+    this.setStatus(201);
+    return { thread };
   }
 
   /**

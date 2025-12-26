@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  useGetOrCreateThread,
+  useListThreads,
+  useCreateThread,
   useGetMessages,
   useSendMessage,
   useGetRecording,
   getGetMessagesQueryKey,
-  type ChatThread,
+  getListThreadsQueryKey,
 } from "@/api";
 import { cn } from "@/lib/utils";
 import { ChatHeader } from "./ChatHeader";
@@ -32,9 +33,19 @@ export function ChatPanel({
     },
   });
 
-  // Get or create thread mutation
-  const getOrCreateThread = useGetOrCreateThread();
-  const thread = getOrCreateThread.data?.thread as ChatThread | undefined;
+  // List threads for this scope (get most recent one)
+  const threadsQuery = useListThreads(
+    { recordingId, limit: 1 },
+    {
+      query: {
+        enabled: !isStartingNewThread,
+      },
+    }
+  );
+  const thread = threadsQuery.data?.threads?.[0];
+
+  // Create thread mutation
+  const createThread = useCreateThread();
 
   // Get messages query (only when we have a thread and not starting new)
   const messagesQuery = useGetMessages(
@@ -51,25 +62,16 @@ export function ChatPanel({
   // Send message mutation
   const sendMessage = useSendMessage();
 
-  // Initialize/switch thread when recordingId changes
-  useEffect(() => {
-    setIsStartingNewThread(false);
-    getOrCreateThread.mutate({
-      data: { recordingId },
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recordingId]);
-
   // Handle sending a message
   const handleSend = useCallback(
     async (content: string) => {
-      // If starting a new thread, create it first
-      if (isStartingNewThread) {
+      // If starting a new thread or no thread exists, create one first
+      if (isStartingNewThread || !thread?.id) {
         setIsStartingNewThread(false);
 
-        // Create a new thread (forceNew to ensure we get a fresh thread)
-        const result = await getOrCreateThread.mutateAsync({
-          data: { recordingId, forceNew: true },
+        // Create a new thread
+        const result = await createThread.mutateAsync({
+          data: { recordingId },
         });
 
         const newThread = result.thread;
@@ -89,13 +91,14 @@ export function ChatPanel({
               count: 2,
             }
           );
+
+          // Invalidate threads list to show the new thread
+          queryClient.invalidateQueries({
+            queryKey: getListThreadsQueryKey({ recordingId, limit: 1 }),
+          });
         } catch (error) {
           console.error("Failed to send message:", error);
         }
-        return;
-      }
-
-      if (!thread?.id) {
         return;
       }
 
@@ -148,7 +151,7 @@ export function ChatPanel({
         console.error("Failed to send message:", error);
       }
     },
-    [isStartingNewThread, thread?.id, messagesQuery.data?.messages, queryClient, sendMessage, getOrCreateThread, recordingId]
+    [isStartingNewThread, thread?.id, messagesQuery.data?.messages, queryClient, sendMessage, createThread, recordingId]
   );
 
   // Handle starting a new thread (just clears the view)
@@ -158,7 +161,8 @@ export function ChatPanel({
 
   const messages = isStartingNewThread ? [] : (messagesQuery.data?.messages ?? []);
   const isInitializing =
-    getOrCreateThread.isPending ||
+    threadsQuery.isLoading ||
+    createThread.isPending ||
     (messagesQuery.isLoading && !!thread?.id && !isStartingNewThread);
 
   return (
@@ -185,7 +189,7 @@ export function ChatPanel({
 
       <ChatInput
         onSend={handleSend}
-        disabled={isInitializing || (!thread?.id && !isStartingNewThread)}
+        disabled={isInitializing}
       />
     </div>
   );

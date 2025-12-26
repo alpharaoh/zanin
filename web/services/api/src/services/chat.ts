@@ -1,7 +1,6 @@
 import { insertChatThread } from "@zanin/db/queries/insert/insertChatThread";
 import { insertChatMessage } from "@zanin/db/queries/insert/insertChatMessage";
 import { selectChatThread } from "@zanin/db/queries/select/one/selectChatThread";
-import { selectChatThreadByScope } from "@zanin/db/queries/select/one/selectChatThreadByScope";
 import { listChatMessages } from "@zanin/db/queries/select/many/listChatMessages";
 import { listChatThreads } from "@zanin/db/queries/select/many/listChatThreads";
 import { updateChatThread } from "@zanin/db/queries/update/updateChatThread";
@@ -55,29 +54,14 @@ function mapMessage(message: SelectChatMessage): ChatMessage {
 
 const ChatService = {
   /**
-   * Get or create a thread for a specific scope.
-   * recordingId = undefined means "all recordings" scope
-   * forceNew = true will always create a new thread
+   * Create a new thread for a specific scope.
+   * recordingId = null means "all recordings" scope
    */
-  getOrCreateThread: async (
+  createThread: async (
     organizationId: string,
     userId: string,
     recordingId?: string,
-    forceNew?: boolean,
   ): Promise<ChatThread> => {
-    // Try to find existing thread (unless forcing new)
-    if (!forceNew) {
-      const existing = await selectChatThreadByScope(
-        organizationId,
-        userId,
-        recordingId,
-      );
-
-      if (existing) {
-        return mapThread(existing);
-      }
-    }
-
     // Create new thread in LangGraph
     const langGraphThread = await LangGraphService.createThread({
       organizationId,
@@ -110,15 +94,28 @@ const ChatService = {
   },
 
   /**
-   * List all threads for a user
+   * List threads for a user, optionally filtered by recordingId.
+   * Pass recordingId = null to get threads scoped to "all recordings".
+   * Pass recordingId = undefined to get all threads regardless of scope.
    */
   listThreads: async (
     organizationId: string,
     userId: string,
+    recordingId?: string | null,
     limit?: number,
     offset?: number,
   ): Promise<{ threads: ChatThread[]; count: number }> => {
-    const result = await listChatThreads(organizationId, userId, limit, offset);
+    const where: Record<string, string | null> = {
+      organizationId,
+      userId,
+    };
+
+    // Only add recordingId filter if explicitly provided (including null)
+    if (recordingId !== undefined) {
+      where.recordingId = recordingId;
+    }
+
+    const result = await listChatThreads(where, limit, offset);
     return {
       threads: result.data.map(mapThread),
       count: result.count,

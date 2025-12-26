@@ -1,18 +1,15 @@
 import { and, count, desc, eq, isNull } from "drizzle-orm";
-import { chatThreads } from "../../../schema";
+import { chatThreads, InsertChatThread } from "../../../schema";
+import { buildWhere } from "../../../utils/buildWhere";
 import db from "../../..";
 
 export const listChatThreads = async (
-  organizationId: string,
-  userId: string,
+  where?: Partial<InsertChatThread>,
   limit?: number,
   offset?: number,
 ) => {
-  const whereCondition = and(
-    eq(chatThreads.organizationId, organizationId),
-    eq(chatThreads.userId, userId),
-    isNull(chatThreads.deletedAt),
-  );
+  const baseWhere = buildWhere(chatThreads, where || {});
+  const whereCondition = and(baseWhere, isNull(chatThreads.deletedAt));
 
   const dataQuery = db
     .select()

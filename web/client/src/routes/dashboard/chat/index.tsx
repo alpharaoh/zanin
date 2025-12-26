@@ -5,6 +5,7 @@ import {
   useDeleteThread,
   useGetRecording,
   getGetMessagesQueryKey,
+  getListThreadsQueryKey,
   type ChatThread,
 } from "@/api";
 import { cn } from "@/lib/utils";
@@ -106,7 +107,7 @@ function ChatPage() {
         });
 
         // Refresh threads list to update lastActivityAt
-        queryClient.invalidateQueries({ queryKey: ["/v1/chat/threads"] });
+        queryClient.invalidateQueries({ queryKey: getListThreadsQueryKey() });
       } catch (error) {
         queryClient.setQueryData(getGetMessagesQueryKey(selectedThreadId), {
           messages: previousMessages,
@@ -125,7 +126,7 @@ function ChatPage() {
 
     try {
       await deleteThread.mutateAsync({ threadId: deleteThreadId });
-      queryClient.invalidateQueries({ queryKey: ["/v1/chat/threads"] });
+      queryClient.invalidateQueries({ queryKey: getListThreadsQueryKey() });
       if (selectedThreadId === deleteThreadId) {
         setSelectedThreadId(null);
       }

@@ -207,18 +207,17 @@ export interface ChatThread {
   createdAt: string;
 }
 
-export interface GetOrCreateThreadResponse {
-  thread: ChatThread;
-}
-
-export interface GetOrCreateThreadRequest {
-  recordingId?: string;
-  forceNew?: boolean;
-}
-
 export interface ListThreadsResponse {
   threads: ChatThread[];
   count: number;
+}
+
+export interface CreateThreadResponse {
+  thread: ChatThread;
+}
+
+export interface CreateThreadRequest {
+  recordingId?: string;
 }
 
 /**
@@ -337,6 +336,7 @@ maxSources?: number;
 };
 
 export type ListThreadsParams = {
+recordingId?: string;
 limit?: number;
 offset?: number;
 };
@@ -1148,71 +1148,8 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     }
     
 /**
- * Get or create a chat thread for the current user.
-If recordingId is provided, the thread is scoped to that recording.
-If not provided, the thread is scoped to all recordings.
- */
-export const getOrCreateThread = (
-    getOrCreateThreadRequest: GetOrCreateThreadRequest,
- options?: SecondParameter<typeof axios>,signal?: AbortSignal
-) => {
-      
-      
-      return axios<GetOrCreateThreadResponse>(
-      {url: `/v1/chat/threads`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: getOrCreateThreadRequest, signal
-    },
-      options);
-    }
-  
-
-
-export const getGetOrCreateThreadMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof getOrCreateThread>>, TError,{data: GetOrCreateThreadRequest}, TContext>, request?: SecondParameter<typeof axios>}
-): UseMutationOptions<Awaited<ReturnType<typeof getOrCreateThread>>, TError,{data: GetOrCreateThreadRequest}, TContext> => {
-
-const mutationKey = ['getOrCreateThread'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-      
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof getOrCreateThread>>, {data: GetOrCreateThreadRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  getOrCreateThread(data,requestOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type GetOrCreateThreadMutationResult = NonNullable<Awaited<ReturnType<typeof getOrCreateThread>>>
-    export type GetOrCreateThreadMutationBody = GetOrCreateThreadRequest
-    export type GetOrCreateThreadMutationError = ErrorType<void>
-
-    export const useGetOrCreateThread = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof getOrCreateThread>>, TError,{data: GetOrCreateThreadRequest}, TContext>, request?: SecondParameter<typeof axios>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof getOrCreateThread>>,
-        TError,
-        {data: GetOrCreateThreadRequest},
-        TContext
-      > => {
-
-      const mutationOptions = getGetOrCreateThreadMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    
-/**
  * List all chat threads for the current user.
+Optionally filter by recordingId.
 Returns threads ordered by last activity (most recent first).
  */
 export const listThreads = (
@@ -1303,6 +1240,70 @@ export function useListThreads<TData = Awaited<ReturnType<typeof listThreads>>, 
 
 
 
+/**
+ * Create a new chat thread.
+If recordingId is provided, the thread is scoped to that recording.
+If not provided, the thread is scoped to all recordings.
+ */
+export const createThread = (
+    createThreadRequest: CreateThreadRequest,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<CreateThreadResponse>(
+      {url: `/v1/chat/threads`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createThreadRequest, signal
+    },
+      options);
+    }
+  
+
+
+export const getCreateThreadMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createThread>>, TError,{data: CreateThreadRequest}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof createThread>>, TError,{data: CreateThreadRequest}, TContext> => {
+
+const mutationKey = ['createThread'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createThread>>, {data: CreateThreadRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createThread(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateThreadMutationResult = NonNullable<Awaited<ReturnType<typeof createThread>>>
+    export type CreateThreadMutationBody = CreateThreadRequest
+    export type CreateThreadMutationError = ErrorType<void>
+
+    export const useCreateThread = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createThread>>, TError,{data: CreateThreadRequest}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createThread>>,
+        TError,
+        {data: CreateThreadRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateThreadMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
 /**
  * Get a specific thread by ID.
  */
