@@ -116,13 +116,13 @@ export function ToolCallCard({ toolCall, className }: ToolCallCardProps) {
                     key={recording.id}
                     to="/dashboard/recordings/$recordingId"
                     params={{ recordingId: recording.id }}
-                    className="flex items-center justify-between gap-2 rounded px-3.5 py-3 hover:bg-card group"
+                    className="flex items-center justify-between gap-2 rounded px-3.5 py-3 hover:bg-card group no-underline"
                   >
                     <span className="truncate text-foreground group-hover:underline">
                       {recording.title || "Untitled"}
                     </span>
                     {recording.createdAt && (
-                      <span className="shrink-0 text-muted-foreground/60 group-hover:no-underline">
+                      <span className="shrink-0 text-muted-foreground/60 no-underline">
                         {format(new Date(recording.createdAt), "MMM d")}
                       </span>
                     )}
