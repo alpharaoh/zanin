@@ -3,7 +3,6 @@ import {
   useGetMessages,
   useDeleteThread,
   useGetRecording,
-  getGetMessagesQueryKey,
   getListThreadsQueryKey,
   type ChatThread,
   type ChatMessage,

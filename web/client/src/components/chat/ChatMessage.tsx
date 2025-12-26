@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { ChatMessage as ChatMessageType } from "@/api";
 import { ToolCallCard } from "./ToolCallCard";
-import type { ToolCall, ToolCallResult } from "@/hooks/useStreamChat";
+import type { ToolCall } from "@/hooks/useStreamChat";
 
 interface ChatMessageProps {
   message: ChatMessageType;

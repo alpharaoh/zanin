@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
-import { organization } from "better-auth/plugins";
+import { organization, apiKey } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import db from "@zanin/db";
 import { env } from "@zanin/env/server";
@@ -23,7 +23,20 @@ export const auth = betterAuth({
       clientSecret: env.GOOGLE_CLIENT_SECRET,
     },
   },
-  plugins: [organization()],
+  plugins: [
+    organization(),
+    apiKey({
+      defaultPrefix: "zn_",
+      enableSessionForAPIKeys: true,
+      customAPIKeyGetter: (ctx) => {
+        const authHeader = ctx.request?.headers.get("authorization");
+        if (authHeader?.startsWith("Bearer ")) {
+          return authHeader.slice(7);
+        }
+        return null;
+      },
+    }),
+  ],
   databaseHooks: {
     user: {
       create: {

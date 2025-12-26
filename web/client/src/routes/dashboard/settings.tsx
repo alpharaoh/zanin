@@ -1,5 +1,6 @@
 import { AccountSettings } from "@/components/settings/account-settings";
 import { VoiceProfile } from "@/components/settings/voice-profile";
+import { ApiKeys } from "@/components/settings/api-keys";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { authClient } from "@zanin/auth/client";
 import { useCallback } from "react";
@@ -24,6 +25,12 @@ function SettingsPage() {
       <div className="grid gap-8 lg:grid-cols-2">
         <VoiceProfile />
         <AccountSettings onSignOut={handleSignOut} />
+      </div>
+
+      {/* Developer section */}
+      <div>
+        <p className="mb-4 text-xs text-muted-foreground">{">"} developer</p>
+        <ApiKeys />
       </div>
 
       {/* ASCII decoration */}

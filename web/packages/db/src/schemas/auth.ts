@@ -1,4 +1,11 @@
-import { pgTable, text, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  boolean,
+  jsonb,
+  integer,
+} from "drizzle-orm/pg-core";
 import { getDefaultColumns } from "../utils/getDefaultColumns";
 
 export const user = pgTable("user", {
@@ -89,6 +96,43 @@ export const invitation = pgTable("invitation", {
     .references(() => user.id, { onDelete: "cascade" }),
 });
 
+// Note: better-auth looks for "apikey" (lowercase) in the schema
+export const apikey = pgTable("api_key", {
+  id: text("id").primaryKey(),
+  name: text("name"),
+  // First few characters for display (e.g., "zn_abc12...")
+  start: text("start"),
+  // Prefix for the key (e.g., "zn_")
+  prefix: text("prefix"),
+  // Hashed API key
+  key: text("key").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  // Remaining requests (null = unlimited)
+  remaining: integer("remaining"),
+  // Refill configuration
+  refillInterval: integer("refill_interval"),
+  refillAmount: integer("refill_amount"),
+  lastRefillAt: timestamp("last_refill_at"),
+  // Enable/disable
+  enabled: boolean("enabled").default(true).notNull(),
+  // Rate limiting
+  rateLimitEnabled: boolean("rate_limit_enabled").default(false),
+  rateLimitTimeWindow: integer("rate_limit_time_window"),
+  rateLimitMax: integer("rate_limit_max"),
+  requestCount: integer("request_count").default(0),
+  lastRequest: timestamp("last_request"),
+  // Expiration
+  expiresAt: timestamp("expires_at"),
+  // Timestamps
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+  // Permissions and metadata
+  permissions: text("permissions"),
+  metadata: text("metadata"),
+});
+
 export type SelectUser = typeof user.$inferSelect;
 export type InsertUser = typeof user.$inferInsert;
 
@@ -109,3 +153,6 @@ export type InsertMember = typeof member.$inferInsert;
 
 export type SelectInvitation = typeof invitation.$inferSelect;
 export type InsertInvitation = typeof invitation.$inferInsert;
+
+export type SelectApiKey = typeof apikey.$inferSelect;
+export type InsertApiKey = typeof apikey.$inferInsert;
