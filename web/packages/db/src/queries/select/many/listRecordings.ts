@@ -1,8 +1,6 @@
-import { and, count, gte, ilike, inArray, lte } from "drizzle-orm";
+import { gte, ilike, lte, SQL } from "drizzle-orm";
 import { InsertRecording, recordings } from "../../../schema";
-import { buildOrderBy } from "../../../utils/buildOrderBy";
-import { buildWhere } from "../../../utils/buildWhere";
-import db from "../../..";
+import { buildListQuery } from "../../../utils/buildListQuery";
 
 export interface ListRecordingsFilters {
   ids?: string[];
@@ -17,48 +15,27 @@ export const listRecordings = async (
   limit?: number,
   offset?: number,
 ) => {
-  const { ids, search, startDate, endDate, ...rest } = where || {};
-  let whereCondition = buildWhere(recordings, rest);
+  const { search, startDate, endDate, ...rest } = where || {};
 
-  if (ids) {
-    whereCondition = and(whereCondition, inArray(recordings.id, ids));
-  }
+  const extraConditions: SQL[] = [];
 
   if (search) {
-    whereCondition = and(whereCondition, ilike(recordings.title, `%${search}%`));
+    extraConditions.push(ilike(recordings.title, `%${search}%`));
   }
 
   if (startDate) {
-    whereCondition = and(whereCondition, gte(recordings.finishedAt, startDate));
+    extraConditions.push(gte(recordings.createdAt, startDate));
   }
 
   if (endDate) {
-    whereCondition = and(whereCondition, lte(recordings.finishedAt, endDate));
+    extraConditions.push(lte(recordings.createdAt, endDate));
   }
 
-  const dataQuery = db.select().from(recordings).where(whereCondition);
-
-  if (orderBy) {
-    dataQuery.orderBy(...buildOrderBy(recordings, orderBy));
-  }
-
-  if (limit) {
-    dataQuery.limit(limit);
-  }
-
-  if (offset) {
-    dataQuery.offset(offset);
-  }
-
-  const countQuery = db
-    .select({ count: count() })
-    .from(recordings)
-    .where(whereCondition);
-
-  const [data, countResult] = await Promise.all([dataQuery, countQuery]);
-
-  return {
-    data,
-    count: countResult[0]?.count ?? 0,
-  };
+  return buildListQuery(recordings, {
+    where: rest,
+    orderBy,
+    limit,
+    offset,
+    extraConditions,
+  });
 };
