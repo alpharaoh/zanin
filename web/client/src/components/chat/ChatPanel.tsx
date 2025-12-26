@@ -67,8 +67,6 @@ export function ChatPanel({
     async (content: string) => {
       // If starting a new thread or no thread exists, create one first
       if (isStartingNewThread || !thread?.id) {
-        setIsStartingNewThread(false);
-
         // Create a new thread
         const result = await createThread.mutateAsync({
           data: { recordingId },
@@ -83,6 +81,15 @@ export function ChatPanel({
             data: { content },
           });
 
+          // Update threads cache with the new thread BEFORE disabling isStartingNewThread
+          queryClient.setQueryData(
+            getListThreadsQueryKey({ recordingId, limit: 1 }),
+            {
+              threads: [newThread],
+              count: 1,
+            }
+          );
+
           // Set the messages in cache
           queryClient.setQueryData(
             getGetMessagesQueryKey(newThread.id),
@@ -92,12 +99,11 @@ export function ChatPanel({
             }
           );
 
-          // Invalidate threads list to show the new thread
-          queryClient.invalidateQueries({
-            queryKey: getListThreadsQueryKey({ recordingId, limit: 1 }),
-          });
+          // Now safe to exit new thread mode
+          setIsStartingNewThread(false);
         } catch (error) {
           console.error("Failed to send message:", error);
+          setIsStartingNewThread(false);
         }
         return;
       }

@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNull } from "drizzle-orm";
+import { and, count, desc, isNull } from "drizzle-orm";
 import { chatThreads, InsertChatThread } from "../../../schema";
 import { buildWhere } from "../../../utils/buildWhere";
 import db from "../../..";
