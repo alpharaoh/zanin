@@ -28,8 +28,8 @@ extern "C" void app_main() {
   Wifi();
   HttpClient http = HttpClient();
 
-  char buffer[100];
-  http.get("http://localhost:8081/docs", buffer, 100);
+  char buffer[1024];
+  http.get("http://192.168.0.105:8081/docs", buffer, sizeof(buffer));
 
   // Print out the response
   ESP_LOGI("HTTP TEST", "Response: %s", buffer);
