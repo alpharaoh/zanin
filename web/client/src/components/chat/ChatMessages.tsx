@@ -14,7 +14,7 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: "instant" });
   }, [messages, isLoading]);
 
   if (messages.length === 0 && !isLoading) {
