@@ -13,7 +13,12 @@ import {
   useMatches,
 } from "@tanstack/react-router";
 import { authClient } from "@zanin/auth/client";
-import { LayoutDashboardIcon, MessageSquareIcon, MicIcon, SettingsIcon } from "lucide-react";
+import {
+  LayoutDashboardIcon,
+  MessagesSquareIcon,
+  MicIcon,
+  SettingsIcon,
+} from "lucide-react";
 import { useMemo } from "react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -63,9 +68,9 @@ function DashboardLayout() {
       icon: <MicIcon />,
     },
     {
-      title: "Chat",
+      title: "Threads",
       url: "/dashboard/chat",
-      icon: <MessageSquareIcon />,
+      icon: <MessagesSquareIcon />,
     },
     {
       title: "Settings",
