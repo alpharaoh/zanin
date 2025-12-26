@@ -26,8 +26,12 @@ function buildDateFilter(
 
   const filter: Record<string, unknown> = {};
 
-  const startTs = startDate ? Math.floor(new Date(startDate).getTime() / 1000) : undefined;
-  const endTs = endDate ? Math.floor(new Date(endDate).getTime() / 1000) : undefined;
+  const startTs = startDate
+    ? Math.floor(new Date(startDate).getTime() / 1000)
+    : undefined;
+  const endTs = endDate
+    ? Math.floor(new Date(endDate).getTime() / 1000)
+    : undefined;
 
   if (startTs && endTs) {
     filter.createdAtTs = {
@@ -165,7 +169,8 @@ const getRecordingDetails = tool(
       return JSON.stringify({
         success: false,
         recordings: [],
-        message: "Please provide either recording IDs or a date range to query.",
+        message:
+          "Please provide either recording IDs or a date range to query.",
       });
     }
 
