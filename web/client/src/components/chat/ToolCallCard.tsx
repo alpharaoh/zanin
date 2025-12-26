@@ -33,14 +33,12 @@ export function ToolCallCard({ toolCall, className }: ToolCallCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const isRunning = toolCall.status === "running";
   const label = getToolLabel(toolCall.name, toolCall.status);
-  const hasResults = toolCall.result?.recordings && toolCall.result.recordings.length > 0;
+  const hasResults =
+    toolCall.result?.recordings && toolCall.result.recordings.length > 0;
 
   return (
     <div
-      className={cn(
-        "border border-border/50 bg-card/30 text-xs",
-        className
-      )}
+      className={cn("border border-border/50 bg-card/30 text-xs", className)}
     >
       {/* Header */}
       <button
@@ -56,15 +54,15 @@ export function ToolCallCard({ toolCall, className }: ToolCallCardProps) {
           hasResults && "cursor-pointer hover:bg-card/50"
         )}
       >
-        {isRunning ? (
-          <Spinner />
-        ) : (
-          <span className="text-primary">✓</span>
-        )}
+        {isRunning ? <Spinner /> : <span className="text-primary">✓</span>}
         <span className="text-muted-foreground">{label}</span>
         {toolCall.result?.count !== undefined && (
           <span className="ml-auto text-muted-foreground/70">
-            {toolCall.result.count} recording{toolCall.result.count !== 1 ? "s" : ""}
+            {toolCall.result.count}{" "}
+            {toolCall.result.name === "search_recordings"
+              ? "snippet"
+              : "recording"}
+            {toolCall.result.count !== 1 ? "s" : ""}
           </span>
         )}
         {hasResults && (
@@ -76,59 +74,61 @@ export function ToolCallCard({ toolCall, className }: ToolCallCardProps) {
 
       {/* Expandable results */}
       {isExpanded && toolCall.result?.recordings && (
-        <div className="border-t border-border/30 px-2.5 py-2">
+        <div className="border-t border-border/30">
           <div className="flex max-h-48 flex-col gap-2 overflow-y-auto">
             {toolCall.result.name === "search_recordings" ? (
-              // Search results: show excerpts with relevance and CTA
-              toolCall.result.recordings.map((recording) => (
-                <div
-                  key={recording.id}
-                  className="flex flex-col gap-1.5 border-b border-border/20 pb-2 last:border-0 last:pb-0"
-                >
-                  {recording.excerpts && recording.excerpts.length > 0 && (
-                    <div className="text-[10px] text-muted-foreground/80">
-                      {recording.excerpts.slice(0, 2).map((excerpt, i) => (
-                        <p key={i} className="line-clamp-2 italic">
-                          "{excerpt}"
-                        </p>
-                      ))}
+              <div className="px-2.5 py-2 flex flex-col gap-2">
+                {toolCall.result.recordings.map((recording) => (
+                  <div
+                    key={recording.id}
+                    className="flex flex-col gap-1.5 border-b pb-4 border-border/20 last:border-0 last:pb-0"
+                  >
+                    {recording.excerpts && recording.excerpts.length > 0 && (
+                      <div className="text-[10px] text-muted-foreground/80">
+                        {recording.excerpts.slice(0, 2).map((excerpt, i) => (
+                          <p key={i} className="line-clamp-2 italic">
+                            "{excerpt}"
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between gap-2">
+                      {recording.relevanceScore !== undefined && (
+                        <span className="text-[10px] text-primary/70">
+                          {Math.round(recording.relevanceScore * 100)}% match
+                        </span>
+                      )}
+                      <Link
+                        to="/dashboard/recordings/$recordingId"
+                        params={{ recordingId: recording.id }}
+                        className="text-[10px] text-foreground/70 hover:text-foreground hover:underline"
+                      >
+                        Go to recording →
+                      </Link>
                     </div>
-                  )}
-                  <div className="flex items-center justify-between gap-2">
-                    {recording.relevanceScore !== undefined && (
-                      <span className="text-[10px] text-primary/70">
-                        {Math.round(recording.relevanceScore * 100)}% match
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div>
+                {toolCall.result.recordings.map((recording) => (
+                  <Link
+                    key={recording.id}
+                    to="/dashboard/recordings/$recordingId"
+                    params={{ recordingId: recording.id }}
+                    className="flex items-center justify-between gap-2 rounded px-3.5 py-3 hover:bg-card group"
+                  >
+                    <span className="truncate text-foreground group-hover:underline">
+                      {recording.title || "Untitled"}
+                    </span>
+                    {recording.createdAt && (
+                      <span className="shrink-0 text-muted-foreground/60 group-hover:no-underline">
+                        {format(new Date(recording.createdAt), "MMM d")}
                       </span>
                     )}
-                    <Link
-                      to="/dashboard/recordings/$recordingId"
-                      params={{ recordingId: recording.id }}
-                      className="text-[10px] text-foreground/70 hover:text-foreground hover:underline"
-                    >
-                      Go to recording →
-                    </Link>
-                  </div>
-                </div>
-              ))
-            ) : (
-              // Recording details: show title and date
-              toolCall.result.recordings.map((recording) => (
-                <Link
-                  key={recording.id}
-                  to="/dashboard/recordings/$recordingId"
-                  params={{ recordingId: recording.id }}
-                  className="flex items-center justify-between gap-2 rounded px-2 py-1 hover:bg-card/50"
-                >
-                  <span className="truncate text-foreground">
-                    {recording.title || "Untitled"}
-                  </span>
-                  {recording.createdAt && (
-                    <span className="shrink-0 text-muted-foreground/60">
-                      {format(new Date(recording.createdAt), "MMM d")}
-                    </span>
-                  )}
-                </Link>
-              ))
+                  </Link>
+                ))}
+              </div>
             )}
           </div>
         </div>
