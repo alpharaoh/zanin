@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "led_strip.h"
+#include "services/http/http.h"
 
 const gpio_num_t LED_GPIO_ID = GPIO_NUM_38;
 
@@ -24,16 +25,23 @@ const gpio_num_t SD_CARD_DI_GPIO_ID = GPIO_NUM_37;
 const gpio_num_t SD_CARD_CS_GPIO_ID = GPIO_NUM_38;
 
 extern "C" void app_main() {
-  Wifi wifi = Wifi();
-
-  SDCard sdcard = SDCard(SD_CARD_DO_GPIO_ID, SD_CARD_CLK_GPIO_ID,
-                         SD_CARD_DI_GPIO_ID, SD_CARD_CS_GPIO_ID);
-
-  sdcard.write("/test.txt", "Hello world!");
+  Wifi();
+  HttpClient http = HttpClient();
 
   char buffer[100];
+  http.get("http://localhost:8081/docs", buffer, 100);
 
-  sdcard.read("/test.txt", buffer, 100);
+  // Print out the response
+  ESP_LOGI("HTTP TEST", "Response: %s", buffer);
+
+  // SDCard sdcard = SDCard(SD_CARD_DO_GPIO_ID, SD_CARD_CLK_GPIO_ID,
+  //                        SD_CARD_DI_GPIO_ID, SD_CARD_CS_GPIO_ID);
+
+  // sdcard.write("/test.txt", "Hello world!");
+  //
+  // char buffer[100];
+  //
+  // sdcard.read("/test.txt", buffer, 100);
 
   // Led led = Led(LED_GPIO_ID);
   //

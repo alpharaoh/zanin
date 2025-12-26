@@ -87,6 +87,8 @@ CompileFlags:
     - "-I/Users/akaam/Projects/esp-idf/components/lwip/lwip/src/include"
     # WPA supplicant
     - "-I/Users/akaam/Projects/esp-idf/components/wpa_supplicant/include"
+    # HTTP client
+    - "-I/Users/akaam/Projects/esp-idf/components/esp_http_client/include"
     - "-D__XTENSA__"
     - "-DESP_PLATFORM"
     - "-std=gnu++17"
@@ -108,3 +110,5 @@ Diagnostics:
     - drv_unknown_argument_with_suggestion
     - attribute_not_type_attr
     - pp_file_not_found
+    - unknown_typename
+    - undeclared_var_use
