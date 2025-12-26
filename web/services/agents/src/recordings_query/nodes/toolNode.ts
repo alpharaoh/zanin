@@ -28,16 +28,16 @@ export async function toolNode(state: RecordingsQueryStateType) {
       } else if (toolCall.name === "get_recording_details") {
         const observation = await getRecordingDetailsTool.invoke(toolCallArgs);
         result.push(observation);
-      }
-
-      result.push(
-        new ToolMessage({
-          tool_call_id: toolCall.id ?? "",
-          content: JSON.stringify({
-            error: `Unknown tool: ${toolCall.name}`,
+      } else {
+        result.push(
+          new ToolMessage({
+            tool_call_id: toolCall.id ?? "",
+            content: JSON.stringify({
+              error: `Unknown tool: ${toolCall.name}`,
+            }),
           }),
-        }),
-      );
+        );
+      }
     } catch (error) {
       result.push(
         new ToolMessage({
