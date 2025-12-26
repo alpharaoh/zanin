@@ -6,12 +6,8 @@ import { updateChatThread } from "@zanin/db/queries/update/updateChatThread";
 import LangGraphService from "../services/external/langgraph/service";
 
 const RECORDINGS_QUERY_ASSISTANT = "recordings";
-
 const router = Router();
 
-/**
- * Stream event types sent to the client
- */
 type StreamEvent =
   | { type: "user_message"; message: unknown }
   | { type: "token"; content: string }
@@ -21,68 +17,48 @@ type StreamEvent =
   | { type: "error"; message: string }
   | { type: "done" };
 
-/**
- * Send an SSE event to the client
- */
-function sendEvent(res: Response, event: StreamEvent) {
+function send(res: Response, event: StreamEvent) {
   res.write(`data: ${JSON.stringify(event)}\n\n`);
 }
 
-/**
- * Helper: flatten LangGraph message content into a single string
- */
-function extractTextFromContent(
-  content: string | Array<{ type: string; text?: string }>,
-): string {
-  if (typeof content === "string") return content;
-  if (!Array.isArray(content)) return "";
-
-  // LangGraph / LC messages often have blocks like { type: "text", text: "..." }
-  return content
-    .filter((chunk) => chunk.type === "text" && typeof chunk.text === "string")
-    .map((chunk) => chunk.text as string)
-    .join("");
+function extractText(content: unknown): string {
+  if (typeof content === "string") {
+    return content;
+  }
+  if (Array.isArray(content)) {
+    return content
+      .filter((c) => c.type === "text" && c.text)
+      .map((c) => c.text)
+      .join("");
+  }
+  return "";
 }
 
-/**
- * POST /api/v1/chat/threads/:threadId/stream
- *
- * Stream a chat message response using Server-Sent Events.
- * Bypasses TSOA since it doesn't support streaming responses.
- */
 router.post(
   "/threads/:threadId/stream",
   async (req: Request, res: Response) => {
     try {
-      // Authenticate the request
+      // Auth
       const session = await auth.api.getSession({
         headers: fromNodeHeaders(req.headers),
       });
-
       if (!session) {
-        res.status(401).json({ error: "Unauthorized" });
-        return;
+        return res.status(401).json({ error: "Unauthorized" });
       }
-
       const organizationId = session.session.activeOrganizationId;
       if (!organizationId) {
-        res.status(400).json({ error: "No active organization" });
-        return;
+        return res.status(400).json({ error: "No active organization" });
       }
 
       const { threadId } = req.params;
       const { content } = req.body as { content: string };
-
       if (!content) {
-        res.status(400).json({ error: "Content is required" });
-        return;
+        return res.status(400).json({ error: "Content is required" });
       }
 
-      // Verify thread exists and belongs to this organization
       const thread = await selectChatThread(threadId, organizationId);
       if (!thread) {
-        res.status(404).json({ error: "Thread not found" });
-        return;
+        return res.status(404).json({ error: "Thread not found" });
       }
 
       // Store user message
@@ -93,16 +69,14 @@ router.post(
         metadata: null,
       });
 
-      // Set up SSE headers
+      // SSE headers
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
-      res.setHeader("X-Accel-Buffering", "no"); // Disable nginx buffering
-      // Make sure headers go out immediately
-      (res as any).flushHeaders?.();
+      res.setHeader("X-Accel-Buffering", "no");
+      res.flushHeaders();
 
-      // Send user message event
-      sendEvent(res, {
+      send(res, {
         type: "user_message",
         message: {
           id: userMessage.id,
@@ -125,138 +99,121 @@ router.post(
         },
       });
 
-      // This tracks the *full* assistant text as we go
       let assistantContent = "";
-
-      // Track tool calls so we can send tool_start / tool_end
-      const toolCalls = new Map<string, { name: string; completed: boolean }>();
+      const tools = new Map<string, boolean>(); // id -> completed
 
       for await (const event of stream as AsyncIterable<{
         event: string;
         data: unknown;
       }>) {
-        console.log("\n\nevent:", event, "\n\n\n");
-        if (event.event === "messages/partial") {
-          /**
-           * messages/partial:
-           *   event.data is an array of LangChain-style messages.
-           *   For AI messages, content is the *current full text so far*, not just a delta.
-           */
-          const messages = event.data as Array<{
+        const { event: eventType, data } = event;
+
+        if (eventType === "messages/partial") {
+          // Streaming AI content
+          const messages = data as Array<{
             type?: string;
-            content?: string | Array<{ type: string; text?: string }>;
+            content?: unknown;
             tool_calls?: Array<{ id: string; name: string }>;
           }>;
-
-          for (const msg of messages) {
-            if (msg.type === "ai" && msg.content != null) {
-              const fullText = extractTextFromContent(msg.content);
-              // Compute just the new suffix since last time
-              const newContent = fullText.slice(assistantContent.length);
-              if (newContent) {
+          const aiMsg = messages.find((m) => m.type === "ai");
+          if (aiMsg) {
+            // Stream text content
+            if (aiMsg.content) {
+              const fullText = extractText(aiMsg.content);
+              const delta = fullText.slice(assistantContent.length);
+              if (delta) {
                 assistantContent = fullText;
-                sendEvent(res, { type: "token", content: newContent });
+                send(res, { type: "token", content: delta });
               }
             }
-
-            // Emit tool_start for new tool calls
-            if (msg.tool_calls && msg.tool_calls.length > 0) {
-              for (const toolCall of msg.tool_calls) {
-                if (!toolCalls.has(toolCall.id)) {
-                  toolCalls.set(toolCall.id, {
-                    name: toolCall.name,
-                    completed: false,
-                  });
-                  sendEvent(res, {
+            // Tool calls can appear in partial messages too
+            if (aiMsg.tool_calls?.length) {
+              for (const tc of aiMsg.tool_calls) {
+                if (!tools.has(tc.id)) {
+                  tools.set(tc.id, false);
+                  send(res, {
                     type: "tool_start",
-                    toolCallId: toolCall.id,
-                    name: toolCall.name,
+                    toolCallId: tc.id,
+                    name: tc.name,
                   });
                 }
               }
             }
           }
-        } else if (event.event === "messages/complete") {
-          /**
-           * messages/complete:
-           *   final AI messages with full content.
-           */
-          const messages = event.data as Array<{
+        } else if (eventType === "messages/complete") {
+          const messages = data as Array<{
             type?: string;
-            content?: string | Array<{ type: string; text?: string }>;
+            content?: unknown;
+            tool_calls?: Array<{ id: string; name: string }>;
+            tool_call_id?: string;
           }>;
 
-          const lastAiMessage = messages.filter((m) => m.type === "ai").pop();
-          if (lastAiMessage && lastAiMessage.content != null) {
-            assistantContent = extractTextFromContent(lastAiMessage.content);
-          }
-        } else if (event.event === "updates") {
-          // [api] event: {
-          // [api]   id: "4",
-          // [api]   event: "updates",
-          // [api]   data: {
-          // [api]     llmCall: {
-          // [api]       messages: [
-          // [api]         [Object ...]
-          // [api]       ],
-          // [api]       llmCalls: 1,
-          // [api]     },
-          // [api]   },
-          // [api] }
-          // [api]
-          /**
-           * updates:
-           *   node-specific updates. Tool results usually show up under a `tools` key.
-           */
-          const updates = event.data as Record<string, unknown>;
+          for (const msg of messages) {
+            // Tool invocation (AI message with tool_calls)
+            if (msg.type === "ai" && msg.tool_calls?.length) {
+              for (const tc of msg.tool_calls) {
+                if (!tools.has(tc.id)) {
+                  tools.set(tc.id, false);
+                  send(res, {
+                    type: "tool_start",
+                    toolCallId: tc.id,
+                    name: tc.name,
+                  });
+                }
+              }
+            }
 
-          if ("tools" in updates) {
-            // Mark all known tools as completed when we see any tool update.
-            for (const [toolCallId, toolInfo] of toolCalls.entries()) {
-              if (!toolInfo.completed) {
-                toolInfo.completed = true;
-                sendEvent(res, { type: "tool_end", toolCallId });
+            // Tool result
+            if (msg.type === "tool" && msg.tool_call_id) {
+              if (tools.has(msg.tool_call_id) && !tools.get(msg.tool_call_id)) {
+                tools.set(msg.tool_call_id, true);
+                send(res, { type: "tool_end", toolCallId: msg.tool_call_id });
+              }
+            }
+
+            // Final AI content
+            if (msg.type === "ai" && msg.content && !msg.tool_calls?.length) {
+              assistantContent = extractText(msg.content);
+            }
+          }
+        } else if (eventType === "updates") {
+          // Tool node completion
+          const updates = data as Record<string, unknown>;
+          if ("toolNode" in updates) {
+            // Mark all pending tools as completed
+            for (const [id, completed] of tools) {
+              if (!completed) {
+                tools.set(id, true);
+                send(res, { type: "tool_end", toolCallId: id });
               }
             }
           }
         }
-
-        // (Optional) You could also handle "messages/metadata", "events", "debug" here
-        // if you decide to add those stream modes later.
       }
 
-      // Ensure any remaining tools are marked as completed
-      for (const [toolCallId, toolInfo] of toolCalls.entries()) {
-        if (!toolInfo.completed) {
-          sendEvent(res, { type: "tool_end", toolCallId });
+      // Mark any tools that didn't get an explicit end
+      for (const [id, completed] of tools) {
+        if (!completed) {
+          send(res, { type: "tool_end", toolCallId: id });
         }
       }
 
-      // Store assistant message in DB
+      // Store assistant message
       const assistantMessage = await insertChatMessage({
         threadId,
         role: "assistant",
         content: assistantContent,
         metadata:
-          toolCalls.size > 0
-            ? {
-                toolCalls: Array.from(toolCalls.entries()).map(
-                  ([id, info]) => ({
-                    id,
-                    name: info.name,
-                  }),
-                ),
-              }
+          tools.size > 0
+            ? { toolCalls: Array.from(tools.keys()).map((id) => ({ id })) }
             : null,
       });
 
-      // Update thread's last activity
       await updateChatThread(threadId, organizationId, {
         lastActivityAt: new Date(),
       });
 
-      // Send assistant message event
-      sendEvent(res, {
+      send(res, {
         type: "assistant_message",
         message: {
           id: assistantMessage.id,
@@ -268,26 +225,20 @@ router.post(
         },
       });
 
-      // Send done event & close stream
-      sendEvent(res, { type: "done" });
+      send(res, { type: "done" });
       res.end();
     } catch (error) {
       console.error("Stream error:", error);
-
-      // If headers haven't been sent yet, send error as JSON
       if (!res.headersSent) {
-        res.status(500).json({ error: "Internal server error" });
-        return;
+        return res.status(500).json({ error: "Internal server error" });
       }
-
-      // Otherwise send as SSE event
-      sendEvent(res, {
+      send(res, {
         type: "error",
         message: error instanceof Error ? error.message : "Unknown error",
       });
       res.end();
     }
-  },
+  }
 );
 
 export default router;
