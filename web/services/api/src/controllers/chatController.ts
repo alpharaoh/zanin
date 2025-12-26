@@ -51,7 +51,9 @@ interface ListThreadsResponse {
 export class ChatController extends Controller {
   /**
    * List all chat threads for the current user.
-   * Optionally filter by recordingId.
+   * - No recordingId: returns all threads
+   * - recordingId=<uuid>: returns threads for that recording
+   * - recordingId=null: returns threads scoped to "all recordings" (where recordingId IS NULL)
    * Returns threads ordered by last activity (most recent first).
    */
   @Get("threads")
@@ -63,10 +65,13 @@ export class ChatController extends Controller {
   ): Promise<ListThreadsResponse> {
     const { userId, organizationId } = request.user!;
 
+    // Convert string "null" to actual null for filtering
+    const recordingIdFilter = recordingId === "null" ? null : recordingId;
+
     const result = await ChatService.listThreads(
       organizationId,
       userId,
-      recordingId,
+      recordingIdFilter,
       limit,
       offset,
     );

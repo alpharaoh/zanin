@@ -1149,7 +1149,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     
 /**
  * List all chat threads for the current user.
-Optionally filter by recordingId.
+- No recordingId: returns all threads
+- recordingId=<uuid>: returns threads for that recording
+- recordingId=null: returns threads scoped to "all recordings" (where recordingId IS NULL)
 Returns threads ordered by last activity (most recent first).
  */
 export const listThreads = (

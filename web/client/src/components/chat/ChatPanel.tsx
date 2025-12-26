@@ -35,7 +35,11 @@ export function ChatPanel({
   });
 
   // List threads to get the most recent one for this scope
-  const threadsQuery = useListThreads({ recordingId, limit: 1 });
+  // If no recordingId, pass "null" to filter for threads where recordingId IS NULL
+  const threadsQuery = useListThreads({
+    recordingId: recordingId ?? "null",
+    limit: 1,
+  });
   const latestThread = threadsQuery.data?.threads?.[0];
 
   // Fetch messages for the current thread
