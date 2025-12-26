@@ -66,7 +66,7 @@ export function RecordingRow({
           ? formatDuration(recording.originalDuration)
           : "—"}
       </div>
-      <div className="col-span-2 text-right text-muted-foreground">
+      <div className="col-span-2 text-right text-muted-foreground whitespace-nowrap">
         {formatDistance(recording.createdAt, new Date(), { addSuffix: true })}
       </div>
       {showDelete && onDelete && (
