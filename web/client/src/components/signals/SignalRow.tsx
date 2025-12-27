@@ -24,7 +24,7 @@ export function SignalRow({ signal, onDelete }: SignalRowProps) {
       to="/dashboard/signals/$signalId"
       params={{ signalId: signal.id }}
       className={cn(
-        "group grid grid-cols-12 gap-4 border-b border-border px-4 py-3 text-sm transition-colors last:border-b-0 no-underline",
+        "group grid grid-cols-11 gap-4 border-b border-border px-4 py-3 text-sm transition-colors last:border-b-0 no-underline",
         signal.isActive
           ? "hover:bg-neutral-800/50 cursor-pointer"
           : "hover:bg-neutral-800/50 cursor-pointer opacity-50"
@@ -63,15 +63,15 @@ export function SignalRow({ signal, onDelete }: SignalRowProps) {
       {/* Streak */}
       <div
         className={cn(
-          "col-span-2 flex items-center justify-end gap-1 tabular-nums",
+          "col-span-1 flex items-center justify-end gap-1 tabular-nums",
           signal.currentStreak >= 7 && "text-amber-500",
-          signal.currentStreak >= 3 && signal.currentStreak < 7 && "text-amber-400/70",
+          signal.currentStreak >= 3 &&
+            signal.currentStreak < 7 &&
+            "text-amber-400/70",
           signal.currentStreak < 3 && "text-muted-foreground"
         )}
       >
-        {signal.currentStreak > 0 && (
-          <FlameIcon className="size-3.5" />
-        )}
+        {signal.currentStreak > 0 && <FlameIcon className="size-3.5" />}
         {signal.currentStreak > 0 ? signal.currentStreak : "—"}
       </div>
 
@@ -82,11 +82,13 @@ export function SignalRow({ signal, onDelete }: SignalRowProps) {
 
       {/* Date */}
       <div className="col-span-2 text-right text-muted-foreground whitespace-nowrap truncate">
-        {formatDistance(new Date(signal.createdAt), new Date(), { addSuffix: true })}
+        {formatDistance(new Date(signal.createdAt), new Date(), {
+          addSuffix: true,
+        })}
       </div>
 
       {/* Delete */}
-      <div className="col-span-1 flex justify-end">
+      <div className="flex">
         {onDelete && (
           <button
             onClick={(e) => {
@@ -109,10 +111,10 @@ export function SignalRow({ signal, onDelete }: SignalRowProps) {
 
 export function SignalListHeader() {
   return (
-    <div className="grid grid-cols-12 gap-4 border-b border-border bg-card px-4 py-2 text-xs text-muted-foreground">
+    <div className="grid grid-cols-11 gap-4 border-b border-border bg-card px-4 py-2 text-xs text-muted-foreground">
       <div className="col-span-5">name</div>
       <div className="col-span-1 text-right">points</div>
-      <div className="col-span-2 text-right">streak</div>
+      <div className="col-span-1 text-right">streak</div>
       <div className="col-span-1 text-right">rate</div>
       <div className="col-span-2 text-right">created</div>
       <div className="col-span-1"></div>
