@@ -104,7 +104,7 @@ export function SignalRow({ signal, onEdit, onDelete }: SignalRowProps) {
       <div className="col-span-2 text-right text-muted-foreground whitespace-nowrap truncate">
         {formatDistance(new Date(signal.createdAt), new Date(), {
           addSuffix: true,
-        })}
+        }).replace("about ", "")}
       </div>
 
       {/* Actions */}
