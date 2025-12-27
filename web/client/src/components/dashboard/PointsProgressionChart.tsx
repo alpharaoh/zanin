@@ -101,8 +101,9 @@ export function PointsProgressionChart({
             border: "1px solid hsl(var(--border))",
             borderRadius: 0,
             fontSize: 11,
-            color: "hsl(var(--foreground))",
           }}
+          labelStyle={{ color: "hsl(var(--foreground))" }}
+          itemStyle={{ color: "hsl(var(--foreground))" }}
           formatter={(value, _name) => {
             const numValue = typeof value === "number" ? value : 0;
             const formatted = numValue > 0 ? `+${numValue}` : `${numValue}`;
@@ -110,7 +111,7 @@ export function PointsProgressionChart({
           }}
         />
         <Area
-          type="monotone"
+          type="linear"
           dataKey="points"
           stroke={strokeColor}
           strokeWidth={2}

@@ -69,7 +69,7 @@ function DashboardIndex() {
     if (!data?.recordings) {
       return [];
     }
-    return data.recordings.slice(0, 5);
+    return data.recordings.slice(0, 3);
   }, [data]);
 
   if (isLoading) {
@@ -130,7 +130,7 @@ function DashboardIndex() {
         {hasSignalsData && (
           <>
             <div className="border border-border bg-card p-3">
-              <p className="text-[10px] text-muted-foreground">points</p>
+              <p className="text-[10px] text-muted-foreground">signal_points</p>
               <p
                 className={cn(
                   "mt-1 text-lg tabular-nums",
@@ -144,7 +144,7 @@ function DashboardIndex() {
               </p>
             </div>
             <div className="border border-border bg-card p-3">
-              <p className="text-[10px] text-muted-foreground">streak</p>
+              <p className="text-[10px] text-muted-foreground">signal_streak</p>
               <div
                 className={cn(
                   "mt-1 flex items-center gap-1 text-lg tabular-nums",
@@ -242,7 +242,7 @@ function DashboardIndex() {
                 <RecentAchievements
                   achievements={achievementsData.achievements}
                   definitions={achievementsData.definitions}
-                  limit={4}
+                  limit={3}
                 />
               </div>
             ) : (
