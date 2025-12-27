@@ -27,7 +27,7 @@ const server = serve({
         console.error("Error invoking graph:", error);
         return Response.json(
           { error: error instanceof Error ? error.message : "Unknown error" },
-          { status: 500 }
+          { status: 500 },
         );
       }
     }
@@ -43,7 +43,7 @@ const server = serve({
             async start(controller) {
               for await (const chunk of stream) {
                 controller.enqueue(
-                  new TextEncoder().encode(JSON.stringify(chunk) + "\n")
+                  new TextEncoder().encode(JSON.stringify(chunk) + "\n"),
                 );
               }
               controller.close();
@@ -54,13 +54,13 @@ const server = serve({
               "Content-Type": "application/x-ndjson",
               "Transfer-Encoding": "chunked",
             },
-          }
+          },
         );
       } catch (error) {
         console.error("Error streaming graph:", error);
         return Response.json(
           { error: error instanceof Error ? error.message : "Unknown error" },
-          { status: 500 }
+          { status: 500 },
         );
       }
     }
