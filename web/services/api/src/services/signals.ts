@@ -257,6 +257,7 @@ export const SignalsService = {
         organizationId: input.organizationId,
         userId: input.userId,
         achievementType: "first_signal",
+        signalId: signal.id,
         metadata: { signalName: input.name },
       });
     }
