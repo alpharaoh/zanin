@@ -35,7 +35,7 @@ export function SignalRow({ signal, onDelete }: SignalRowProps) {
       {/* Name */}
       <div
         className={cn(
-          "col-span-4 flex items-center gap-2 truncate transition-colors",
+          "col-span-5 flex items-center gap-2 truncate transition-colors",
           isHovered ? "text-neutral-300" : "text-muted-foreground"
         )}
       >
@@ -50,7 +50,7 @@ export function SignalRow({ signal, onDelete }: SignalRowProps) {
       {/* Points */}
       <div
         className={cn(
-          "col-span-2 text-right tabular-nums",
+          "col-span-1 text-right tabular-nums",
           signal.totalPoints > 0 && "text-emerald-500",
           signal.totalPoints < 0 && "text-red-500",
           signal.totalPoints === 0 && "text-muted-foreground"
@@ -63,25 +63,30 @@ export function SignalRow({ signal, onDelete }: SignalRowProps) {
       {/* Streak */}
       <div
         className={cn(
-          "col-span-2 text-right tabular-nums",
+          "col-span-2 flex items-center justify-end gap-1 tabular-nums",
           signal.currentStreak >= 7 && "text-amber-500",
           signal.currentStreak >= 3 && signal.currentStreak < 7 && "text-amber-400/70",
           signal.currentStreak < 3 && "text-muted-foreground"
         )}
       >
+        {signal.currentStreak > 0 && (
+          <FlameIcon className="size-3.5" />
+        )}
         {signal.currentStreak > 0 ? signal.currentStreak : "—"}
       </div>
 
       {/* Success Rate */}
-      <div className="col-span-2 text-right tabular-nums text-muted-foreground">
+      <div className="col-span-1 text-right tabular-nums text-muted-foreground">
         {successRate !== null ? `${successRate}%` : "—"}
       </div>
 
-      {/* Date + Delete */}
-      <div className="col-span-2 flex items-center justify-end gap-2">
-        <span className="text-right text-muted-foreground whitespace-nowrap">
-          {formatDistance(new Date(signal.createdAt), new Date(), { addSuffix: true })}
-        </span>
+      {/* Date */}
+      <div className="col-span-2 text-right text-muted-foreground whitespace-nowrap truncate">
+        {formatDistance(new Date(signal.createdAt), new Date(), { addSuffix: true })}
+      </div>
+
+      {/* Delete */}
+      <div className="col-span-1 flex justify-end">
         {onDelete && (
           <button
             onClick={(e) => {
@@ -105,11 +110,12 @@ export function SignalRow({ signal, onDelete }: SignalRowProps) {
 export function SignalListHeader() {
   return (
     <div className="grid grid-cols-12 gap-4 border-b border-border bg-card px-4 py-2 text-xs text-muted-foreground">
-      <div className="col-span-4">name</div>
-      <div className="col-span-2 text-right">points</div>
+      <div className="col-span-5">name</div>
+      <div className="col-span-1 text-right">points</div>
       <div className="col-span-2 text-right">streak</div>
-      <div className="col-span-2 text-right">rate</div>
+      <div className="col-span-1 text-right">rate</div>
       <div className="col-span-2 text-right">created</div>
+      <div className="col-span-1"></div>
     </div>
   );
 }

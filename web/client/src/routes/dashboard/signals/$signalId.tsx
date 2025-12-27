@@ -4,6 +4,7 @@ import {
   useGetSignalEvaluations,
   useUpdateSignal,
   useDeleteSignal,
+  useGetAchievements,
   getListSignalsQueryKey,
 } from "@/api";
 import { useQueryClient } from "@tanstack/react-query";
@@ -54,6 +55,9 @@ function SignalDetailPage() {
     limit: 100,
   });
 
+  // Fetch achievements for this signal
+  const { data: achievementsData } = useGetAchievements();
+
   const updateMutation = useUpdateSignal();
   const deleteMutation = useDeleteSignal();
 
@@ -97,6 +101,12 @@ function SignalDetailPage() {
   const evaluations = evaluationsData?.evaluations ?? [];
   const allEvaluations = allEvaluationsData?.evaluations ?? [];
   const totalCount = evaluationsData?.count ?? 0;
+
+  // Filter achievements for this signal
+  const signalAchievements = (achievementsData?.achievements ?? []).filter(
+    (a) => a.signalId === signalId
+  );
+  const achievementDefinitions = achievementsData?.definitions ?? {};
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const hasNextPage = page < totalPages - 1;
   const hasPrevPage = page > 0;
@@ -233,41 +243,73 @@ function SignalDetailPage() {
             <p className="text-xs">{signal.failureCondition}</p>
           </div>
         </div>
-        {(signal.goodExamples?.length || signal.badExamples?.length) && (
-          <div className="grid gap-px bg-border sm:grid-cols-2">
-            {signal.goodExamples && signal.goodExamples.length > 0 && (
-              <div className="bg-background p-4">
-                <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-                  good_examples
-                </p>
-                <ul className="space-y-1">
-                  {signal.goodExamples.map((ex, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs">
-                      <span className="mt-1 size-1.5 shrink-0 bg-emerald-500" />
-                      {ex}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {signal.badExamples && signal.badExamples.length > 0 && (
-              <div className="bg-background p-4">
-                <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-                  bad_examples
-                </p>
-                <ul className="space-y-1">
-                  {signal.badExamples.map((ex, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs">
-                      <span className="mt-1 size-1.5 shrink-0 bg-red-500" />
-                      {ex}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+        <div className="grid gap-px bg-border sm:grid-cols-2">
+          <div className="bg-background p-4">
+            <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+              good_examples
+            </p>
+            {signal.goodExamples && signal.goodExamples.length > 0 ? (
+              <ul className="space-y-1">
+                {signal.goodExamples.map((ex, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs">
+                    <span className="mt-1 size-1.5 shrink-0 bg-emerald-500" />
+                    {ex}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-muted-foreground/50">None</p>
             )}
           </div>
-        )}
+          <div className="bg-background p-4">
+            <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+              bad_examples
+            </p>
+            {signal.badExamples && signal.badExamples.length > 0 ? (
+              <ul className="space-y-1">
+                {signal.badExamples.map((ex, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs">
+                    <span className="mt-1 size-1.5 shrink-0 bg-red-500" />
+                    {ex}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-muted-foreground/50">None</p>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Achievements */}
+      {signalAchievements.length > 0 && (
+        <div className="border border-border p-4">
+          <p className="mb-4 text-xs text-muted-foreground">{">"} achievements</p>
+          <div className="flex flex-wrap gap-3">
+            {signalAchievements.map((achievement) => {
+              const def = achievementDefinitions[achievement.achievementType];
+              return (
+                <div
+                  key={achievement.id}
+                  className="flex items-center gap-2 border border-border bg-card px-3 py-2"
+                >
+                  <span className="text-base">{def?.icon || "🏅"}</span>
+                  <div>
+                    <p className="text-xs font-medium">
+                      {def?.name || achievement.achievementType}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {formatDistance(new Date(achievement.unlockedAt), new Date(), {
+                        addSuffix: true,
+                      })}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Evaluations Table */}
       <div className="border border-border">
