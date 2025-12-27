@@ -232,7 +232,7 @@ function DashboardIndex() {
               <div className="border border-border p-3">
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-[10px] text-muted-foreground">
-                    achievements
+                    recent_achievements
                   </p>
                   <p className="text-[10px] tabular-nums text-muted-foreground">
                     {signalsStats.achievementsUnlocked}/
