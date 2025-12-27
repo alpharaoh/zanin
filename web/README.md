@@ -89,6 +89,14 @@ When using Docker Compose, connect to PostgreSQL at:
 postgresql://zanin:zanin@localhost:54399/zanin
 ```
 
+#### Running Migrations
+
+After starting the database, run migrations:
+
+```bash
+DATABASE_URL="postgresql://zanin:zanin@localhost:54399/zanin" bun run db:migrate
+```
+
 ## Services
 
 ### API (`/services/api`)

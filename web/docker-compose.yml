@@ -4,7 +4,7 @@
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: zanin
       POSTGRES_PASSWORD: zanin
