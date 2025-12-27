@@ -66,7 +66,7 @@ export const achievements = pgTable("achievements", {
   ...getDefaultColumns(),
   ...getDefaultOwnershipColumns(),
 
-  achievementType: text("achievement_type").notNull(), // e.g., "first_signal", "streak_7", "points_100"
+  achievementType: text("achievement_type").notNull(), // e.g., "streak_7", "points_100", "first_success"
   signalId: text("signal_id").references(() => signals.id, {
     onDelete: "set null",
   }), // null for global achievements

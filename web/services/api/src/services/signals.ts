@@ -1,5 +1,4 @@
 import { insertSignal } from "@zanin/db/queries/insert/insertSignal";
-import { insertAchievement } from "@zanin/db/queries/insert/insertAchievement";
 import { selectSignal } from "@zanin/db/queries/select/one/selectSignal";
 import { listSignals } from "@zanin/db/queries/select/many/listSignals";
 import { listSignalEvaluations } from "@zanin/db/queries/select/many/listSignalEvaluations";
@@ -14,13 +13,6 @@ import {
 // Achievement definitions
 export const ACHIEVEMENT_DEFINITIONS = {
   // Getting Started
-  first_signal: {
-    id: "first_signal",
-    name: "Signal Pioneer",
-    description: "Create your first signal",
-    icon: "📡",
-    category: "getting_started",
-  },
   first_success: {
     id: "first_success",
     name: "First Win",
@@ -244,23 +236,6 @@ export const SignalsService = {
       goodExamples: input.goodExamples,
       badExamples: input.badExamples,
     });
-
-    // Check for first_signal achievement
-    const { data: existingSignals } = await listSignals(
-      { userId: input.userId, organizationId: input.organizationId },
-      undefined,
-      2,
-    );
-
-    if (existingSignals.length === 1) {
-      await insertAchievement({
-        organizationId: input.organizationId,
-        userId: input.userId,
-        achievementType: "first_signal",
-        signalId: null,
-        metadata: { signalName: input.name },
-      });
-    }
 
     return toSignalResponse(signal);
   },
