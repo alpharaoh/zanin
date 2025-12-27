@@ -1,7 +1,12 @@
 import { cn } from "@/lib/utils";
 import type { Signal } from "@/api";
 import { Link } from "@tanstack/react-router";
-import { MoreHorizontalIcon, PencilIcon, TrashIcon, FlameIcon } from "lucide-react";
+import {
+  MoreHorizontalIcon,
+  PencilIcon,
+  TrashIcon,
+  FlameIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { formatDistance } from "date-fns";
 import {
@@ -78,7 +83,7 @@ export function SignalRow({ signal, onEdit, onDelete }: SignalRowProps) {
       {/* Streak */}
       <div
         className={cn(
-          "col-span-1 flex items-center justify-end gap-1 tabular-nums",
+          "col-span-1 flex justify-end gap-0.5 tabular-nums",
           signal.currentStreak >= 7 && "text-amber-500",
           signal.currentStreak >= 3 &&
             signal.currentStreak < 7 &&
@@ -86,7 +91,7 @@ export function SignalRow({ signal, onEdit, onDelete }: SignalRowProps) {
           signal.currentStreak < 3 && "text-muted-foreground"
         )}
       >
-        {signal.currentStreak > 0 && <FlameIcon className="size-3.5" />}
+        {signal.currentStreak > 0 && <FlameIcon className="size-3 mt-1" />}
         {signal.currentStreak > 0 ? signal.currentStreak : "—"}
       </div>
 

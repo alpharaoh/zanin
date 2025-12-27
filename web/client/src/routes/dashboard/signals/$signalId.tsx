@@ -30,6 +30,7 @@ import {
   PauseIcon,
   PlayIcon,
   PencilIcon,
+  FlameIcon,
 } from "lucide-react";
 import { SignalForm } from "@/components/signals/SignalForm";
 import type { CreateSignalRequest } from "@/api";
@@ -228,7 +229,7 @@ function SignalDetailPage() {
             </dt>
             <dd
               className={cn(
-                "mt-1 text-lg tabular-nums",
+                "mt-1 flex items-center gap-1.5 text-lg tabular-nums",
                 signal.currentStreak >= 7 && "text-amber-500",
                 signal.currentStreak >= 3 &&
                   signal.currentStreak < 7 &&
@@ -236,6 +237,7 @@ function SignalDetailPage() {
                 signal.currentStreak < 3 && "text-foreground"
               )}
             >
+              {signal.currentStreak > 0 && <FlameIcon className="size-4" />}
               {signal.currentStreak}
               {signal.longestStreak > signal.currentStreak && (
                 <span className="ml-1 text-xs text-muted-foreground">
@@ -421,11 +423,12 @@ function SignalDetailPage() {
                       <p className="text-xs text-muted-foreground line-clamp-2">
                         {evaluation.reasoning}
                       </p>
-                      {evaluation.evidence && evaluation.evidence.length > 0 && (
-                        <p className="mt-1 text-[11px] italic text-muted-foreground/60 line-clamp-1">
-                          "{evaluation.evidence[0]}"
-                        </p>
-                      )}
+                      {evaluation.evidence &&
+                        evaluation.evidence.length > 0 && (
+                          <p className="mt-1 text-[11px] italic text-muted-foreground/60 line-clamp-1">
+                            "{evaluation.evidence[0]}"
+                          </p>
+                        )}
                     </div>
 
                     {/* Confidence */}
