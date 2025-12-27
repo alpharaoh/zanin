@@ -78,7 +78,7 @@ export const ACHIEVEMENT_DEFINITIONS = {
   comeback: {
     id: "comeback",
     name: "Comeback Kid",
-    description: "Recover from a negative points balance to positive",
+    description: "Recover from a negative points balance",
     icon: "💪",
     category: "recovery",
   },

@@ -86,11 +86,11 @@ export async function checkAndAwardAchievements(
       }
     }
 
-    // Check comeback achievement (went from negative to positive)
+    // Check comeback achievement (went from negative to zero or positive)
     const comebackKey = `comeback_${result.signalId}`;
     if (
       result.previousTotalPoints < 0 &&
-      result.newTotalPoints > 0 &&
+      result.newTotalPoints >= 0 &&
       !existingTypes.has(comebackKey)
     ) {
       const achievement = await insertAchievement({
@@ -108,20 +108,24 @@ export async function checkAndAwardAchievements(
     }
   }
 
-  // Check first_success (global)
+  // Check first_success (global) - awarded on first successful evaluation
   const firstSuccessKey = "first_success_global";
-  if (
-    !existingTypes.has(firstSuccessKey) &&
-    evaluationResults.some((r) => r.success)
-  ) {
+  const hasSuccessInBatch = evaluationResults.some((r) => r.success === true);
+  if (!existingTypes.has(firstSuccessKey) && hasSuccessInBatch) {
+    const firstSuccess = evaluationResults.find((r) => r.success === true);
     const achievement = await insertAchievement({
       userId,
       organizationId,
       achievementType: "first_success",
       signalId: null,
-      metadata: {},
+      metadata: firstSuccess
+        ? {
+            signalName: firstSuccess.signalName,
+          }
+        : {},
     });
     newAchievements.push(achievement);
+    existingTypes.add(firstSuccessKey);
   }
 
   return newAchievements;
