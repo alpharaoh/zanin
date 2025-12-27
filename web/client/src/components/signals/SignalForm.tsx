@@ -100,7 +100,8 @@ export function SignalForm({
   onSubmit,
   isSubmitting,
 }: SignalFormProps) {
-  const isEditing = !!signal;
+  // Track editing state separately to prevent flash when closing modal
+  const [isEditing, setIsEditing] = useState(!!signal);
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -116,6 +117,8 @@ export function SignalForm({
 
   useEffect(() => {
     if (open) {
+      // Only update isEditing when opening, not during close animation
+      setIsEditing(!!signal);
       if (signal) {
         setFormData({
           name: signal.name,
@@ -191,10 +194,8 @@ export function SignalForm({
         description: formData.description.trim(),
         goal: formData.goal.trim(),
         failureCondition: formData.failureCondition.trim(),
-        goodExamples:
-          formData.goodExamples.length > 0 ? formData.goodExamples : undefined,
-        badExamples:
-          formData.badExamples.length > 0 ? formData.badExamples : undefined,
+        goodExamples: formData.goodExamples,
+        badExamples: formData.badExamples,
       });
     },
     [formData, onSubmit]
