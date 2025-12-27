@@ -1,10 +1,9 @@
-#include <stdio.h>
-
 #include "components/led/led.h"
 #include "components/mic/mic.h"
 #include "components/sdcard/sdcard.h"
 #include "components/wifi/wifi.h"
 #include "services/sync/sync_service.h"
+#include <stdio.h>
 
 #include "driver/gpio.h"
 #include "esp_log.h"
