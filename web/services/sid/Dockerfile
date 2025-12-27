@@ -51,12 +51,12 @@ RUN useradd --create-home --shell /bin/bash appuser && \
     chown -R appuser:appuser /app /data
 USER appuser
 
-# Expose port
-EXPOSE 8001
+# Expose port (non-standard)
+EXPOSE 8101
 
 # Health check (longer start period for model loading)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8001/health/live')" || exit 1
+    CMD python -c "import os; import urllib.request; urllib.request.urlopen(f'http://localhost:{os.environ.get(\"SID_PORT\", 8101)}/health/live')" || exit 1
 
 # Run the service
 CMD ["python", "-m", "sid_service.main"]

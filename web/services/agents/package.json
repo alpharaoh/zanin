@@ -3,6 +3,10 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "start": "bun run src/server.ts",
+    "dev": "bun run --watch src/server.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/pg": "^8.16.0"
