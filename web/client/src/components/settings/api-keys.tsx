@@ -107,11 +107,7 @@ export function ApiKeys({ className }: ApiKeysProps) {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3">
         <p className="text-xs text-muted-foreground">{">"} api_keys</p>
-        <Button
-          variant="ghost"
-          size="xs"
-          onClick={() => setIsCreating(true)}
-        >
+        <Button variant="ghost" size="xs" onClick={() => setIsCreating(true)}>
           <PlusIcon className="size-3" />
           new
         </Button>
@@ -131,11 +127,7 @@ export function ApiKeys({ className }: ApiKeysProps) {
             <code className="flex-1 overflow-x-auto rounded bg-card px-2 py-1 font-mono text-xs">
               {createdKey}
             </code>
-            <Button
-              variant="outline"
-              size="icon-xs"
-              onClick={handleCopyKey}
-            >
+            <Button variant="outline" size="icon-xs" onClick={handleCopyKey}>
               {copiedKey ? (
                 <CheckIcon className="size-3 text-primary" />
               ) : (
@@ -226,11 +218,11 @@ export function ApiKeys({ className }: ApiKeysProps) {
                   </span>
                 </div>
                 <p className="mt-1 pl-5.5 font-mono text-[10px] text-muted-foreground">
-                  {key.start}•••••••••
+                  {key.start}•••••••••••••••••
                 </p>
               </div>
               <Button
-                variant="ghost"
+                variant="link"
                 size="icon-xs"
                 onClick={() => setDeleteKeyId(key.id)}
                 className="ml-2 text-muted-foreground/50 opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
