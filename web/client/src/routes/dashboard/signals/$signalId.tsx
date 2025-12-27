@@ -73,7 +73,9 @@ function SignalDetailPage() {
         data: { isActive: !signal.isActive },
       });
       queryClient.invalidateQueries({ queryKey: getListSignalsQueryKey() });
-      queryClient.invalidateQueries({ queryKey: getGetSignalQueryKey(signalId) });
+      queryClient.invalidateQueries({
+        queryKey: getGetSignalQueryKey(signalId),
+      });
       toast.success(signal.isActive ? "Signal paused" : "Signal resumed");
     } catch {
       toast.error("Failed to update signal");
@@ -293,11 +295,10 @@ function SignalDetailPage() {
           <div className="flex flex-wrap gap-3">
             {signalAchievements.map((achievement) => {
               const def = achievementDefinitions[achievement.achievementType];
-              console.log(def);
               return (
                 <div
                   key={achievement.id}
-                  className="flex items-center gap-2 border border-border bg-card px-3 py-2"
+                  className="flex items-center gap-2.5 border border-border bg-card px-3 py-2"
                 >
                   <span className="text-base">{def?.icon || "🏅"}</span>
                   <div>

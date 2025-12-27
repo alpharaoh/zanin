@@ -18,7 +18,7 @@ export const ACHIEVEMENT_DEFINITIONS = {
     id: "first_signal",
     name: "Signal Pioneer",
     description: "Create your first signal",
-    icon: "⚡",
+    icon: "📡",
     category: "getting_started",
   },
   first_success: {
