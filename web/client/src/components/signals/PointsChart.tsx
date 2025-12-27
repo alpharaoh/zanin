@@ -1,33 +1,114 @@
 import { useMemo } from "react";
 import type { SignalEvaluation } from "@/api";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 
 interface PointsChartProps {
   evaluations: SignalEvaluation[];
 }
 
+interface ChartDataPoint {
+  index: number;
+  value: number;
+  success: boolean;
+}
+
+interface DotProps {
+  cx?: number;
+  cy?: number;
+  payload?: ChartDataPoint;
+}
+
+const renderDot = (props: DotProps) => {
+  const { cx, cy, payload } = props;
+  if (cx === undefined || cy === undefined || !payload) {
+    return <></>;
+  }
+  return (
+    <circle
+      key={`dot-${cx}-${cy}`}
+      cx={cx}
+      cy={cy}
+      r={4}
+      fill={payload.success ? "#10b981" : "#ef4444"}
+    />
+  );
+};
+
 export function PointsChart({ evaluations }: PointsChartProps) {
   const chartData = useMemo(() => {
     if (evaluations.length === 0) {
-      return { points: [], min: 0, max: 0 };
+      return [];
     }
 
     // Sort by date ascending and calculate cumulative points
     const sorted = [...evaluations].sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
     let cumulative = 0;
-    const points = sorted.map((e, i) => {
+    return sorted.map((e, i) => {
       cumulative += e.pointsAwarded;
-      return { index: i, value: cumulative, success: e.success };
+      return {
+        index: i + 1,
+        value: cumulative,
+        success: e.success,
+      };
     });
-
-    const values = points.map((p) => p.value);
-    const min = Math.min(0, ...values);
-    const max = Math.max(0, ...values);
-
-    return { points, min, max };
   }, [evaluations]);
+
+  // Create segments for colored lines based on direction
+  const segments = useMemo(() => {
+    if (chartData.length < 2) {
+      return [];
+    }
+
+    const result: { data: ChartDataPoint[]; color: string }[] = [];
+
+    for (let i = 0; i < chartData.length - 1; i++) {
+      const current = chartData[i];
+      const next = chartData[i + 1];
+      const isRising = next.value >= current.value;
+
+      result.push({
+        data: chartData.map((point, idx) => ({
+          ...point,
+          // Only include values for this segment, null for others
+          [`segment${i}`]: idx === i || idx === i + 1 ? point.value : null,
+        })),
+        color: isRising ? "#10b981" : "#ef4444",
+      });
+    }
+
+    return result;
+  }, [chartData]);
+
+  // Merge all segment data into single dataset
+  const mergedData = useMemo(() => {
+    if (chartData.length < 2) {
+      return chartData;
+    }
+
+    return chartData.map((point, idx) => {
+      const segmentValues: Record<string, number | null> = {};
+      for (let i = 0; i < chartData.length - 1; i++) {
+        segmentValues[`segment${i}`] =
+          idx === i || idx === i + 1 ? point.value : null;
+      }
+      return {
+        ...point,
+        ...segmentValues,
+      };
+    });
+  }, [chartData]);
 
   if (evaluations.length < 2) {
     return (
@@ -37,102 +118,82 @@ export function PointsChart({ evaluations }: PointsChartProps) {
     );
   }
 
-  const { points, min, max } = chartData;
-  const range = max - min || 1;
-  const width = 400;
-  const height = 120;
-  const padding = { top: 10, right: 10, bottom: 20, left: 35 };
-  const chartWidth = width - padding.left - padding.right;
-  const chartHeight = height - padding.top - padding.bottom;
-
-  // Scale functions
-  const xScale = (index: number) =>
-    padding.left + (index / (points.length - 1)) * chartWidth;
-  const yScale = (value: number) =>
-    padding.top + chartHeight - ((value - min) / range) * chartHeight;
-
-  // Generate path
-  const linePath = points
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${xScale(p.index)} ${yScale(p.value)}`)
-    .join(" ");
-
-  // Zero line position
-  const zeroY = yScale(0);
-
-  // Y-axis labels
-  const yLabels = [max, 0, min].filter((v, i, arr) => arr.indexOf(v) === i);
+  const minValue = Math.min(0, ...chartData.map((d) => d.value));
+  const maxValue = Math.max(0, ...chartData.map((d) => d.value));
 
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="h-32 w-full"
-    >
-      {/* Grid lines */}
-      <line
-        x1={padding.left}
-        y1={zeroY}
-        x2={width - padding.right}
-        y2={zeroY}
-        stroke="currentColor"
-        strokeOpacity={0.2}
-        strokeDasharray="2 2"
-      />
-
-      {/* Y-axis labels */}
-      {yLabels.map((label) => (
-        <text
-          key={label}
-          x={padding.left - 6}
-          y={yScale(label)}
-          textAnchor="end"
-          dominantBaseline="middle"
-          className="fill-muted-foreground"
-          fontSize={10}
-        >
-          {label > 0 ? `+${label}` : label}
-        </text>
-      ))}
-
-      {/* Area fill */}
-      <path
-        d={`${linePath} L ${xScale(points.length - 1)} ${zeroY} L ${xScale(0)} ${zeroY} Z`}
-        fill="currentColor"
-        fillOpacity={0.05}
-        className="text-primary"
-      />
-
-      {/* Line */}
-      <path
-        d={linePath}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-primary"
-      />
-
-      {/* Points */}
-      {points.map((p, i) => (
-        <circle
-          key={i}
-          cx={xScale(p.index)}
-          cy={yScale(p.value)}
-          r={4}
-          className={p.success ? "fill-emerald-500" : "fill-red-500"}
-        />
-      ))}
-
-      {/* X-axis label */}
-      <text
-        x={width / 2}
-        y={height - 4}
-        textAnchor="middle"
-        className="fill-muted-foreground"
-        fontSize={10}
+    <ResponsiveContainer width="100%" height={160}>
+      <LineChart
+        data={mergedData}
+        margin={{ top: 10, right: 20, left: 10, bottom: 25 }}
       >
-        evaluations ({points.length})
-      </text>
-    </svg>
+        <XAxis
+          dataKey="index"
+          axisLine={{ stroke: "#525252" }}
+          tickLine={{ stroke: "#525252" }}
+          tick={{ fontSize: 10, fill: "#a3a3a3" }}
+          label={{
+            value: "evaluation",
+            position: "bottom",
+            offset: 5,
+            style: { fontSize: 10, fill: "#737373" },
+          }}
+        />
+        <YAxis
+          domain={[minValue, maxValue]}
+          axisLine={{ stroke: "#525252" }}
+          tickLine={{ stroke: "#525252" }}
+          tick={{ fontSize: 10, fill: "#a3a3a3" }}
+          tickFormatter={(value) => (value > 0 ? `+${value}` : `${value}`)}
+          width={35}
+          allowDecimals={false}
+          label={{
+            value: "points",
+            angle: -90,
+            position: "insideLeft",
+            offset: 10,
+            style: { fontSize: 10, fill: "#737373", textAnchor: "middle" },
+          }}
+        />
+        <ReferenceLine y={0} stroke="#525252" strokeDasharray="3 3" />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: "hsl(var(--card))",
+            border: "1px solid hsl(var(--border))",
+            borderRadius: 0,
+            fontSize: 11,
+          }}
+          labelFormatter={(label) => `Evaluation ${label}`}
+          formatter={(value) => [
+            typeof value === "number" && value > 0 ? `+${value}` : value,
+            "Points",
+          ]}
+        />
+        {/* Render colored segments */}
+        {segments.map((segment, i) => (
+          <Line
+            key={`segment-${i}`}
+            type="linear"
+            dataKey={`segment${i}`}
+            stroke={segment.color}
+            strokeWidth={2}
+            dot={false}
+            activeDot={false}
+            isAnimationActive={false}
+            connectNulls
+          />
+        ))}
+        {/* Render dots on top */}
+        <Line
+          type="linear"
+          dataKey="value"
+          stroke="transparent"
+          strokeWidth={0}
+          dot={renderDot}
+          activeDot={{ r: 6, fill: "#3b82f6" }}
+          isAnimationActive={false}
+        />
+      </LineChart>
+    </ResponsiveContainer>
   );
 }

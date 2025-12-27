@@ -257,8 +257,10 @@ function SignalDetailPage() {
       </div>
 
       {/* Progression Chart */}
-      <div className="border border-border p-4">
-        <p className="mb-4 text-xs text-muted-foreground">{">"} progression</p>
+      <div className="border border-border pt-4 pr-4">
+        <p className="mb-4 text-xs text-muted-foreground px-4">
+          {">"} progression
+        </p>
         <PointsChart evaluations={allEvaluations} />
       </div>
 
