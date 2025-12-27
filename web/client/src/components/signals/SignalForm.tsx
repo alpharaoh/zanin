@@ -38,10 +38,7 @@ const SIGNAL_TEMPLATES: FormData[] = [
     goal: 'Eliminate unnecessary "like" from speech for clearer, more confident communication',
     failureCondition:
       'Using "like" as a filler word (not for comparisons or preferences)',
-    goodExamples: [
-      "I think we should proceed",
-      "The results were similar to last quarter",
-    ],
+    goodExamples: [],
     badExamples: [
       "I was like, really surprised",
       "It's like, you know, complicated",
@@ -54,10 +51,7 @@ const SIGNAL_TEMPLATES: FormData[] = [
     goal: "Speak more clearly by replacing filler words with pauses",
     failureCondition:
       'Using filler words like "um", "uh", "you know", "so", "basically", "actually", "literally"',
-    goodExamples: [
-      "Let me think about that... The answer is yes",
-      "There are three key points",
-    ],
+    goodExamples: [],
     badExamples: ["Um, so basically, you know, we should, uh, move forward"],
   },
   {
@@ -79,7 +73,7 @@ const SIGNAL_TEMPLATES: FormData[] = [
       "Interrupting others, not asking follow-up questions, or immediately redirecting to self",
     goodExamples: [
       "That's interesting, can you tell me more?",
-      "How did that make you feel?",
+      "Oh, I see. How did that make you feel?",
     ],
     badExamples: [
       "Yeah but anyway, let me tell you about...",

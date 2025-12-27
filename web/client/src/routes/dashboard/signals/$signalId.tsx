@@ -29,7 +29,10 @@ import {
   ChevronRightIcon,
   PauseIcon,
   PlayIcon,
+  PencilIcon,
 } from "lucide-react";
+import { SignalForm } from "@/components/signals/SignalForm";
+import type { CreateSignalRequest } from "@/api";
 import { cn } from "@/lib/utils";
 import { formatDistance } from "date-fns";
 import { useState, useCallback } from "react";
@@ -43,6 +46,7 @@ function SignalDetailPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
 
   const { data: signal, isLoading: signalLoading } = useGetSignal(signalId);
   const { data: evaluationsData, isLoading: evaluationsLoading } =
@@ -81,6 +85,26 @@ function SignalDetailPage() {
       toast.error("Failed to update signal");
     }
   }, [signal, updateMutation, queryClient, signalId]);
+
+  const handleEdit = useCallback(
+    async (data: CreateSignalRequest) => {
+      try {
+        await updateMutation.mutateAsync({
+          signalId,
+          data,
+        });
+        queryClient.invalidateQueries({ queryKey: getListSignalsQueryKey() });
+        queryClient.invalidateQueries({
+          queryKey: getGetSignalQueryKey(signalId),
+        });
+        setShowEditForm(false);
+        toast.success("Signal updated");
+      } catch {
+        toast.error("Failed to update signal");
+      }
+    },
+    [signalId, updateMutation, queryClient]
+  );
 
   const handleDelete = useCallback(async () => {
     try {
@@ -147,6 +171,12 @@ function SignalDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowEditForm(true)}
+            className="border border-border p-2 text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+          >
+            <PencilIcon className="size-4" />
+          </button>
           <button
             onClick={handleToggleActive}
             disabled={updateMutation.isPending}
@@ -489,6 +519,15 @@ function SignalDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Form */}
+      <SignalForm
+        open={showEditForm}
+        onOpenChange={setShowEditForm}
+        signal={signal}
+        onSubmit={handleEdit}
+        isSubmitting={updateMutation.isPending}
+      />
     </div>
   );
 }

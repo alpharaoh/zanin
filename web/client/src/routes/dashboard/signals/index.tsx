@@ -137,6 +137,10 @@ function SignalsPage() {
             <SignalRow
               key={signal.id}
               signal={signal}
+              onEdit={(s) => {
+                setEditingSignal(s);
+                setIsFormOpen(true);
+              }}
               onDelete={setDeletingSignal}
             />
           ))}

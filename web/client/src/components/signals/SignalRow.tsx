@@ -1,16 +1,23 @@
 import { cn } from "@/lib/utils";
 import type { Signal } from "@/api";
 import { Link } from "@tanstack/react-router";
-import { TrashIcon, FlameIcon } from "lucide-react";
+import { MoreHorizontalIcon, PencilIcon, TrashIcon, FlameIcon } from "lucide-react";
 import { useState } from "react";
 import { formatDistance } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface SignalRowProps {
   signal: Signal;
+  onEdit?: (signal: Signal) => void;
   onDelete?: (signal: Signal) => void;
 }
 
-export function SignalRow({ signal, onDelete }: SignalRowProps) {
+export function SignalRow({ signal, onEdit, onDelete }: SignalRowProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const totalEvaluations = signal.totalSuccesses + signal.totalFailures;
@@ -95,22 +102,48 @@ export function SignalRow({ signal, onDelete }: SignalRowProps) {
         })}
       </div>
 
-      {/* Delete */}
+      {/* Actions */}
       <div className="col-span-1 flex justify-end">
-        {onDelete && (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onDelete(signal);
-            }}
-            className={cn(
-              "p-1 text-muted-foreground transition-all hover:text-destructive",
-              isHovered ? "opacity-100" : "opacity-0"
-            )}
-          >
-            <TrashIcon className="size-3.5" />
-          </button>
+        {(onEdit || onDelete) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              className={cn(
+                "p-1 text-muted-foreground transition-all hover:text-foreground",
+                isHovered ? "opacity-100" : "opacity-0"
+              )}
+            >
+              <MoreHorizontalIcon className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-32">
+              {onEdit && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(signal);
+                  }}
+                >
+                  <PencilIcon className="mr-2 size-3.5" />
+                  Edit
+                </DropdownMenuItem>
+              )}
+              {onDelete && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(signal);
+                  }}
+                  variant="destructive"
+                >
+                  <TrashIcon className="mr-2 size-3.5" />
+                  Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </Link>

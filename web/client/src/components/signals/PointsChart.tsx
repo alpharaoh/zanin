@@ -39,9 +39,9 @@ export function PointsChart({ evaluations }: PointsChartProps) {
 
   const { points, min, max } = chartData;
   const range = max - min || 1;
-  const width = 100;
-  const height = 100;
-  const padding = { top: 10, right: 10, bottom: 20, left: 30 };
+  const width = 400;
+  const height = 120;
+  const padding = { top: 10, right: 10, bottom: 20, left: 35 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
@@ -66,7 +66,6 @@ export function PointsChart({ evaluations }: PointsChartProps) {
     <svg
       viewBox={`0 0 ${width} ${height}`}
       className="h-32 w-full"
-      preserveAspectRatio="none"
     >
       {/* Grid lines */}
       <line
@@ -83,11 +82,12 @@ export function PointsChart({ evaluations }: PointsChartProps) {
       {yLabels.map((label) => (
         <text
           key={label}
-          x={padding.left - 4}
+          x={padding.left - 6}
           y={yScale(label)}
           textAnchor="end"
           dominantBaseline="middle"
-          className="fill-muted-foreground text-[8px]"
+          className="fill-muted-foreground"
+          fontSize={10}
         >
           {label > 0 ? `+${label}` : label}
         </text>
@@ -106,7 +106,7 @@ export function PointsChart({ evaluations }: PointsChartProps) {
         d={linePath}
         fill="none"
         stroke="currentColor"
-        strokeWidth={1.5}
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
         className="text-primary"
@@ -118,7 +118,7 @@ export function PointsChart({ evaluations }: PointsChartProps) {
           key={i}
           cx={xScale(p.index)}
           cy={yScale(p.value)}
-          r={2}
+          r={4}
           className={p.success ? "fill-emerald-500" : "fill-red-500"}
         />
       ))}
@@ -128,7 +128,8 @@ export function PointsChart({ evaluations }: PointsChartProps) {
         x={width / 2}
         y={height - 4}
         textAnchor="middle"
-        className="fill-muted-foreground text-[7px]"
+        className="fill-muted-foreground"
+        fontSize={10}
       >
         evaluations ({points.length})
       </text>
