@@ -26,12 +26,12 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/package.json ./
 
-# Expose port (non-standard)
-EXPOSE 3101
+# Expose port
+EXPOSE 3001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD bun -e "fetch('http://localhost:' + (process.env.PORT || 3101) + '/health').then(r => process.exit(r.ok ? 0 : 1))" || exit 1
+    CMD bun -e "fetch('http://localhost:' + (process.env.PORT || 3001) + '/health').then(r => process.exit(r.ok ? 0 : 1))" || exit 1
 
 # Run the service
 CMD ["bun", "run", "src/server.ts"]

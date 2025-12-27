@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: zanin
       POSTGRES_DB: zanin
     ports:
-      - "54320:5432"
+      - "54321:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -25,13 +25,13 @@ services:
       context: .
       dockerfile: services/api/Dockerfile
     ports:
-      - "3100:3100"
+      - "8081:8081"
     environment:
       - DATABASE_URL=postgresql://zanin:zanin@postgres:5432/zanin
       - NODE_ENV=development
-      - PORT=3100
-      - VAD_SERVICE_URL=http://vad:8100
-      - SID_SERVICE_URL=http://sid:8101
+      - PORT=8081
+      - VAD_SERVICE_URL=http://vad:8000
+      - SID_SERVICE_URL=http://sid:8082
     env_file:
       - .env
     depends_on:
@@ -44,10 +44,10 @@ services:
       context: .
       dockerfile: services/agents/Dockerfile
     ports:
-      - "3101:3101"
+      - "3001:3001"
     environment:
       - DATABASE_URL=postgresql://zanin:zanin@postgres:5432/zanin
-      - PORT=3101
+      - PORT=3001
     env_file:
       - .env
     depends_on:
@@ -60,10 +60,10 @@ services:
       context: services/vad
       dockerfile: Dockerfile
     ports:
-      - "8100:8100"
+      - "8000:8000"
     environment:
       - VAD_HOST=0.0.0.0
-      - VAD_PORT=8100
+      - VAD_PORT=8000
 
   # SID Service (Speaker Identification)
   sid:
@@ -71,10 +71,10 @@ services:
       context: services/sid
       dockerfile: Dockerfile
     ports:
-      - "8101:8101"
+      - "8082:8082"
     environment:
       - SID_HOST=0.0.0.0
-      - SID_PORT=8101
+      - SID_PORT=8082
     volumes:
       - sid_profiles:/data/profiles
 
