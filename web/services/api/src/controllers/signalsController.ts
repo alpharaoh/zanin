@@ -20,6 +20,7 @@ import {
   SignalEvaluation,
   Achievement,
   SignalsStats,
+  EvaluationHistoryItem,
   ACHIEVEMENT_DEFINITIONS,
 } from "../services/signals";
 import { NotFoundError } from "../errors";
@@ -133,6 +134,23 @@ export class SignalsController extends Controller {
     const { userId, organizationId } = request.user!;
 
     return await SignalsService.listAchievements(userId, organizationId);
+  }
+
+  /**
+   * Get evaluation history across all signals for charts.
+   */
+  @Get("evaluations/history")
+  public async getEvaluationsHistory(
+    @Request() request: ExpressRequest,
+    @Query() days?: number,
+  ): Promise<EvaluationHistoryItem[]> {
+    const { userId, organizationId } = request.user!;
+
+    return await SignalsService.getEvaluationsHistory(
+      userId,
+      organizationId,
+      days ?? 30,
+    );
   }
 
   /**

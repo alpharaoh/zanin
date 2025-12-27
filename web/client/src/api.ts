@@ -137,6 +137,15 @@ export interface AchievementListResponse {
   definitions: RecordStringAchievementDefinition;
 }
 
+export interface EvaluationHistoryItem {
+  id: string;
+  signalId: string;
+  signalName: string;
+  success: boolean;
+  pointsAwarded: number;
+  createdAt: string;
+}
+
 export interface UpdateSignalRequest {
   name?: string;
   description?: string;
@@ -442,6 +451,10 @@ export type ListSignalsParams = {
 isActive?: boolean;
 limit?: number;
 offset?: number;
+};
+
+export type GetEvaluationsHistoryParams = {
+days?: number;
 };
 
 export type GetSignalEvaluationsParams = {
@@ -931,6 +944,97 @@ export function useGetAchievements<TData = Awaited<ReturnType<typeof getAchievem
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetAchievementsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Get evaluation history across all signals for charts.
+ */
+export const getEvaluationsHistory = (
+    params?: GetEvaluationsHistoryParams,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<EvaluationHistoryItem[]>(
+      {url: `/v1/signals/evaluations/history`, method: 'GET',
+        params, signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGetEvaluationsHistoryQueryKey = (params?: GetEvaluationsHistoryParams,) => {
+    return [
+    `/v1/signals/evaluations/history`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetEvaluationsHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getEvaluationsHistory>>, TError = ErrorType<void>>(params?: GetEvaluationsHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvaluationsHistory>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEvaluationsHistoryQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEvaluationsHistory>>> = ({ signal }) => getEvaluationsHistory(params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEvaluationsHistory>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetEvaluationsHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getEvaluationsHistory>>>
+export type GetEvaluationsHistoryQueryError = ErrorType<void>
+
+
+export function useGetEvaluationsHistory<TData = Awaited<ReturnType<typeof getEvaluationsHistory>>, TError = ErrorType<void>>(
+ params: undefined |  GetEvaluationsHistoryParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvaluationsHistory>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEvaluationsHistory>>,
+          TError,
+          Awaited<ReturnType<typeof getEvaluationsHistory>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEvaluationsHistory<TData = Awaited<ReturnType<typeof getEvaluationsHistory>>, TError = ErrorType<void>>(
+ params?: GetEvaluationsHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvaluationsHistory>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEvaluationsHistory>>,
+          TError,
+          Awaited<ReturnType<typeof getEvaluationsHistory>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEvaluationsHistory<TData = Awaited<ReturnType<typeof getEvaluationsHistory>>, TError = ErrorType<void>>(
+ params?: GetEvaluationsHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvaluationsHistory>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetEvaluationsHistory<TData = Awaited<ReturnType<typeof getEvaluationsHistory>>, TError = ErrorType<void>>(
+ params?: GetEvaluationsHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvaluationsHistory>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetEvaluationsHistoryQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

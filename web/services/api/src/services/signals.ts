@@ -181,6 +181,15 @@ export interface SignalsStats {
   overallSuccessRate: number;
 }
 
+export interface EvaluationHistoryItem {
+  id: string;
+  signalId: string;
+  signalName: string;
+  success: boolean;
+  pointsAwarded: number;
+  createdAt: Date;
+}
+
 /**
  * Compute stats from evaluations for a signal
  */
@@ -562,5 +571,63 @@ export const SignalsService = {
       totalEvaluations,
       overallSuccessRate,
     };
+  },
+
+  /**
+   * Get evaluation history across all signals for charts
+   */
+  getEvaluationsHistory: async (
+    userId: string,
+    organizationId: string,
+    days: number = 30,
+  ): Promise<EvaluationHistoryItem[]> => {
+    // Get all user's signals
+    const { data: signals } = await listSignals(
+      { userId, organizationId },
+      undefined,
+    );
+
+    if (signals.length === 0) {
+      return [];
+    }
+
+    // Create a map of signal IDs to names
+    const signalNameMap = new Map<string, string>();
+    for (const signal of signals) {
+      signalNameMap.set(signal.id, signal.name);
+    }
+
+    // Get evaluations for all signals within the date range
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    const allEvaluations: EvaluationHistoryItem[] = [];
+
+    for (const signal of signals) {
+      const { data: evaluations } = await listSignalEvaluations(
+        { signalId: signal.id },
+        { createdAt: "desc" },
+      );
+
+      for (const evaluation of evaluations) {
+        if (new Date(evaluation.createdAt) >= cutoffDate) {
+          allEvaluations.push({
+            id: evaluation.id,
+            signalId: evaluation.signalId,
+            signalName: signalNameMap.get(evaluation.signalId) || "Unknown",
+            success: evaluation.success,
+            pointsAwarded: evaluation.pointsAwarded,
+            createdAt: evaluation.createdAt,
+          });
+        }
+      }
+    }
+
+    // Sort by createdAt descending
+    allEvaluations.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
+    return allEvaluations;
   },
 };
