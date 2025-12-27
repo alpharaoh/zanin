@@ -1,23 +1,18 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   useListSignals,
-  useGetSignalsStats,
-  useGetAchievements,
   useCreateSignal,
   useUpdateSignal,
   useDeleteSignal,
   type Signal,
   type CreateSignalRequest,
   getListSignalsQueryKey,
-  getGetSignalsStatsQueryKey,
 } from "@/api";
-import { SignalCard } from "@/components/signals/SignalCard";
+import { SignalRow, SignalListHeader } from "@/components/signals/SignalRow";
 import { SignalForm } from "@/components/signals/SignalForm";
-import { AchievementGrid } from "@/components/signals/AchievementBadge";
-import { StreakIndicator } from "@/components/signals/StreakIndicator";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -30,36 +25,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PlusIcon, Loader2Icon, TrophyIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { PlusIcon, Loader2Icon } from "lucide-react";
 
 function SignalsPage() {
   const queryClient = useQueryClient();
 
-  // State
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSignal, setEditingSignal] = useState<Signal | undefined>();
   const [deletingSignal, setDeletingSignal] = useState<Signal | null>(null);
 
-  // Queries
-  const { data: signalsData, isLoading: signalsLoading } = useListSignals({
-    limit: 100,
-  });
-  const { data: statsData, isLoading: statsLoading } = useGetSignalsStats();
-  const { data: achievementsData, isLoading: achievementsLoading } =
-    useGetAchievements();
+  const { data: signalsData, isLoading } = useListSignals({ limit: 100 });
 
-  // Mutations
   const createMutation = useCreateSignal();
   const updateMutation = useUpdateSignal();
   const deleteMutation = useDeleteSignal();
 
   const invalidateQueries = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: getListSignalsQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetSignalsStatsQueryKey() });
   }, [queryClient]);
 
-  // Handlers
+  // Sort signals: active first, then by creation date
+  const sortedSignals = useMemo(() => {
+    const signals = signalsData?.signals ?? [];
+    return [...signals].sort((a, b) => {
+      if (a.isActive !== b.isActive) {
+        return a.isActive ? -1 : 1;
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [signalsData?.signals]);
+
   const handleCreateOrUpdate = useCallback(
     async (data: CreateSignalRequest) => {
       try {
@@ -77,31 +72,12 @@ function SignalsPage() {
         setIsFormOpen(false);
         setEditingSignal(undefined);
       } catch {
-        toast.error(editingSignal ? "Failed to update signal" : "Failed to create signal");
+        toast.error(
+          editingSignal ? "Failed to update signal" : "Failed to create signal"
+        );
       }
     },
     [editingSignal, createMutation, updateMutation, invalidateQueries]
-  );
-
-  const handleEdit = useCallback((signal: Signal) => {
-    setEditingSignal(signal);
-    setIsFormOpen(true);
-  }, []);
-
-  const handleToggleActive = useCallback(
-    async (signal: Signal) => {
-      try {
-        await updateMutation.mutateAsync({
-          signalId: signal.id,
-          data: { isActive: !signal.isActive },
-        });
-        invalidateQueries();
-        toast.success(signal.isActive ? "Signal paused" : "Signal resumed");
-      } catch {
-        toast.error("Failed to update signal");
-      }
-    },
-    [updateMutation, invalidateQueries]
   );
 
   const handleDelete = useCallback(async () => {
@@ -119,18 +95,12 @@ function SignalsPage() {
     }
   }, [deletingSignal, deleteMutation, invalidateQueries]);
 
-  const signals = signalsData?.signals ?? [];
-  const activeSignals = signals.filter((s) => s.isActive);
-  const inactiveSignals = signals.filter((s) => !s.isActive);
-
-  const isLoading = signalsLoading || statsLoading;
-
   if (isLoading) {
     return <SignalsSkeleton />;
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -143,141 +113,35 @@ function SignalsPage() {
         </Button>
       </div>
 
-      {/* Stats Grid */}
-      {statsData && (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatBox
-            label="total_points"
-            value={
-              <span
-                className={cn(
-                  "tabular-nums",
-                  statsData.totalPoints > 0 && "text-emerald-500",
-                  statsData.totalPoints < 0 && "text-red-500"
-                )}
-              >
-                {statsData.totalPoints > 0 ? "+" : ""}
-                {statsData.totalPoints}
-              </span>
-            }
-          />
-          <StatBox
-            label="active_signals"
-            value={<span className="tabular-nums">{statsData.activeSignals}</span>}
-            extra={
-              signals.length > statsData.activeSignals
-                ? `${signals.length - statsData.activeSignals} paused`
-                : undefined
-            }
-          />
-          <StatBox
-            label="best_streak"
-            value={
-              <StreakIndicator
-                streak={statsData.bestCurrentStreak}
-                longestStreak={statsData.longestEverStreak}
-                size="lg"
-              />
-            }
-            extra={
-              statsData.longestEverStreak > statsData.bestCurrentStreak
-                ? `record: ${statsData.longestEverStreak}`
-                : undefined
-            }
-          />
-          <StatBox
-            label="achievements"
-            value={
-              <span className="tabular-nums">
-                {statsData.achievementsUnlocked}/{statsData.totalAchievements}
-              </span>
-            }
-            extra={
-              statsData.totalEvaluations > 0
-                ? `${statsData.overallSuccessRate}% success rate`
-                : undefined
-            }
-          />
+      {/* Signals Table */}
+      {sortedSignals.length === 0 ? (
+        <div className="border border-dashed border-border p-8 text-center">
+          <p className="text-muted-foreground">// no signals</p>
+          <p className="mt-1 text-xs text-muted-foreground/70">
+            create a signal to start tracking behavior patterns
+          </p>
+          <Button
+            onClick={() => setIsFormOpen(true)}
+            variant="outline"
+            size="sm"
+            className="mt-4"
+          >
+            <PlusIcon className="mr-1.5 size-3.5" />
+            create first signal
+          </Button>
         </div>
-      )}
-
-      {/* Achievements Section */}
-      {achievementsData && achievementsData.achievements.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <TrophyIcon className="size-3.5" />
-            <span className="text-xs">{">"} achievements</span>
-          </div>
-          {achievementsLoading ? (
-            <Skeleton className="h-12 w-full" />
-          ) : (
-            <AchievementGrid
-              achievements={achievementsData.achievements}
-              definitions={achievementsData.definitions}
+      ) : (
+        <div className="border border-border">
+          <SignalListHeader />
+          {sortedSignals.map((signal) => (
+            <SignalRow
+              key={signal.id}
+              signal={signal}
+              onDelete={setDeletingSignal}
             />
-          )}
+          ))}
         </div>
       )}
-
-      {/* Active Signals */}
-      <div className="space-y-4">
-        <span className="text-muted-foreground">{">"} active_signals</span>
-
-        {activeSignals.length === 0 ? (
-          <div className="border border-dashed border-border p-8 text-center">
-            <p className="text-muted-foreground">// no active signals</p>
-            <p className="mt-1 text-xs text-muted-foreground/70">
-              create a signal to start tracking behavior patterns
-            </p>
-            <Button
-              onClick={() => setIsFormOpen(true)}
-              variant="outline"
-              size="sm"
-              className="mt-4"
-            >
-              <PlusIcon className="mr-1.5 size-3.5" />
-              create first signal
-            </Button>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {activeSignals.map((signal) => (
-              <SignalCard
-                key={signal.id}
-                signal={signal}
-                onEdit={handleEdit}
-                onDelete={setDeletingSignal}
-                onToggleActive={handleToggleActive}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Inactive Signals */}
-      {inactiveSignals.length > 0 && (
-        <div className="space-y-4">
-          <span className="text-muted-foreground/70">
-            {">"} paused_signals
-          </span>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {inactiveSignals.map((signal) => (
-              <SignalCard
-                key={signal.id}
-                signal={signal}
-                onEdit={handleEdit}
-                onDelete={setDeletingSignal}
-                onToggleActive={handleToggleActive}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ASCII decoration */}
-      <div className="text-center text-xs text-muted-foreground/30">
-        ═══════════════════════════════════════════
-      </div>
 
       {/* Create/Edit Form */}
       <SignalForm
@@ -308,8 +172,8 @@ function SignalsPage() {
               {">"} confirm_delete
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground">
-              this will permanently delete "{deletingSignal?.name}" and all its
-              evaluation history. this action cannot be undone.
+              permanently delete "{deletingSignal?.name}" and all evaluation
+              history? this action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -332,43 +196,22 @@ function SignalsPage() {
   );
 }
 
-interface StatBoxProps {
-  label: string;
-  value: React.ReactNode;
-  extra?: string;
-}
-
-function StatBox({ label, value, extra }: StatBoxProps) {
-  return (
-    <div className="border border-border bg-card p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <div className="mt-2 text-xl text-foreground">{value}</div>
-      {extra && (
-        <p className="mt-1 text-xs text-muted-foreground">{extra}</p>
-      )}
-    </div>
-  );
-}
-
 function SignalsSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <div className="flex items-center justify-between">
         <Skeleton className="h-5 w-24" />
         <Skeleton className="h-8 w-28" />
       </div>
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-24" />
-        ))}
-      </div>
-      <div className="space-y-4">
-        <Skeleton className="h-4 w-32" />
-        <div className="grid gap-4 sm:grid-cols-2">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <Skeleton key={i} className="h-48" />
-          ))}
+      <div className="border border-border">
+        <div className="border-b border-border bg-card px-4 py-2">
+          <Skeleton className="h-4 w-full" />
         </div>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="border-b border-border px-4 py-3 last:border-b-0">
+            <Skeleton className="h-4 w-full" />
+          </div>
+        ))}
       </div>
     </div>
   );

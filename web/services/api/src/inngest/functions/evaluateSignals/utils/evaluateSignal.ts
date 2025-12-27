@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SimpleLLMService } from "./simple";
+import { SimpleLLMService } from "../../../../services/external/llm/simple";
 
 const signalEvaluationSchema = z.object({
   success: z
@@ -9,14 +9,10 @@ const signalEvaluationSchema = z.object({
     ),
   reasoning: z
     .string()
-    .describe(
-      "2-3 sentence explanation of why this determination was made",
-    ),
+    .describe("2-3 sentence explanation of why this determination was made"),
   evidence: z
     .array(z.string())
-    .describe(
-      "1-3 direct quotes from the transcript supporting the decision",
-    ),
+    .describe("1-3 direct quotes from the transcript supporting the decision"),
   confidence: z
     .enum(["high", "medium", "low"])
     .describe("Confidence level in this evaluation"),

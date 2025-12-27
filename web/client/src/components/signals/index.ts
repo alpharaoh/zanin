@@ -1,4 +1,3 @@
-export { SignalCard } from "./SignalCard";
+export { SignalRow, SignalListHeader } from "./SignalRow";
 export { SignalForm } from "./SignalForm";
-export { StreakIndicator } from "./StreakIndicator";
-export { AchievementBadge, AchievementGrid } from "./AchievementBadge";
+export { PointsChart } from "./PointsChart";

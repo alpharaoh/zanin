@@ -17,6 +17,7 @@ import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settin
 import { Route as DashboardSignalsIndexRouteImport } from './routes/dashboard/signals/index'
 import { Route as DashboardRecordingsIndexRouteImport } from './routes/dashboard/recordings/index'
 import { Route as DashboardChatIndexRouteImport } from './routes/dashboard/chat/index'
+import { Route as DashboardSignalsSignalIdRouteImport } from './routes/dashboard/signals/$signalId'
 import { Route as DashboardRecordingsRecordingIdRouteImport } from './routes/dashboard/recordings/$recordingId'
 
 const SignInRoute = SignInRouteImport.update({
@@ -60,6 +61,12 @@ const DashboardChatIndexRoute = DashboardChatIndexRouteImport.update({
   path: '/chat/',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
+const DashboardSignalsSignalIdRoute =
+  DashboardSignalsSignalIdRouteImport.update({
+    id: '/signals/$signalId',
+    path: '/signals/$signalId',
+    getParentRoute: () => DashboardRouteRoute,
+  } as any)
 const DashboardRecordingsRecordingIdRoute =
   DashboardRecordingsRecordingIdRouteImport.update({
     id: '/recordings/$recordingId',
@@ -74,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/recordings/$recordingId': typeof DashboardRecordingsRecordingIdRoute
+  '/dashboard/signals/$signalId': typeof DashboardSignalsSignalIdRoute
   '/dashboard/chat': typeof DashboardChatIndexRoute
   '/dashboard/recordings': typeof DashboardRecordingsIndexRoute
   '/dashboard/signals': typeof DashboardSignalsIndexRoute
@@ -84,6 +92,7 @@ export interface FileRoutesByTo {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/recordings/$recordingId': typeof DashboardRecordingsRecordingIdRoute
+  '/dashboard/signals/$signalId': typeof DashboardSignalsSignalIdRoute
   '/dashboard/chat': typeof DashboardChatIndexRoute
   '/dashboard/recordings': typeof DashboardRecordingsIndexRoute
   '/dashboard/signals': typeof DashboardSignalsIndexRoute
@@ -96,6 +105,7 @@ export interface FileRoutesById {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/recordings/$recordingId': typeof DashboardRecordingsRecordingIdRoute
+  '/dashboard/signals/$signalId': typeof DashboardSignalsSignalIdRoute
   '/dashboard/chat/': typeof DashboardChatIndexRoute
   '/dashboard/recordings/': typeof DashboardRecordingsIndexRoute
   '/dashboard/signals/': typeof DashboardSignalsIndexRoute
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/'
     | '/dashboard/recordings/$recordingId'
+    | '/dashboard/signals/$signalId'
     | '/dashboard/chat'
     | '/dashboard/recordings'
     | '/dashboard/signals'
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard'
     | '/dashboard/recordings/$recordingId'
+    | '/dashboard/signals/$signalId'
     | '/dashboard/chat'
     | '/dashboard/recordings'
     | '/dashboard/signals'
@@ -130,6 +142,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/'
     | '/dashboard/recordings/$recordingId'
+    | '/dashboard/signals/$signalId'
     | '/dashboard/chat/'
     | '/dashboard/recordings/'
     | '/dashboard/signals/'
@@ -199,6 +212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardChatIndexRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
+    '/dashboard/signals/$signalId': {
+      id: '/dashboard/signals/$signalId'
+      path: '/signals/$signalId'
+      fullPath: '/dashboard/signals/$signalId'
+      preLoaderRoute: typeof DashboardSignalsSignalIdRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
     '/dashboard/recordings/$recordingId': {
       id: '/dashboard/recordings/$recordingId'
       path: '/recordings/$recordingId'
@@ -213,6 +233,7 @@ interface DashboardRouteRouteChildren {
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardRecordingsRecordingIdRoute: typeof DashboardRecordingsRecordingIdRoute
+  DashboardSignalsSignalIdRoute: typeof DashboardSignalsSignalIdRoute
   DashboardChatIndexRoute: typeof DashboardChatIndexRoute
   DashboardRecordingsIndexRoute: typeof DashboardRecordingsIndexRoute
   DashboardSignalsIndexRoute: typeof DashboardSignalsIndexRoute
@@ -222,6 +243,7 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardRecordingsRecordingIdRoute: DashboardRecordingsRecordingIdRoute,
+  DashboardSignalsSignalIdRoute: DashboardSignalsSignalIdRoute,
   DashboardChatIndexRoute: DashboardChatIndexRoute,
   DashboardRecordingsIndexRoute: DashboardRecordingsIndexRoute,
   DashboardSignalsIndexRoute: DashboardSignalsIndexRoute,

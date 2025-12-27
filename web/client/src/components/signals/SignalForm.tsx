@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { XIcon, PlusIcon, Loader2Icon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SignalFormProps {
   open: boolean;
@@ -51,7 +52,6 @@ export function SignalForm({
   const [newGoodExample, setNewGoodExample] = useState("");
   const [newBadExample, setNewBadExample] = useState("");
 
-  // Reset form when dialog opens/closes or signal changes
   useEffect(() => {
     if (open) {
       if (signal) {
@@ -146,79 +146,62 @@ export function SignalForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>
-              {">"} {isEditing ? "edit_signal" : "new_signal"}
+            <DialogTitle className="text-sm font-medium">
+              {isEditing ? "Edit Signal" : "Create Signal"}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs">
               {isEditing
-                ? "update your signal tracking definition"
-                : "define a behavior pattern to track across your recordings"}
+                ? "Update your signal's tracking definition"
+                : "Define a behavioral pattern to track across recordings"}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mt-4 space-y-4">
-            {/* Name */}
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">name</label>
+          <div className="mt-6 space-y-5">
+            <FormField label="Name">
               <Input
                 value={formData.name}
                 onChange={(e) => updateField("name", e.target.value)}
                 placeholder="e.g., Reduce filler words"
                 maxLength={100}
               />
-            </div>
+            </FormField>
 
-            {/* Description */}
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">
-                description
-              </label>
+            <FormField label="Description">
               <Textarea
                 value={formData.description}
                 onChange={(e) => updateField("description", e.target.value)}
                 placeholder="What behavior pattern should be tracked?"
                 rows={2}
               />
-            </div>
+            </FormField>
 
-            {/* Goal */}
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">goal</label>
+            <FormField label="Goal">
               <Textarea
                 value={formData.goal}
                 onChange={(e) => updateField("goal", e.target.value)}
-                placeholder="What is the ideal outcome you want to achieve?"
+                placeholder="What is the ideal outcome?"
                 rows={2}
               />
-            </div>
+            </FormField>
 
-            {/* Failure Condition */}
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">
-                failure condition
-              </label>
+            <FormField label="Failure Condition">
               <Textarea
                 value={formData.failureCondition}
                 onChange={(e) => updateField("failureCondition", e.target.value)}
                 placeholder="What constitutes a failure? Be specific."
                 rows={2}
               />
-            </div>
+            </FormField>
 
-            {/* Good Examples */}
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">
-                good examples{" "}
-                <span className="text-muted-foreground/50">(optional)</span>
-              </label>
+            <FormField label="Good Examples" optional>
               <div className="flex gap-2">
                 <Input
                   value={newGoodExample}
                   onChange={(e) => setNewGoodExample(e.target.value)}
-                  placeholder="Add an example of good behavior..."
+                  placeholder="Add an example..."
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -232,42 +215,24 @@ export function SignalForm({
                   size="icon"
                   onClick={addGoodExample}
                   disabled={!newGoodExample.trim()}
+                  className="shrink-0"
                 >
                   <PlusIcon className="size-4" />
                 </Button>
               </div>
-              {formData.goodExamples.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {formData.goodExamples.map((example) => (
-                    <span
-                      key={example}
-                      className="inline-flex items-center gap-1 border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400"
-                    >
-                      {example}
-                      <button
-                        type="button"
-                        onClick={() => removeGoodExample(example)}
-                        className="hover:text-emerald-700 dark:hover:text-emerald-300"
-                      >
-                        <XIcon className="size-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+              <ExampleTags
+                examples={formData.goodExamples}
+                onRemove={removeGoodExample}
+                variant="success"
+              />
+            </FormField>
 
-            {/* Bad Examples */}
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">
-                bad examples{" "}
-                <span className="text-muted-foreground/50">(optional)</span>
-              </label>
+            <FormField label="Bad Examples" optional>
               <div className="flex gap-2">
                 <Input
                   value={newBadExample}
                   onChange={(e) => setNewBadExample(e.target.value)}
-                  placeholder="Add an example of bad behavior..."
+                  placeholder="Add an example..."
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -281,50 +246,103 @@ export function SignalForm({
                   size="icon"
                   onClick={addBadExample}
                   disabled={!newBadExample.trim()}
+                  className="shrink-0"
                 >
                   <PlusIcon className="size-4" />
                 </Button>
               </div>
-              {formData.badExamples.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {formData.badExamples.map((example) => (
-                    <span
-                      key={example}
-                      className="inline-flex items-center gap-1 border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs text-red-600 dark:text-red-400"
-                    >
-                      {example}
-                      <button
-                        type="button"
-                        onClick={() => removeBadExample(example)}
-                        className="hover:text-red-700 dark:hover:text-red-300"
-                      >
-                        <XIcon className="size-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+              <ExampleTags
+                examples={formData.badExamples}
+                onRemove={removeBadExample}
+                variant="error"
+              />
+            </FormField>
           </div>
 
-          <DialogFooter className="mt-6">
+          <DialogFooter className="mt-6 gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
+              className="h-8"
             >
-              cancel
+              Cancel
             </Button>
-            <Button type="submit" disabled={!isValid || isSubmitting}>
+            <Button
+              type="submit"
+              disabled={!isValid || isSubmitting}
+              className="h-8"
+            >
               {isSubmitting && (
-                <Loader2Icon className="mr-2 size-4 animate-spin" />
+                <Loader2Icon className="mr-1.5 size-3.5 animate-spin" />
               )}
-              {isEditing ? "save" : "create"}
+              {isEditing ? "Save" : "Create"}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function FormField({
+  label,
+  optional,
+  children,
+}: {
+  label: string;
+  optional?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs text-muted-foreground">
+        {label}
+        {optional && (
+          <span className="ml-1 text-muted-foreground/50">(optional)</span>
+        )}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function ExampleTags({
+  examples,
+  onRemove,
+  variant,
+}: {
+  examples: string[];
+  onRemove: (example: string) => void;
+  variant: "success" | "error";
+}) {
+  if (examples.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {examples.map((example) => (
+        <span
+          key={example}
+          className={cn(
+            "inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-xs",
+            variant === "success" &&
+              "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+            variant === "error" && "bg-red-500/10 text-red-600 dark:text-red-400"
+          )}
+        >
+          {example}
+          <button
+            type="button"
+            onClick={() => onRemove(example)}
+            className="ml-0.5 opacity-60 hover:opacity-100"
+          >
+            <XIcon className="size-3" />
+          </button>
+        </span>
+      ))}
+    </div>
   );
 }
