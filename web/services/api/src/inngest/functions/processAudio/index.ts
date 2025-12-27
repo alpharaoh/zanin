@@ -1,5 +1,6 @@
 import { inngest } from "../../client";
 import { vectorize } from "../vectorize";
+import evaluateSignals from "../evaluateSignals";
 import VADService from "../../../services/external/vad/service";
 import DeepgramService from "../../../services/external/deepgram/service";
 import BlobStorageService from "../../../services/external/store/blob/service";
@@ -200,11 +201,24 @@ export default inngest.createFunction(
 
     logger.info("Vectorized recording", { recordingId });
 
+    // Evaluate signals for this recording
+    const signalsResult = await step.invoke("evaluate-signals", {
+      function: evaluateSignals,
+      data: {
+        recordingId,
+        organizationId,
+        userId,
+      },
+    });
+
+    logger.info("Evaluated signals", { recordingId, signalsResult });
+
     return {
       success: true,
       recordingId,
       transcription,
       vectorization: vectorResult,
+      signals: signalsResult,
     };
   },
 );

@@ -50,6 +50,122 @@ export interface User {
   organizations: UserOrganizationsItem[];
 }
 
+export interface Signal {
+  id: string;
+  name: string;
+  description: string;
+  goal: string;
+  failureCondition: string;
+  /** @nullable */
+  goodExamples: string[] | null;
+  /** @nullable */
+  badExamples: string[] | null;
+  isActive: boolean;
+  totalPoints: number;
+  currentStreak: number;
+  longestStreak: number;
+  totalSuccesses: number;
+  totalFailures: number;
+  /** @nullable */
+  lastEvaluatedAt: string | null;
+  createdAt: string;
+  /** @nullable */
+  updatedAt: string | null;
+}
+
+export interface CreateSignalRequest {
+  name: string;
+  description: string;
+  goal: string;
+  failureCondition: string;
+  goodExamples?: string[];
+  badExamples?: string[];
+}
+
+export interface SignalListResponse {
+  signals: Signal[];
+  count: number;
+}
+
+export interface SignalsStats {
+  totalPoints: number;
+  activeSignals: number;
+  bestCurrentStreak: number;
+  longestEverStreak: number;
+  achievementsUnlocked: number;
+  totalAchievements: number;
+  totalEvaluations: number;
+  overallSuccessRate: number;
+}
+
+/**
+ * @nullable
+ */
+export type AchievementMetadata = {
+  recordingId?: string;
+  pointsTotal?: number;
+  streakCount?: number;
+  signalName?: string;
+} | null;
+
+export interface Achievement {
+  id: string;
+  achievementType: string;
+  /** @nullable */
+  signalId: string | null;
+  unlockedAt: string;
+  /** @nullable */
+  metadata: AchievementMetadata;
+  createdAt: string;
+}
+
+export interface AchievementDefinition {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+}
+
+/**
+ * Construct a type with a set of properties K of type T
+ */
+export interface RecordStringAchievementDefinition {[key: string]: AchievementDefinition}
+
+export interface AchievementListResponse {
+  achievements: Achievement[];
+  definitions: RecordStringAchievementDefinition;
+}
+
+export interface UpdateSignalRequest {
+  name?: string;
+  description?: string;
+  goal?: string;
+  failureCondition?: string;
+  goodExamples?: string[];
+  badExamples?: string[];
+  isActive?: boolean;
+}
+
+export interface SignalEvaluation {
+  id: string;
+  signalId: string;
+  recordingId: string;
+  success: boolean;
+  pointsAwarded: number;
+  reasoning: string;
+  /** @nullable */
+  evidence: string[] | null;
+  confidence: string;
+  streakAtEvaluation: number;
+  createdAt: string;
+}
+
+export interface SignalEvaluationListResponse {
+  evaluations: SignalEvaluation[];
+  count: number;
+}
+
 export interface EnrollmentResponse {
   success: boolean;
   audioDurationSeconds: number;
@@ -322,6 +438,17 @@ export interface RunAgentRequest {
   threadId?: string;
 }
 
+export type ListSignalsParams = {
+isActive?: boolean;
+limit?: number;
+offset?: number;
+};
+
+export type GetSignalEvaluationsParams = {
+limit?: number;
+offset?: number;
+};
+
 export type EnrollBody = {
   audio: Blob;
 };
@@ -471,6 +598,648 @@ export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = Err
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetMeQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Create a new signal to track behavior in recordings.
+ */
+export const createSignal = (
+    createSignalRequest: CreateSignalRequest,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<Signal>(
+      {url: `/v1/signals`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createSignalRequest, signal
+    },
+      options);
+    }
+  
+
+
+export const getCreateSignalMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSignal>>, TError,{data: CreateSignalRequest}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSignal>>, TError,{data: CreateSignalRequest}, TContext> => {
+
+const mutationKey = ['createSignal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSignal>>, {data: CreateSignalRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSignal(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSignalMutationResult = NonNullable<Awaited<ReturnType<typeof createSignal>>>
+    export type CreateSignalMutationBody = CreateSignalRequest
+    export type CreateSignalMutationError = ErrorType<void>
+
+    export const useCreateSignal = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSignal>>, TError,{data: CreateSignalRequest}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createSignal>>,
+        TError,
+        {data: CreateSignalRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateSignalMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
+/**
+ * List all signals for the current user.
+ */
+export const listSignals = (
+    params?: ListSignalsParams,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<SignalListResponse>(
+      {url: `/v1/signals`, method: 'GET',
+        params, signal
+    },
+      options);
+    }
+  
+
+
+
+export const getListSignalsQueryKey = (params?: ListSignalsParams,) => {
+    return [
+    `/v1/signals`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListSignalsQueryOptions = <TData = Awaited<ReturnType<typeof listSignals>>, TError = ErrorType<void>>(params?: ListSignalsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSignals>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSignalsQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSignals>>> = ({ signal }) => listSignals(params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSignals>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListSignalsQueryResult = NonNullable<Awaited<ReturnType<typeof listSignals>>>
+export type ListSignalsQueryError = ErrorType<void>
+
+
+export function useListSignals<TData = Awaited<ReturnType<typeof listSignals>>, TError = ErrorType<void>>(
+ params: undefined |  ListSignalsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSignals>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listSignals>>,
+          TError,
+          Awaited<ReturnType<typeof listSignals>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListSignals<TData = Awaited<ReturnType<typeof listSignals>>, TError = ErrorType<void>>(
+ params?: ListSignalsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSignals>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listSignals>>,
+          TError,
+          Awaited<ReturnType<typeof listSignals>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListSignals<TData = Awaited<ReturnType<typeof listSignals>>, TError = ErrorType<void>>(
+ params?: ListSignalsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSignals>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useListSignals<TData = Awaited<ReturnType<typeof listSignals>>, TError = ErrorType<void>>(
+ params?: ListSignalsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSignals>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListSignalsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Get dashboard stats for all signals.
+ */
+export const getSignalsStats = (
+    
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<SignalsStats>(
+      {url: `/v1/signals/stats`, method: 'GET', signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGetSignalsStatsQueryKey = () => {
+    return [
+    `/v1/signals/stats`
+    ] as const;
+    }
+
+    
+export const getGetSignalsStatsQueryOptions = <TData = Awaited<ReturnType<typeof getSignalsStats>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignalsStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSignalsStatsQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSignalsStats>>> = ({ signal }) => getSignalsStats(requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSignalsStats>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSignalsStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getSignalsStats>>>
+export type GetSignalsStatsQueryError = ErrorType<void>
+
+
+export function useGetSignalsStats<TData = Awaited<ReturnType<typeof getSignalsStats>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignalsStats>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSignalsStats>>,
+          TError,
+          Awaited<ReturnType<typeof getSignalsStats>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSignalsStats<TData = Awaited<ReturnType<typeof getSignalsStats>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignalsStats>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSignalsStats>>,
+          TError,
+          Awaited<ReturnType<typeof getSignalsStats>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSignalsStats<TData = Awaited<ReturnType<typeof getSignalsStats>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignalsStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSignalsStats<TData = Awaited<ReturnType<typeof getSignalsStats>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignalsStats>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSignalsStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Get all achievements for the current user.
+ */
+export const getAchievements = (
+    
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<AchievementListResponse>(
+      {url: `/v1/signals/achievements`, method: 'GET', signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGetAchievementsQueryKey = () => {
+    return [
+    `/v1/signals/achievements`
+    ] as const;
+    }
+
+    
+export const getGetAchievementsQueryOptions = <TData = Awaited<ReturnType<typeof getAchievements>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAchievements>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAchievementsQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAchievements>>> = ({ signal }) => getAchievements(requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAchievements>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAchievementsQueryResult = NonNullable<Awaited<ReturnType<typeof getAchievements>>>
+export type GetAchievementsQueryError = ErrorType<void>
+
+
+export function useGetAchievements<TData = Awaited<ReturnType<typeof getAchievements>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAchievements>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAchievements>>,
+          TError,
+          Awaited<ReturnType<typeof getAchievements>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAchievements<TData = Awaited<ReturnType<typeof getAchievements>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAchievements>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAchievements>>,
+          TError,
+          Awaited<ReturnType<typeof getAchievements>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAchievements<TData = Awaited<ReturnType<typeof getAchievements>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAchievements>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetAchievements<TData = Awaited<ReturnType<typeof getAchievements>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAchievements>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetAchievementsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Get a specific signal by ID.
+ */
+export const getSignal = (
+    signalId: string,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<Signal>(
+      {url: `/v1/signals/${signalId}`, method: 'GET', signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGetSignalQueryKey = (signalId?: string,) => {
+    return [
+    `/v1/signals/${signalId}`
+    ] as const;
+    }
+
+    
+export const getGetSignalQueryOptions = <TData = Awaited<ReturnType<typeof getSignal>>, TError = ErrorType<void>>(signalId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignal>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSignalQueryKey(signalId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSignal>>> = ({ signal }) => getSignal(signalId, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(signalId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSignal>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSignalQueryResult = NonNullable<Awaited<ReturnType<typeof getSignal>>>
+export type GetSignalQueryError = ErrorType<void>
+
+
+export function useGetSignal<TData = Awaited<ReturnType<typeof getSignal>>, TError = ErrorType<void>>(
+ signalId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignal>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSignal>>,
+          TError,
+          Awaited<ReturnType<typeof getSignal>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSignal<TData = Awaited<ReturnType<typeof getSignal>>, TError = ErrorType<void>>(
+ signalId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignal>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSignal>>,
+          TError,
+          Awaited<ReturnType<typeof getSignal>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSignal<TData = Awaited<ReturnType<typeof getSignal>>, TError = ErrorType<void>>(
+ signalId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignal>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSignal<TData = Awaited<ReturnType<typeof getSignal>>, TError = ErrorType<void>>(
+ signalId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignal>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSignalQueryOptions(signalId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Update a signal.
+ */
+export const updateSignal = (
+    signalId: string,
+    updateSignalRequest: UpdateSignalRequest,
+ options?: SecondParameter<typeof axios>,) => {
+      
+      
+      return axios<Signal>(
+      {url: `/v1/signals/${signalId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateSignalRequest
+    },
+      options);
+    }
+  
+
+
+export const getUpdateSignalMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSignal>>, TError,{signalId: string;data: UpdateSignalRequest}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSignal>>, TError,{signalId: string;data: UpdateSignalRequest}, TContext> => {
+
+const mutationKey = ['updateSignal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSignal>>, {signalId: string;data: UpdateSignalRequest}> = (props) => {
+          const {signalId,data} = props ?? {};
+
+          return  updateSignal(signalId,data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSignalMutationResult = NonNullable<Awaited<ReturnType<typeof updateSignal>>>
+    export type UpdateSignalMutationBody = UpdateSignalRequest
+    export type UpdateSignalMutationError = ErrorType<void>
+
+    export const useUpdateSignal = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSignal>>, TError,{signalId: string;data: UpdateSignalRequest}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateSignal>>,
+        TError,
+        {signalId: string;data: UpdateSignalRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateSignalMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
+/**
+ * Delete a signal (soft delete).
+ */
+export const deleteSignal = (
+    signalId: string,
+ options?: SecondParameter<typeof axios>,) => {
+      
+      
+      return axios<void>(
+      {url: `/v1/signals/${signalId}`, method: 'DELETE'
+    },
+      options);
+    }
+  
+
+
+export const getDeleteSignalMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSignal>>, TError,{signalId: string}, TContext>, request?: SecondParameter<typeof axios>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSignal>>, TError,{signalId: string}, TContext> => {
+
+const mutationKey = ['deleteSignal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSignal>>, {signalId: string}> = (props) => {
+          const {signalId} = props ?? {};
+
+          return  deleteSignal(signalId,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSignalMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSignal>>>
+    
+    export type DeleteSignalMutationError = ErrorType<void>
+
+    export const useDeleteSignal = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSignal>>, TError,{signalId: string}, TContext>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSignal>>,
+        TError,
+        {signalId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteSignalMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
+/**
+ * Get evaluations for a specific signal.
+ */
+export const getSignalEvaluations = (
+    signalId: string,
+    params?: GetSignalEvaluationsParams,
+ options?: SecondParameter<typeof axios>,signal?: AbortSignal
+) => {
+      
+      
+      return axios<SignalEvaluationListResponse>(
+      {url: `/v1/signals/${signalId}/evaluations`, method: 'GET',
+        params, signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGetSignalEvaluationsQueryKey = (signalId?: string,
+    params?: GetSignalEvaluationsParams,) => {
+    return [
+    `/v1/signals/${signalId}/evaluations`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetSignalEvaluationsQueryOptions = <TData = Awaited<ReturnType<typeof getSignalEvaluations>>, TError = ErrorType<void>>(signalId: string,
+    params?: GetSignalEvaluationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignalEvaluations>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSignalEvaluationsQueryKey(signalId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSignalEvaluations>>> = ({ signal }) => getSignalEvaluations(signalId,params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(signalId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSignalEvaluations>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSignalEvaluationsQueryResult = NonNullable<Awaited<ReturnType<typeof getSignalEvaluations>>>
+export type GetSignalEvaluationsQueryError = ErrorType<void>
+
+
+export function useGetSignalEvaluations<TData = Awaited<ReturnType<typeof getSignalEvaluations>>, TError = ErrorType<void>>(
+ signalId: string,
+    params: undefined |  GetSignalEvaluationsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignalEvaluations>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSignalEvaluations>>,
+          TError,
+          Awaited<ReturnType<typeof getSignalEvaluations>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSignalEvaluations<TData = Awaited<ReturnType<typeof getSignalEvaluations>>, TError = ErrorType<void>>(
+ signalId: string,
+    params?: GetSignalEvaluationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignalEvaluations>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSignalEvaluations>>,
+          TError,
+          Awaited<ReturnType<typeof getSignalEvaluations>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSignalEvaluations<TData = Awaited<ReturnType<typeof getSignalEvaluations>>, TError = ErrorType<void>>(
+ signalId: string,
+    params?: GetSignalEvaluationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignalEvaluations>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSignalEvaluations<TData = Awaited<ReturnType<typeof getSignalEvaluations>>, TError = ErrorType<void>>(
+ signalId: string,
+    params?: GetSignalEvaluationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSignalEvaluations>>, TError, TData>>, request?: SecondParameter<typeof axios>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSignalEvaluationsQueryOptions(signalId,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
