@@ -31,6 +31,74 @@ interface FormData {
   badExamples: string[];
 }
 
+const SIGNAL_TEMPLATES: FormData[] = [
+  {
+    name: 'Reduce "like"',
+    description: 'Track and reduce usage of "like" as a filler word',
+    goal: 'Eliminate unnecessary "like" from speech for clearer, more confident communication',
+    failureCondition:
+      'Using "like" as a filler word (not for comparisons or preferences)',
+    goodExamples: [
+      "I think we should proceed",
+      "The results were similar to last quarter",
+    ],
+    badExamples: [
+      "I was like, really surprised",
+      "It's like, you know, complicated",
+    ],
+  },
+  {
+    name: "Reduce filler words",
+    description:
+      "Track usage of common filler words (um, uh, you know, so, basically)",
+    goal: "Speak more clearly by replacing filler words with pauses",
+    failureCondition:
+      'Using filler words like "um", "uh", "you know", "so", "basically", "actually", "literally"',
+    goodExamples: [
+      "Let me think about that... The answer is yes",
+      "There are three key points",
+    ],
+    badExamples: ["Um, so basically, you know, we should, uh, move forward"],
+  },
+  {
+    name: "Speak with confidence",
+    description:
+      "Avoid hedging language and qualifiers that undermine your message",
+    goal: "Communicate assertively without undermining statements with unnecessary hedges",
+    failureCondition:
+      'Using hedging phrases like "I think", "maybe", "sort of", "kind of", "I guess", "probably"',
+    goodExamples: ["This approach will work", "We should prioritize this"],
+    badExamples: ["I think maybe we should sort of consider this"],
+  },
+  {
+    name: "Active listening",
+    description:
+      "Demonstrate engagement by asking follow-up questions and not interrupting",
+    goal: "Show genuine interest in conversations through active engagement",
+    failureCondition:
+      "Interrupting others, not asking follow-up questions, or immediately redirecting to self",
+    goodExamples: [
+      "That's interesting, can you tell me more?",
+      "How did that make you feel?",
+    ],
+    badExamples: [
+      "Yeah but anyway, let me tell you about...",
+      "Right, right, so I...",
+    ],
+  },
+  {
+    name: "Be concise",
+    description: "Get to the point without unnecessary rambling or repetition",
+    goal: "Communicate ideas clearly and efficiently",
+    failureCondition:
+      "Repeating the same point multiple times, excessive preamble, or going off on tangents",
+    goodExamples: ["The main issue is X. Here's how we fix it."],
+    badExamples: [
+      "So what I wanted to say, and this is really important, is that, well, the thing is...",
+    ],
+  },
+];
+
 export function SignalForm({
   open,
   onOpenChange,
@@ -146,7 +214,12 @@ export function SignalForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+      <DialogContent
+        className={cn(
+          "max-h-[90vh] overflow-y-auto",
+          isEditing ? "sm:max-w-md" : "sm:max-w-4xl"
+        )}
+      >
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="text-sm font-medium">
@@ -159,104 +232,135 @@ export function SignalForm({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mt-6 space-y-5">
-            <FormField label="Name">
-              <Input
-                value={formData.name}
-                onChange={(e) => updateField("name", e.target.value)}
-                placeholder="e.g., Reduce filler words"
-                maxLength={100}
-              />
-            </FormField>
-
-            <FormField label="Description">
-              <Textarea
-                value={formData.description}
-                onChange={(e) => updateField("description", e.target.value)}
-                placeholder="What behavior pattern should be tracked?"
-                rows={2}
-              />
-            </FormField>
-
-            <FormField label="Goal">
-              <Textarea
-                value={formData.goal}
-                onChange={(e) => updateField("goal", e.target.value)}
-                placeholder="What is the ideal outcome?"
-                rows={2}
-              />
-            </FormField>
-
-            <FormField label="Failure Condition">
-              <Textarea
-                value={formData.failureCondition}
-                onChange={(e) => updateField("failureCondition", e.target.value)}
-                placeholder="What constitutes a failure? Be specific."
-                rows={2}
-              />
-            </FormField>
-
-            <FormField label="Good Examples" optional>
-              <div className="flex gap-2">
+          <div
+            className={cn("mt-6", !isEditing && "grid gap-6 sm:grid-cols-2")}
+          >
+            {/* Form Fields */}
+            <div className="space-y-5">
+              <FormField label="Name">
                 <Input
-                  value={newGoodExample}
-                  onChange={(e) => setNewGoodExample(e.target.value)}
-                  placeholder="Add an example..."
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addGoodExample();
-                    }
-                  }}
+                  value={formData.name}
+                  onChange={(e) => updateField("name", e.target.value)}
+                  placeholder="e.g., Reduce filler words"
+                  maxLength={100}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={addGoodExample}
-                  disabled={!newGoodExample.trim()}
-                  className="shrink-0"
-                >
-                  <PlusIcon className="size-4" />
-                </Button>
-              </div>
-              <ExampleTags
-                examples={formData.goodExamples}
-                onRemove={removeGoodExample}
-                variant="success"
-              />
-            </FormField>
+              </FormField>
 
-            <FormField label="Bad Examples" optional>
-              <div className="flex gap-2">
-                <Input
-                  value={newBadExample}
-                  onChange={(e) => setNewBadExample(e.target.value)}
-                  placeholder="Add an example..."
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addBadExample();
-                    }
-                  }}
+              <FormField label="Description">
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => updateField("description", e.target.value)}
+                  placeholder="What behavior pattern should be tracked?"
+                  rows={2}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={addBadExample}
-                  disabled={!newBadExample.trim()}
-                  className="shrink-0"
-                >
-                  <PlusIcon className="size-4" />
-                </Button>
+              </FormField>
+
+              <FormField label="Goal">
+                <Textarea
+                  value={formData.goal}
+                  onChange={(e) => updateField("goal", e.target.value)}
+                  placeholder="What is the ideal outcome?"
+                  rows={2}
+                />
+              </FormField>
+
+              <FormField label="Failure Condition">
+                <Textarea
+                  value={formData.failureCondition}
+                  onChange={(e) =>
+                    updateField("failureCondition", e.target.value)
+                  }
+                  placeholder="What constitutes a failure? Be specific."
+                  rows={2}
+                />
+              </FormField>
+
+              <FormField label="Good Examples" optional>
+                <div className="flex gap-2">
+                  <Input
+                    value={newGoodExample}
+                    onChange={(e) => setNewGoodExample(e.target.value)}
+                    placeholder="Add an example..."
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addGoodExample();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={addGoodExample}
+                    disabled={!newGoodExample.trim()}
+                    className="shrink-0"
+                  >
+                    <PlusIcon className="size-4" />
+                  </Button>
+                </div>
+                <ExampleTags
+                  examples={formData.goodExamples}
+                  onRemove={removeGoodExample}
+                  variant="success"
+                />
+              </FormField>
+
+              <FormField label="Bad Examples" optional>
+                <div className="flex gap-2">
+                  <Input
+                    value={newBadExample}
+                    onChange={(e) => setNewBadExample(e.target.value)}
+                    placeholder="Add an example..."
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addBadExample();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={addBadExample}
+                    disabled={!newBadExample.trim()}
+                    className="shrink-0"
+                  >
+                    <PlusIcon className="size-4" />
+                  </Button>
+                </div>
+                <ExampleTags
+                  examples={formData.badExamples}
+                  onRemove={removeBadExample}
+                  variant="error"
+                />
+              </FormField>
+            </div>
+
+            {/* Templates Panel - only show when creating */}
+            {!isEditing && (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">{">"} templates</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {SIGNAL_TEMPLATES.map((template) => (
+                    <button
+                      key={template.name}
+                      type="button"
+                      onClick={() => setFormData(template)}
+                      className="group border border-border p-3 text-left transition-colors hover:border-primary/50"
+                    >
+                      <p className="text-xs font-medium text-foreground group-hover:text-primary">
+                        {template.name}
+                      </p>
+                      <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground line-clamp-2">
+                        {template.description}
+                      </p>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <ExampleTags
-                examples={formData.badExamples}
-                onRemove={removeBadExample}
-                variant="error"
-              />
-            </FormField>
+            )}
           </div>
 
           <DialogFooter className="mt-6 gap-2">
@@ -330,7 +434,8 @@ function ExampleTags({
             "inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-xs",
             variant === "success" &&
               "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-            variant === "error" && "bg-red-500/10 text-red-600 dark:text-red-400"
+            variant === "error" &&
+              "bg-red-500/10 text-red-600 dark:text-red-400"
           )}
         >
           {example}
