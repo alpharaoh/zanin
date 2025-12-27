@@ -61,7 +61,7 @@ docker compose down -v
 
 | Service   | Port  | Description                    |
 |-----------|-------|--------------------------------|
-| postgres  | 54321 | PostgreSQL database            |
+| postgres  | 54399 | PostgreSQL database            |
 | api       | 8081  | Express REST API               |
 | agents    | 3001  | LangGraph agents               |
 | vad       | 8000  | Voice Activity Detection       |
@@ -86,7 +86,7 @@ docker compose up api
 When using Docker Compose, connect to PostgreSQL at:
 
 ```
-postgresql://zanin:zanin@localhost:54321/zanin
+postgresql://zanin:zanin@localhost:54399/zanin
 ```
 
 ## Services
