@@ -14,6 +14,7 @@ import {
 } from "@tanstack/react-router";
 import { authClient } from "@zanin/auth/client";
 import {
+  ActivityIcon,
   LayoutDashboardIcon,
   MessagesSquareIcon,
   MicIcon,
@@ -66,6 +67,11 @@ function DashboardLayout() {
       title: "Recordings",
       url: "/dashboard/recordings",
       icon: <MicIcon />,
+    },
+    {
+      title: "Signals",
+      url: "/dashboard/signals",
+      icon: <ActivityIcon />,
     },
     {
       title: "Threads",
