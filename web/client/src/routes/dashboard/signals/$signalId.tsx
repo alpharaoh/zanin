@@ -36,6 +36,11 @@ import type { CreateSignalRequest } from "@/api";
 import { cn } from "@/lib/utils";
 import { formatDistance } from "date-fns";
 import { useState, useCallback } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 
 const PAGE_SIZE = 20;
@@ -328,26 +333,30 @@ function SignalDetailPage() {
             {signalAchievements.map((achievement) => {
               const def = achievementDefinitions[achievement.achievementType];
               return (
-                <div
-                  key={achievement.id}
-                  className="flex items-center gap-2.5 border border-border bg-card px-3 py-2"
-                >
-                  <span className="text-base">{def?.icon || "🏅"}</span>
-                  <div>
-                    <p className="text-xs font-medium">
-                      {def?.name || achievement.achievementType}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {formatDistance(
-                        new Date(achievement.unlockedAt),
-                        new Date(),
-                        {
-                          addSuffix: true,
-                        }
-                      )}
-                    </p>
-                  </div>
-                </div>
+                <Tooltip key={achievement.id} hoverable={false}>
+                  <TooltipTrigger>
+                    <div className="flex items-center gap-2.5 border border-border bg-card px-3 py-2">
+                      <span className="text-base">{def?.icon || "🏅"}</span>
+                      <div className="text-left">
+                        <p className="text-xs font-medium">
+                          {def?.name || achievement.achievementType}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatDistance(
+                            new Date(achievement.unlockedAt),
+                            new Date(),
+                            {
+                              addSuffix: true,
+                            }
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <p>{def?.description || "Achievement unlocked"}</p>
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
           </div>
@@ -384,72 +393,156 @@ function SignalDetailPage() {
 
             {/* Table Rows */}
             {evaluations.map((evaluation) => (
-              <div
-                key={evaluation.id}
-                className="grid grid-cols-12 gap-4 border-b border-border px-4 py-3 text-sm last:border-b-0"
-              >
-                {/* Result */}
-                <div className="col-span-1">
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1.5 text-xs",
-                      evaluation.success ? "text-emerald-500" : "text-red-500"
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "size-1.5 rounded-full",
-                        evaluation.success ? "bg-emerald-500" : "bg-red-500"
+              <Tooltip key={evaluation.id} hoverable={false}>
+                <TooltipTrigger className="w-full text-left">
+                  <div className="grid grid-cols-12 gap-4 border-b border-border px-4 py-3 text-sm last:border-b-0 transition-colors hover:bg-muted/30">
+                    {/* Result */}
+                    <div className="col-span-1">
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1.5 text-xs",
+                          evaluation.success
+                            ? "text-emerald-500"
+                            : "text-red-500"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "size-1.5 rounded-full",
+                            evaluation.success ? "bg-emerald-500" : "bg-red-500"
+                          )}
+                        />
+                        {evaluation.success ? "+1" : "-1"}
+                      </span>
+                    </div>
+
+                    {/* Reasoning */}
+                    <div className="col-span-5">
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {evaluation.reasoning}
+                      </p>
+                      {evaluation.evidence && evaluation.evidence.length > 0 && (
+                        <p className="mt-1 text-[11px] italic text-muted-foreground/60 line-clamp-1">
+                          "{evaluation.evidence[0]}"
+                        </p>
                       )}
-                    />
-                    {evaluation.success ? "+1" : "-1"}
-                  </span>
-                </div>
+                    </div>
 
-                {/* Reasoning */}
-                <div className="col-span-5">
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    {evaluation.reasoning}
-                  </p>
-                  {evaluation.evidence && evaluation.evidence.length > 0 && (
-                    <p className="mt-1 text-[11px] italic text-muted-foreground/60 line-clamp-1">
-                      "{evaluation.evidence[0]}"
-                    </p>
-                  )}
-                </div>
+                    {/* Confidence */}
+                    <div className="col-span-2">
+                      <span
+                        className={cn(
+                          "text-xs",
+                          evaluation.confidence === "high" &&
+                            "text-emerald-500/80",
+                          evaluation.confidence === "medium" &&
+                            "text-amber-500/80",
+                          evaluation.confidence === "low" && "text-red-400/80"
+                        )}
+                      >
+                        {evaluation.confidence}
+                      </span>
+                    </div>
 
-                {/* Confidence */}
-                <div className="col-span-2">
-                  <span
-                    className={cn(
-                      "text-xs",
-                      evaluation.confidence === "high" && "text-emerald-500/80",
-                      evaluation.confidence === "medium" && "text-amber-500/80",
-                      evaluation.confidence === "low" && "text-red-400/80"
+                    {/* Recording */}
+                    <div className="col-span-2 text-right">
+                      <Link
+                        to="/dashboard/recordings/$recordingId"
+                        params={{ recordingId: evaluation.recordingId }}
+                        className="text-xs text-muted-foreground hover:text-primary"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {evaluation.recordingId.slice(0, 8)}...
+                      </Link>
+                    </div>
+
+                    {/* Date */}
+                    <div className="col-span-2 text-right text-xs text-muted-foreground whitespace-nowrap">
+                      {formatDistance(
+                        new Date(evaluation.createdAt),
+                        new Date(),
+                        {
+                          addSuffix: true,
+                        }
+                      )}
+                    </div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  align="start"
+                  className="max-w-md p-0"
+                >
+                  <div className="space-y-3 p-3">
+                    {/* Header */}
+                    <div className="flex items-center justify-between gap-4">
+                      <span
+                        className={cn(
+                          "text-xs font-medium",
+                          evaluation.success
+                            ? "text-emerald-500"
+                            : "text-red-500"
+                        )}
+                      >
+                        {evaluation.success ? "Success" : "Failure"} (
+                        {evaluation.pointsAwarded > 0 ? "+" : ""}
+                        {evaluation.pointsAwarded} pts)
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        streak: {evaluation.streakAtEvaluation}
+                      </span>
+                    </div>
+
+                    {/* Reasoning */}
+                    <div>
+                      <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                        reasoning
+                      </p>
+                      <p className="text-xs leading-relaxed">
+                        {evaluation.reasoning}
+                      </p>
+                    </div>
+
+                    {/* Confidence */}
+                    <div>
+                      <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                        confidence
+                      </p>
+                      <span
+                        className={cn(
+                          "text-xs",
+                          evaluation.confidence === "high" &&
+                            "text-emerald-500",
+                          evaluation.confidence === "medium" &&
+                            "text-amber-500",
+                          evaluation.confidence === "low" && "text-red-400"
+                        )}
+                      >
+                        {evaluation.confidence}
+                      </span>
+                    </div>
+
+                    {/* Evidence */}
+                    {evaluation.evidence && evaluation.evidence.length > 0 && (
+                      <div>
+                        <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                          evidence
+                        </p>
+                        <ul className="space-y-1">
+                          {evaluation.evidence.map((e, i) => (
+                            <li
+                              key={i}
+                              className="text-xs italic text-muted-foreground"
+                            >
+                              "{e}"
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
-                  >
-                    {evaluation.confidence}
-                  </span>
-                </div>
-
-                {/* Recording */}
-                <div className="col-span-2 text-right">
-                  <Link
-                    to="/dashboard/recordings/$recordingId"
-                    params={{ recordingId: evaluation.recordingId }}
-                    className="text-xs text-muted-foreground hover:text-primary"
-                  >
-                    {evaluation.recordingId.slice(0, 8)}...
-                  </Link>
-                </div>
-
-                {/* Date */}
-                <div className="col-span-2 text-right text-xs text-muted-foreground whitespace-nowrap">
-                  {formatDistance(new Date(evaluation.createdAt), new Date(), {
-                    addSuffix: true,
-                  })}
-                </div>
-              </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             ))}
 
             {/* Pagination */}

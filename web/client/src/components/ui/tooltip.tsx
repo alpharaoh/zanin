@@ -17,10 +17,17 @@ function TooltipProvider({
   )
 }
 
-function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
+function Tooltip({
+  hoverable = true,
+  ...props
+}: TooltipPrimitive.Root.Props & { hoverable?: boolean }) {
   return (
     <TooltipProvider>
-      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+      <TooltipPrimitive.Root
+        data-slot="tooltip"
+        disableHoverablePopup={!hoverable}
+        {...props}
+      />
     </TooltipProvider>
   )
 }
