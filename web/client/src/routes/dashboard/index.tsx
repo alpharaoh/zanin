@@ -81,7 +81,9 @@ function DashboardIndex() {
         <StatBox
           label="recordings"
           value={stats.total.toString()}
-          extra={stats.processing > 0 ? `${stats.processing} processing` : undefined}
+          extra={
+            stats.processing > 0 ? `${stats.processing} processing` : undefined
+          }
         />
         <StatBox
           label="you_spoke"
@@ -100,19 +102,13 @@ function DashboardIndex() {
           label="others_spoke"
           value={formatDuration(stats.othersSpeakingTime)}
         />
-        <StatBox
-          label="talk_ratio"
-          value={talkRatio}
-          extra="you:others"
-        />
+        <StatBox label="talk_ratio" value={talkRatio} extra="you:others" />
       </div>
 
       {/* Recent Recordings */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">
-            {">"} recent_recordings
-          </span>
+          <span className="text-muted-foreground">{">"} recent_recordings</span>
           <Link
             to="/dashboard/recordings"
             className="text-xs text-primary hover:underline"
@@ -157,9 +153,7 @@ function StatBox({ label, value, extra }: StatBoxProps) {
     <div className="border border-border bg-card p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-2 text-xl text-foreground">{value}</p>
-      {extra && (
-        <p className="mt-1 text-xs text-muted-foreground">{extra}</p>
-      )}
+      {extra && <p className="mt-1 text-xs text-muted-foreground">{extra}</p>}
     </div>
   );
 }

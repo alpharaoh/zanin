@@ -208,7 +208,10 @@ function SignalsSkeleton() {
           <Skeleton className="h-4 w-full" />
         </div>
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="border-b border-border px-4 py-3 last:border-b-0">
+          <div
+            key={i}
+            className="border-b border-border px-4 py-3 last:border-b-0"
+          >
             <Skeleton className="h-4 w-full" />
           </div>
         ))}
