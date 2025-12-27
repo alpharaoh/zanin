@@ -30,8 +30,24 @@ export async function checkAndAwardAchievements(
   );
 
   for (const result of evaluationResults) {
-    // Check streak achievements
-    if (result.success) {
+    // Check first_success achievement (first successful evaluation for this signal)
+    if (result.success === true) {
+      const firstSuccessKey = `first_success_${result.signalId}`;
+      if (result.newStreak === 1 && !existingTypes.has(firstSuccessKey)) {
+        const achievement = await insertAchievement({
+          userId,
+          organizationId,
+          achievementType: "first_success",
+          signalId: result.signalId,
+          metadata: {
+            signalName: result.signalName,
+          },
+        });
+        newAchievements.push(achievement);
+        existingTypes.add(firstSuccessKey);
+      }
+
+      // Check streak achievements
       const streakAchievements = [
         { streak: 3, type: "streak_3" },
         { streak: 7, type: "streak_7" },
@@ -106,26 +122,6 @@ export async function checkAndAwardAchievements(
       newAchievements.push(achievement);
       existingTypes.add(comebackKey);
     }
-  }
-
-  // Check first_success (global) - awarded on first successful evaluation
-  const firstSuccessKey = "first_success_global";
-  const hasSuccessInBatch = evaluationResults.some((r) => r.success === true);
-  if (!existingTypes.has(firstSuccessKey) && hasSuccessInBatch) {
-    const firstSuccess = evaluationResults.find((r) => r.success === true);
-    const achievement = await insertAchievement({
-      userId,
-      organizationId,
-      achievementType: "first_success",
-      signalId: null,
-      metadata: firstSuccess
-        ? {
-            signalName: firstSuccess.signalName,
-          }
-        : {},
-    });
-    newAchievements.push(achievement);
-    existingTypes.add(firstSuccessKey);
   }
 
   return newAchievements;

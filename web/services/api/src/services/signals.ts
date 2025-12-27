@@ -16,7 +16,7 @@ export const ACHIEVEMENT_DEFINITIONS = {
   first_success: {
     id: "first_success",
     name: "First Win",
-    description: "Get your first successful evaluation",
+    description: "Get your first successful evaluation on this signal",
     icon: "✅",
     category: "getting_started",
   },
