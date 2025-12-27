@@ -6,6 +6,7 @@ import {
   useDeleteSignal,
   useGetAchievements,
   getListSignalsQueryKey,
+  getGetSignalQueryKey,
 } from "@/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -72,7 +73,7 @@ function SignalDetailPage() {
         data: { isActive: !signal.isActive },
       });
       queryClient.invalidateQueries({ queryKey: getListSignalsQueryKey() });
-      queryClient.invalidateQueries({ queryKey: ["/v1/signals", signalId] });
+      queryClient.invalidateQueries({ queryKey: getGetSignalQueryKey(signalId) });
       toast.success(signal.isActive ? "Signal paused" : "Signal resumed");
     } catch {
       toast.error("Failed to update signal");
