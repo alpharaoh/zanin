@@ -1,5 +1,6 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva, type VariantProps } from "class-variance-authority";
+import { Link, type LinkProps } from "@tanstack/react-router";
 
 import { cn } from "@/lib/utils";
 
@@ -38,16 +39,40 @@ const buttonVariants = cva(
   }
 );
 
+type ButtonProps = ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    to?: LinkProps["to"];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    params?: any;
+  };
+
 function Button({
   className,
   variant = "default",
   size = "default",
+  to,
+  params,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonProps) {
+  const classes = cn(buttonVariants({ variant, size, className }));
+
+  if (to) {
+    return (
+      <Link
+        to={to}
+        params={params}
+        className={cn(classes, "no-underline")}
+        {...(props as React.ComponentProps<typeof Link>)}
+      >
+        {props.children}
+      </Link>
+    );
+  }
+
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={classes}
       {...props}
     />
   );

@@ -10,6 +10,7 @@ import {
 } from "@/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { PointsChart } from "@/components/signals/PointsChart";
 import {
   AlertDialog,
@@ -264,7 +265,12 @@ function SignalDetailPage() {
       </div>
 
       {/* Progression Chart */}
-      <div className="border border-border pt-4 pr-4">
+      <div
+        className={cn(
+          "border border-border pt-4 pr-4",
+          allEvaluations.length < 2 && "pb-4"
+        )}
+      >
         <p className="mb-4 text-xs text-muted-foreground px-4">
           {">"} progression
         </p>
@@ -387,10 +393,10 @@ function SignalDetailPage() {
             {/* Table Header */}
             <div className="grid grid-cols-12 gap-4 border-b border-border bg-card px-4 py-2 text-xs text-muted-foreground">
               <div className="col-span-1">result</div>
-              <div className="col-span-5">reasoning</div>
+              <div className="col-span-4">reasoning</div>
               <div className="col-span-2">confidence</div>
-              <div className="col-span-2 text-right">recording</div>
-              <div className="col-span-2 text-right">date</div>
+              <div className="col-span-2">recording</div>
+              <div className="col-span-3 text-right">date</div>
             </div>
 
             {/* Table Rows */}
@@ -419,7 +425,7 @@ function SignalDetailPage() {
                     </div>
 
                     {/* Reasoning */}
-                    <div className="col-span-5">
+                    <div className="col-span-4">
                       <p className="text-xs text-muted-foreground line-clamp-2">
                         {evaluation.reasoning}
                       </p>
@@ -448,19 +454,20 @@ function SignalDetailPage() {
                     </div>
 
                     {/* Recording */}
-                    <div className="col-span-2 text-right">
-                      <Link
+                    <div className="col-span-2">
+                      <Button
+                        variant="secondary"
+                        size="xs"
                         to="/dashboard/recordings/$recordingId"
                         params={{ recordingId: evaluation.recordingId }}
-                        className="text-xs text-muted-foreground hover:text-primary"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
                       >
-                        {evaluation.recordingId.slice(0, 8)}...
-                      </Link>
+                        Go to recording
+                      </Button>
                     </div>
 
                     {/* Date */}
-                    <div className="col-span-2 text-right text-xs text-muted-foreground whitespace-nowrap">
+                    <div className="col-span-3 text-right text-xs text-muted-foreground">
                       {formatDistance(
                         new Date(evaluation.createdAt),
                         new Date(),
