@@ -17,9 +17,9 @@ WORKDIR /app
 # Copy dependency files
 COPY pyproject.toml poetry.lock* ./
 
-# Install dependencies to virtual env
+# Install dependencies to virtual env (--no-root skips installing the project itself)
 RUN poetry config virtualenvs.in-project true && \
-    poetry install --only main --no-interaction --no-ansi
+    poetry install --only main --no-root --no-interaction --no-ansi
 
 
 # Stage 2: Production stage

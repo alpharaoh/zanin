@@ -6,15 +6,31 @@ FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
-# Copy workspace config and lockfile
+# Copy workspace package files first for better caching
 COPY package.json bun.lock ./
-COPY packages/ ./packages/
+
+# Copy workspace packages that API depends on
+COPY packages/auth/package.json ./packages/auth/
+COPY packages/db/package.json ./packages/db/
+COPY packages/env/package.json ./packages/env/
+
+# Copy API package.json
 COPY services/api/package.json ./services/api/
 
-# Install dependencies
-RUN bun install --frozen-lockfile
+# Create minimal workspace structure (empty dirs for other workspaces)
+RUN mkdir -p client services/agents services/vad services/sid
 
-# Copy API source
+# Create dummy package.json files for workspaces we don't need
+RUN echo '{"name":"client","private":true}' > client/package.json && \
+    echo '{"name":"agents","private":true}' > services/agents/package.json && \
+    echo '{"name":"vad","private":true}' > services/vad/package.json && \
+    echo '{"name":"sid","private":true}' > services/sid/package.json
+
+# Install dependencies (can't use --frozen-lockfile due to dummy workspaces)
+RUN bun install
+
+# Copy actual source code
+COPY packages/ ./packages/
 COPY services/api/ ./services/api/
 
 # Build TSOA routes

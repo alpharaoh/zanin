@@ -6,15 +6,14 @@ FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
-# Copy workspace config and lockfile
-COPY package.json bun.lock ./
-COPY services/agents/package.json ./services/agents/
+# Copy only the agents package.json (not root workspace)
+COPY services/agents/package.json ./
 
-# Install dependencies
-RUN bun install --frozen-lockfile
+# Install dependencies (standalone, not as workspace)
+RUN bun install
 
 # Copy agents source
-COPY services/agents/ ./services/agents/
+COPY services/agents/ ./
 
 
 # Stage 2: Production stage
@@ -24,9 +23,8 @@ WORKDIR /app
 
 # Copy built artifacts and node_modules
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/services/agents ./services/agents
-
-WORKDIR /app/services/agents
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/package.json ./
 
 # Expose port (non-standard)
 EXPOSE 3101
