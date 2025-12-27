@@ -133,7 +133,9 @@ function SignalDetailPage() {
             <span className="text-muted-foreground">{">"} </span>
             {signal.name}
             {!signal.isActive && (
-              <span className="ml-2 text-xs text-muted-foreground">[paused]</span>
+              <span className="ml-2 text-xs text-muted-foreground">
+                [paused]
+              </span>
             )}
           </h1>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -284,10 +286,13 @@ function SignalDetailPage() {
       {/* Achievements */}
       {signalAchievements.length > 0 && (
         <div className="border border-border p-4">
-          <p className="mb-4 text-xs text-muted-foreground">{">"} achievements</p>
+          <p className="mb-4 text-xs text-muted-foreground">
+            {">"} achievements
+          </p>
           <div className="flex flex-wrap gap-3">
             {signalAchievements.map((achievement) => {
               const def = achievementDefinitions[achievement.achievementType];
+              console.log(def);
               return (
                 <div
                   key={achievement.id}
@@ -299,9 +304,13 @@ function SignalDetailPage() {
                       {def?.name || achievement.achievementType}
                     </p>
                     <p className="text-[10px] text-muted-foreground">
-                      {formatDistance(new Date(achievement.unlockedAt), new Date(), {
-                        addSuffix: true,
-                      })}
+                      {formatDistance(
+                        new Date(achievement.unlockedAt),
+                        new Date(),
+                        {
+                          addSuffix: true,
+                        }
+                      )}
                     </p>
                   </div>
                 </div>
@@ -321,7 +330,9 @@ function SignalDetailPage() {
           <EvaluationsSkeleton />
         ) : evaluations.length === 0 ? (
           <div className="p-8 text-center">
-            <p className="text-xs text-muted-foreground">// no evaluations yet</p>
+            <p className="text-xs text-muted-foreground">
+              // no evaluations yet
+            </p>
             <p className="mt-1 text-xs text-muted-foreground/70">
               evaluations appear when recordings are processed
             </p>
@@ -500,7 +511,10 @@ function EvaluationsSkeleton() {
   return (
     <>
       {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="border-b border-border px-4 py-3 last:border-b-0">
+        <div
+          key={i}
+          className="border-b border-border px-4 py-3 last:border-b-0"
+        >
           <Skeleton className="h-4 w-full" />
         </div>
       ))}

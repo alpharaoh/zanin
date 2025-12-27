@@ -18,14 +18,14 @@ export const ACHIEVEMENT_DEFINITIONS = {
     id: "first_signal",
     name: "Signal Pioneer",
     description: "Create your first signal",
-    icon: "signal",
+    icon: "⚡",
     category: "getting_started",
   },
   first_success: {
     id: "first_success",
     name: "First Win",
     description: "Get your first successful evaluation",
-    icon: "check",
+    icon: "✅",
     category: "getting_started",
   },
 
@@ -34,28 +34,28 @@ export const ACHIEVEMENT_DEFINITIONS = {
     id: "streak_3",
     name: "On a Roll",
     description: "Achieve a 3-day streak on any signal",
-    icon: "flame",
+    icon: "🔥",
     category: "streaks",
   },
   streak_7: {
     id: "streak_7",
     name: "Week Warrior",
     description: "Achieve a 7-day streak on any signal",
-    icon: "flame",
+    icon: "🔥",
     category: "streaks",
   },
   streak_14: {
     id: "streak_14",
     name: "Fortnight Fighter",
     description: "Achieve a 14-day streak on any signal",
-    icon: "flame",
+    icon: "🌟",
     category: "streaks",
   },
   streak_30: {
     id: "streak_30",
     name: "Monthly Master",
     description: "Achieve a 30-day streak on any signal",
-    icon: "crown",
+    icon: "👑",
     category: "streaks",
   },
 
@@ -64,21 +64,21 @@ export const ACHIEVEMENT_DEFINITIONS = {
     id: "points_10",
     name: "Double Digits",
     description: "Earn 10 total points on any signal",
-    icon: "star",
+    icon: "⭐",
     category: "points",
   },
   points_50: {
     id: "points_50",
     name: "Half Century",
     description: "Earn 50 total points on any signal",
-    icon: "star",
+    icon: "🥇",
     category: "points",
   },
   points_100: {
     id: "points_100",
     name: "Centurion",
     description: "Earn 100 total points on any signal",
-    icon: "trophy",
+    icon: "🏆",
     category: "points",
   },
 
@@ -87,7 +87,7 @@ export const ACHIEVEMENT_DEFINITIONS = {
     id: "comeback",
     name: "Comeback Kid",
     description: "Recover from a negative points balance to positive",
-    icon: "refresh",
+    icon: "💪",
     category: "recovery",
   },
 } as const;
@@ -201,7 +201,9 @@ function toSignalResponse(signal: SelectSignal): Signal {
   };
 }
 
-function toEvaluationResponse(evaluation: SelectSignalEvaluation): SignalEvaluation {
+function toEvaluationResponse(
+  evaluation: SelectSignalEvaluation,
+): SignalEvaluation {
   return {
     id: evaluation.id,
     signalId: evaluation.signalId,
@@ -319,10 +321,7 @@ export const SignalsService = {
       return undefined;
     }
 
-    const updated = await updateSignal(
-      { id, userId, organizationId },
-      input,
-    );
+    const updated = await updateSignal({ id, userId, organizationId }, input);
 
     if (!updated?.[0]) {
       return undefined;
@@ -393,7 +392,10 @@ export const SignalsService = {
   listAchievements: async (
     userId: string,
     organizationId: string,
-  ): Promise<{ achievements: Achievement[]; definitions: typeof ACHIEVEMENT_DEFINITIONS }> => {
+  ): Promise<{
+    achievements: Achievement[];
+    definitions: typeof ACHIEVEMENT_DEFINITIONS;
+  }> => {
     const { data } = await listAchievements(
       { userId, organizationId },
       { unlockedAt: "desc" },
@@ -417,20 +419,31 @@ export const SignalsService = {
       undefined,
     );
 
-    const { data: achievements } = await listAchievements(
-      { userId, organizationId },
-    );
+    const { data: achievements } = await listAchievements({
+      userId,
+      organizationId,
+    });
 
     const activeSignals = signals.filter((s) => s.isActive);
     const totalPoints = signals.reduce((sum, s) => sum + s.totalPoints, 0);
-    const bestCurrentStreak = Math.max(0, ...signals.map((s) => s.currentStreak));
-    const longestEverStreak = Math.max(0, ...signals.map((s) => s.longestStreak));
-    const totalSuccesses = signals.reduce((sum, s) => sum + s.totalSuccesses, 0);
+    const bestCurrentStreak = Math.max(
+      0,
+      ...signals.map((s) => s.currentStreak),
+    );
+    const longestEverStreak = Math.max(
+      0,
+      ...signals.map((s) => s.longestStreak),
+    );
+    const totalSuccesses = signals.reduce(
+      (sum, s) => sum + s.totalSuccesses,
+      0,
+    );
     const totalFailures = signals.reduce((sum, s) => sum + s.totalFailures, 0);
     const totalEvaluations = totalSuccesses + totalFailures;
-    const overallSuccessRate = totalEvaluations > 0
-      ? Math.round((totalSuccesses / totalEvaluations) * 100)
-      : 0;
+    const overallSuccessRate =
+      totalEvaluations > 0
+        ? Math.round((totalSuccesses / totalEvaluations) * 100)
+        : 0;
 
     return {
       totalPoints,
