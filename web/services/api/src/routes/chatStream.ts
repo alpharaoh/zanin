@@ -163,6 +163,10 @@ router.post(
         string,
         { name: string; completed: boolean; result?: ToolResult }
       >();
+      // Track seen message IDs to avoid processing historical messages
+      // LangGraph sends entire history in initial messages/complete event
+      const seenMessageIds = new Set<string>();
+      let isFirstMessagesComplete = true;
 
       for await (const event of stream as AsyncIterable<{
         event: string;
@@ -204,6 +208,7 @@ router.post(
           }
         } else if (eventType === "messages/complete") {
           const messages = data as Array<{
+            id?: string;
             type?: string;
             content?: unknown;
             name?: string;
@@ -211,7 +216,27 @@ router.post(
             tool_call_id?: string;
           }>;
 
+          // Skip the first messages/complete event - it contains the entire history
+          if (isFirstMessagesComplete) {
+            isFirstMessagesComplete = false;
+            // Mark all message IDs as seen so we don't process them later
+            for (const msg of messages) {
+              if (msg.id) {
+                seenMessageIds.add(msg.id);
+              }
+            }
+            continue;
+          }
+
           for (const msg of messages) {
+            // Skip messages we've already processed
+            if (msg.id && seenMessageIds.has(msg.id)) {
+              continue;
+            }
+            if (msg.id) {
+              seenMessageIds.add(msg.id);
+            }
+
             // Tool invocation (AI message with tool_calls)
             if (msg.type === "ai" && msg.tool_calls?.length) {
               for (const tc of msg.tool_calls) {
@@ -253,7 +278,6 @@ router.post(
           // Tool node completion
           const updates = data as Record<string, unknown>;
           if ("toolNode" in updates) {
-            console.log("updates", JSON.stringify(updates));
             const toolNode = updates.toolNode as {
               messages?: Array<{
                 type?: string;
