@@ -27,14 +27,6 @@ export const signals = pgTable("signals", {
 
   // State
   isActive: boolean("is_active").notNull().default(true),
-
-  // Gamification stats (denormalized for quick access)
-  totalPoints: integer("total_points").notNull().default(0),
-  currentStreak: integer("current_streak").notNull().default(0),
-  longestStreak: integer("longest_streak").notNull().default(0),
-  totalSuccesses: integer("total_successes").notNull().default(0),
-  totalFailures: integer("total_failures").notNull().default(0),
-  lastEvaluatedAt: timestamp("last_evaluated_at", { withTimezone: true }),
 });
 
 // Signal evaluations - results for each recording

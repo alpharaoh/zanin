@@ -1,8 +1,8 @@
 import { inngest } from "../../client";
 import { selectRecording } from "@zanin/db/queries/select/one/selectRecording";
 import { listSignals } from "@zanin/db/queries/select/many/listSignals";
+import { listSignalEvaluations } from "@zanin/db/queries/select/many/listSignalEvaluations";
 import { insertSignalEvaluation } from "@zanin/db/queries/insert/insertSignalEvaluation";
-import { updateSignal } from "@zanin/db/queries/update/updateSignal";
 import { transcriptToText } from "../processAudio/utils/buildStructuredTranscript";
 import {
   checkAndAwardAchievements,
@@ -89,6 +89,26 @@ export default inngest.createFunction(
       const evaluation = await step.run(
         `evaluate-signal-${signal.id}`,
         async () => {
+          // Get existing evaluations to compute current stats
+          const { data: existingEvaluations } = await listSignalEvaluations(
+            { signalId: signal.id },
+            { createdAt: "asc" },
+          );
+
+          // Compute current stats from existing evaluations
+          let previousTotalPoints = 0;
+          let currentStreak = 0;
+
+          for (const e of existingEvaluations) {
+            previousTotalPoints += e.pointsAwarded;
+            if (e.success) {
+              currentStreak++;
+            } else {
+              currentStreak = 0;
+            }
+          }
+
+          // Evaluate the signal
           const result = await evaluateSignal(
             {
               name: signal.name,
@@ -104,9 +124,8 @@ export default inngest.createFunction(
 
           // Calculate new stats
           const pointsAwarded = result.success ? 1 : -1;
-          const newStreak = result.success ? signal.currentStreak + 1 : 0;
-          const newLongestStreak = Math.max(signal.longestStreak, newStreak);
-          const newTotalPoints = signal.totalPoints + pointsAwarded;
+          const newStreak = result.success ? currentStreak + 1 : 0;
+          const newTotalPoints = previousTotalPoints + pointsAwarded;
 
           // Insert evaluation
           await insertSignalEvaluation({
@@ -117,21 +136,8 @@ export default inngest.createFunction(
             reasoning: result.reasoning,
             evidence: result.evidence,
             confidence: result.confidence,
-            streakAtEvaluation: signal.currentStreak,
+            streakAtEvaluation: currentStreak,
           });
-
-          // Update signal stats
-          await updateSignal(
-            { id: signal.id },
-            {
-              totalPoints: newTotalPoints,
-              currentStreak: newStreak,
-              longestStreak: newLongestStreak,
-              totalSuccesses: signal.totalSuccesses + (result.success ? 1 : 0),
-              totalFailures: signal.totalFailures + (result.success ? 0 : 1),
-              lastEvaluatedAt: new Date(),
-            },
-          );
 
           return {
             signalId: signal.id,
@@ -139,7 +145,7 @@ export default inngest.createFunction(
             success: result.success,
             newStreak,
             newTotalPoints,
-            previousTotalPoints: signal.totalPoints,
+            previousTotalPoints,
           };
         },
       );

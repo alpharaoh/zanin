@@ -86,6 +86,15 @@ export const ACHIEVEMENT_DEFINITIONS = {
 
 export type AchievementType = keyof typeof ACHIEVEMENT_DEFINITIONS;
 
+export interface SignalStats {
+  totalPoints: number;
+  currentStreak: number;
+  longestStreak: number;
+  totalSuccesses: number;
+  totalFailures: number;
+  lastEvaluatedAt: Date | null;
+}
+
 export interface Signal {
   id: string;
   name: string;
@@ -172,7 +181,65 @@ export interface SignalsStats {
   overallSuccessRate: number;
 }
 
-function toSignalResponse(signal: SelectSignal): Signal {
+/**
+ * Compute stats from evaluations for a signal
+ */
+function computeStatsFromEvaluations(
+  evaluations: SelectSignalEvaluation[],
+): SignalStats {
+  if (evaluations.length === 0) {
+    return {
+      totalPoints: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      totalSuccesses: 0,
+      totalFailures: 0,
+      lastEvaluatedAt: null,
+    };
+  }
+
+  // Sort by createdAt ascending for streak calculation
+  const sorted = [...evaluations].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+
+  let totalPoints = 0;
+  let totalSuccesses = 0;
+  let totalFailures = 0;
+  let currentStreak = 0;
+  let longestStreak = 0;
+  let tempStreak = 0;
+
+  for (const evaluation of sorted) {
+    totalPoints += evaluation.pointsAwarded;
+
+    if (evaluation.success) {
+      totalSuccesses++;
+      tempStreak++;
+      longestStreak = Math.max(longestStreak, tempStreak);
+    } else {
+      totalFailures++;
+      tempStreak = 0;
+    }
+  }
+
+  // Current streak is the streak at the end
+  currentStreak = tempStreak;
+
+  // Last evaluated is the most recent
+  const lastEvaluatedAt = sorted[sorted.length - 1].createdAt;
+
+  return {
+    totalPoints,
+    currentStreak,
+    longestStreak,
+    totalSuccesses,
+    totalFailures,
+    lastEvaluatedAt,
+  };
+}
+
+function toSignalResponse(signal: SelectSignal, stats: SignalStats): Signal {
   return {
     id: signal.id,
     name: signal.name,
@@ -182,12 +249,12 @@ function toSignalResponse(signal: SelectSignal): Signal {
     goodExamples: signal.goodExamples,
     badExamples: signal.badExamples,
     isActive: signal.isActive,
-    totalPoints: signal.totalPoints,
-    currentStreak: signal.currentStreak,
-    longestStreak: signal.longestStreak,
-    totalSuccesses: signal.totalSuccesses,
-    totalFailures: signal.totalFailures,
-    lastEvaluatedAt: signal.lastEvaluatedAt,
+    totalPoints: stats.totalPoints,
+    currentStreak: stats.currentStreak,
+    longestStreak: stats.longestStreak,
+    totalSuccesses: stats.totalSuccesses,
+    totalFailures: stats.totalFailures,
+    lastEvaluatedAt: stats.lastEvaluatedAt,
     createdAt: signal.createdAt,
     updatedAt: signal.updatedAt,
   };
@@ -221,6 +288,35 @@ function toAchievementResponse(achievement: SelectAchievement): Achievement {
   };
 }
 
+/**
+ * Helper to get stats for a single signal
+ */
+async function getSignalStats(signalId: string): Promise<SignalStats> {
+  const { data: evaluations } = await listSignalEvaluations(
+    { signalId },
+    { createdAt: "asc" },
+  );
+  return computeStatsFromEvaluations(evaluations);
+}
+
+/**
+ * Helper to get stats for multiple signals in a batch
+ */
+async function getSignalsStats(
+  signalIds: string[],
+): Promise<Map<string, SignalStats>> {
+  const statsMap = new Map<string, SignalStats>();
+
+  // Fetch all evaluations for all signals
+  const promises = signalIds.map(async (signalId) => {
+    const stats = await getSignalStats(signalId);
+    statsMap.set(signalId, stats);
+  });
+
+  await Promise.all(promises);
+  return statsMap;
+}
+
 export const SignalsService = {
   /**
    * Create a new signal
@@ -237,7 +333,17 @@ export const SignalsService = {
       badExamples: input.badExamples,
     });
 
-    return toSignalResponse(signal);
+    // New signal has no evaluations, so empty stats
+    const emptyStats: SignalStats = {
+      totalPoints: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      totalSuccesses: 0,
+      totalFailures: 0,
+      lastEvaluatedAt: null,
+    };
+
+    return toSignalResponse(signal, emptyStats);
   },
 
   /**
@@ -254,7 +360,8 @@ export const SignalsService = {
       return undefined;
     }
 
-    return toSignalResponse(signal);
+    const stats = await getSignalStats(id);
+    return toSignalResponse(signal, stats);
   },
 
   /**
@@ -276,8 +383,22 @@ export const SignalsService = {
       offset,
     );
 
+    // Batch fetch stats for all signals
+    const signalIds = data.map((s) => s.id);
+    const statsMap = await getSignalsStats(signalIds);
+
     return {
-      signals: data.map(toSignalResponse),
+      signals: data.map((signal) => {
+        const stats = statsMap.get(signal.id) || {
+          totalPoints: 0,
+          currentStreak: 0,
+          longestStreak: 0,
+          totalSuccesses: 0,
+          totalFailures: 0,
+          lastEvaluatedAt: null,
+        };
+        return toSignalResponse(signal, stats);
+      }),
       count,
     };
   },
@@ -303,7 +424,8 @@ export const SignalsService = {
       return undefined;
     }
 
-    return toSignalResponse(updated[0]);
+    const stats = await getSignalStats(id);
+    return toSignalResponse(updated[0], stats);
   },
 
   /**
@@ -329,7 +451,8 @@ export const SignalsService = {
       return undefined;
     }
 
-    return toSignalResponse(deleted[0]);
+    const stats = await getSignalStats(id);
+    return toSignalResponse(deleted[0], stats);
   },
 
   /**
@@ -400,21 +523,29 @@ export const SignalsService = {
       organizationId,
     });
 
+    // Compute stats for all signals
+    const signalIds = signals.map((s) => s.id);
+    const statsMap = await getSignalsStats(signalIds);
+
     const activeSignals = signals.filter((s) => s.isActive);
-    const totalPoints = signals.reduce((sum, s) => sum + s.totalPoints, 0);
-    const bestCurrentStreak = Math.max(
-      0,
-      ...signals.map((s) => s.currentStreak),
-    );
-    const longestEverStreak = Math.max(
-      0,
-      ...signals.map((s) => s.longestStreak),
-    );
-    const totalSuccesses = signals.reduce(
-      (sum, s) => sum + s.totalSuccesses,
-      0,
-    );
-    const totalFailures = signals.reduce((sum, s) => sum + s.totalFailures, 0);
+
+    let totalPoints = 0;
+    let bestCurrentStreak = 0;
+    let longestEverStreak = 0;
+    let totalSuccesses = 0;
+    let totalFailures = 0;
+
+    for (const signal of signals) {
+      const stats = statsMap.get(signal.id);
+      if (stats) {
+        totalPoints += stats.totalPoints;
+        bestCurrentStreak = Math.max(bestCurrentStreak, stats.currentStreak);
+        longestEverStreak = Math.max(longestEverStreak, stats.longestStreak);
+        totalSuccesses += stats.totalSuccesses;
+        totalFailures += stats.totalFailures;
+      }
+    }
+
     const totalEvaluations = totalSuccesses + totalFailures;
     const overallSuccessRate =
       totalEvaluations > 0
