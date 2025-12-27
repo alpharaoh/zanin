@@ -23,6 +23,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   ArrowLeftIcon,
   TrashIcon,
   Loader2Icon,
@@ -332,11 +340,67 @@ function SignalDetailPage() {
       </div>
 
       {/* Achievements */}
-      {signalAchievements.length > 0 && (
-        <div className="border border-border p-4">
-          <p className="mb-4 text-xs text-muted-foreground">
-            {">"} achievements
+      <div className="border border-border p-4">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-xs text-muted-foreground">
+            {">"} achievements ({signalAchievements.length}/
+            {Object.keys(achievementDefinitions).length})
           </p>
+          <Dialog>
+            <DialogTrigger className="text-[11px] text-muted-foreground hover:text-primary transition-colors">
+              View all
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>{">"} all_achievements</DialogTitle>
+                <DialogDescription>
+                  Achievements you can earn on this signal
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                {Object.entries(achievementDefinitions).map(([key, def]) => {
+                  const earned = signalAchievements.find(
+                    (a) => a.achievementType === key
+                  );
+                  return (
+                    <div
+                      key={key}
+                      className={cn(
+                        "flex items-start gap-3 p-3 border border-border",
+                        earned ? "bg-card" : "opacity-50"
+                      )}
+                    >
+                      <span className="text-lg">{def.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-medium">{def.name}</p>
+                          {earned && (
+                            <span className="text-[10px] text-emerald-500">
+                              ✓ earned
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {def.description}
+                        </p>
+                        {earned && (
+                          <p className="text-[10px] text-muted-foreground/70 mt-1">
+                            {formatDistance(
+                              new Date(earned.unlockedAt),
+                              new Date(),
+                              { addSuffix: true }
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+        {signalAchievements.length > 0 ? (
           <div className="flex flex-wrap gap-3">
             {signalAchievements.map((achievement) => {
               const def = achievementDefinitions[achievement.achievementType];
@@ -368,8 +432,12 @@ function SignalDetailPage() {
               );
             })}
           </div>
-        </div>
-      )}
+        ) : (
+          <p className="text-xs text-muted-foreground/50">
+            // no achievements yet
+          </p>
+        )}
+      </div>
 
       {/* Evaluations Table */}
       <div className="border border-border">
