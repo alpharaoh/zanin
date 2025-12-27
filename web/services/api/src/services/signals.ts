@@ -567,7 +567,8 @@ export const SignalsService = {
       bestCurrentStreak,
       longestEverStreak,
       achievementsUnlocked: achievements.length,
-      totalAchievements: Object.keys(ACHIEVEMENT_DEFINITIONS).length,
+      totalAchievements:
+        activeSignals.length * Object.keys(ACHIEVEMENT_DEFINITIONS).length,
       totalEvaluations,
       overallSuccessRate,
     };

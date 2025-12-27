@@ -101,6 +101,7 @@ export function PointsProgressionChart({
             border: "1px solid hsl(var(--border))",
             borderRadius: 0,
             fontSize: 11,
+            color: "hsl(var(--foreground))",
           }}
           formatter={(value, _name) => {
             const numValue = typeof value === "number" ? value : 0;

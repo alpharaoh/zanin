@@ -81,16 +81,25 @@ function DashboardIndex() {
       ? (stats.yourSpeakingTime / stats.othersSpeakingTime).toFixed(2)
       : "—";
 
+  const hasSignalsData = signalsStats && signalsStats.totalEvaluations > 0;
+
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       {/* Header */}
       <div>
         <span className="text-muted-foreground">~/</span>
         <span className="text-primary">dashboard</span>
       </div>
 
-      {/* Stats Grid - Terminal style boxes */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {/* Unified Stats Grid */}
+      <div
+        className={cn(
+          "grid gap-3",
+          hasSignalsData
+            ? "grid-cols-2 lg:grid-cols-6"
+            : "grid-cols-2 lg:grid-cols-4"
+        )}
+      >
         <StatBox
           label="recordings"
           value={stats.total.toString()}
@@ -116,12 +125,52 @@ function DashboardIndex() {
           value={formatDuration(stats.othersSpeakingTime)}
         />
         <StatBox label="talk_ratio" value={talkRatio} extra="you:others" />
+
+        {/* Signals stats integrated when available */}
+        {hasSignalsData && (
+          <>
+            <div className="border border-border bg-card p-3">
+              <p className="text-[10px] text-muted-foreground">points</p>
+              <p
+                className={cn(
+                  "mt-1 text-lg tabular-nums",
+                  signalsStats.totalPoints > 0 && "text-emerald-500",
+                  signalsStats.totalPoints < 0 && "text-red-500",
+                  signalsStats.totalPoints === 0 && "text-foreground"
+                )}
+              >
+                {signalsStats.totalPoints > 0 ? "+" : ""}
+                {signalsStats.totalPoints}
+              </p>
+            </div>
+            <div className="border border-border bg-card p-3">
+              <p className="text-[10px] text-muted-foreground">streak</p>
+              <div
+                className={cn(
+                  "mt-1 flex items-center gap-1 text-lg tabular-nums",
+                  signalsStats.bestCurrentStreak >= 7 && "text-amber-500",
+                  signalsStats.bestCurrentStreak >= 3 &&
+                    signalsStats.bestCurrentStreak < 7 &&
+                    "text-amber-400/70",
+                  signalsStats.bestCurrentStreak < 3 && "text-foreground"
+                )}
+              >
+                {signalsStats.bestCurrentStreak > 0 && (
+                  <FlameIcon className="size-4" />
+                )}
+                {signalsStats.bestCurrentStreak}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Recent Recordings */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">{">"} recent_recordings</span>
+          <span className="text-xs text-muted-foreground">
+            {">"} recent_recordings
+          </span>
           <Link
             to="/dashboard/recordings"
             className="text-xs text-primary hover:underline"
@@ -148,123 +197,81 @@ function DashboardIndex() {
       </div>
 
       {/* Signals Section */}
-      {signalsStats && signalsStats.totalEvaluations > 0 && (
-        <>
-          <div className="text-center text-xs text-muted-foreground/30">
-            ═══════════════════════════════════════════
+      {hasSignalsData && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">{">"} signals</span>
+            <Link
+              to="/dashboard/signals"
+              className="text-xs text-primary hover:underline"
+            >
+              manage --&gt;
+            </Link>
           </div>
 
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">{">"} signals_progress</span>
-              <Link
-                to="/dashboard/signals"
-                className="text-xs text-primary hover:underline"
-              >
-                manage_signals --&gt;
-              </Link>
-            </div>
-
-            {/* Signals Stats */}
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-              <div className="border border-border bg-card p-4">
-                <p className="text-xs text-muted-foreground">total_points</p>
-                <p
-                  className={cn(
-                    "mt-2 text-xl tabular-nums",
-                    signalsStats.totalPoints > 0 && "text-emerald-500",
-                    signalsStats.totalPoints < 0 && "text-red-500",
-                    signalsStats.totalPoints === 0 && "text-foreground"
-                  )}
-                >
-                  {signalsStats.totalPoints > 0 ? "+" : ""}
-                  {signalsStats.totalPoints}
+          {/* Two-column layout for charts and achievements */}
+          <div className="grid gap-3 lg:grid-cols-2">
+            {/* Daily Success Chart */}
+            <div className="border border-border p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-[10px] text-muted-foreground">
+                  success_rate (14d)
+                </p>
+                <p className="text-[10px] tabular-nums text-muted-foreground">
+                  {signalsStats.overallSuccessRate}% avg
                 </p>
               </div>
-              <div className="border border-border bg-card p-4">
-                <p className="text-xs text-muted-foreground">best_streak</p>
-                <div
-                  className={cn(
-                    "mt-2 flex items-center gap-1.5 text-xl tabular-nums",
-                    signalsStats.bestCurrentStreak >= 7 && "text-amber-500",
-                    signalsStats.bestCurrentStreak >= 3 &&
-                      signalsStats.bestCurrentStreak < 7 &&
-                      "text-amber-400/70",
-                    signalsStats.bestCurrentStreak < 3 && "text-foreground"
-                  )}
-                >
-                  {signalsStats.bestCurrentStreak > 0 && (
-                    <FlameIcon className="size-5" />
-                  )}
-                  {signalsStats.bestCurrentStreak}
-                </div>
-                {signalsStats.longestEverStreak > signalsStats.bestCurrentStreak && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    best: {signalsStats.longestEverStreak}
+              <DailySuccessChart
+                evaluations={evaluationsHistory ?? []}
+                days={14}
+              />
+            </div>
+
+            {/* Recent Achievements or Points Progression */}
+            {achievementsData && achievementsData.achievements.length > 0 ? (
+              <div className="border border-border p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-[10px] text-muted-foreground">
+                    achievements
                   </p>
-                )}
-              </div>
-              <div className="border border-border bg-card p-4">
-                <p className="text-xs text-muted-foreground">success_rate</p>
-                <p className="mt-2 text-xl tabular-nums">
-                  {signalsStats.overallSuccessRate}%
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {signalsStats.totalEvaluations} evals
-                </p>
-              </div>
-              <div className="border border-border bg-card p-4">
-                <p className="text-xs text-muted-foreground">achievements</p>
-                <p className="mt-2 text-xl tabular-nums">
-                  {signalsStats.achievementsUnlocked}/{signalsStats.totalAchievements}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {signalsStats.activeSignals} active signals
-                </p>
-              </div>
-            </div>
-
-            {/* Charts Row */}
-            <div className="grid gap-4 lg:grid-cols-2">
-              {/* Daily Success Rate */}
-              <div className="border border-border p-4">
-                <p className="mb-4 text-xs text-muted-foreground">
-                  {">"} daily_success_rate (14d)
-                </p>
-                <DailySuccessChart
-                  evaluations={evaluationsHistory ?? []}
-                  days={14}
-                />
-              </div>
-
-              {/* Recent Achievements */}
-              <div className="border border-border p-4">
-                <p className="mb-4 text-xs text-muted-foreground">
-                  {">"} recent_achievements
-                </p>
+                  <p className="text-[10px] tabular-nums text-muted-foreground">
+                    {signalsStats.achievementsUnlocked}/
+                    {signalsStats.totalAchievements}
+                  </p>
+                </div>
                 <RecentAchievements
-                  achievements={achievementsData?.achievements ?? []}
-                  definitions={achievementsData?.definitions ?? {}}
+                  achievements={achievementsData.achievements}
+                  definitions={achievementsData.definitions}
                   limit={4}
                 />
               </div>
-            </div>
-
-            {/* Points Progression */}
-            <div className="border border-border p-4">
-              <p className="mb-4 text-xs text-muted-foreground">
-                {">"} points_progression (30d)
-              </p>
-              <PointsProgressionChart evaluations={evaluationsHistory ?? []} />
-            </div>
+            ) : (
+              evaluationsHistory &&
+              evaluationsHistory.length >= 2 && (
+                <div className="border border-border p-3">
+                  <p className="mb-2 text-[10px] text-muted-foreground">
+                    points_progression (30d)
+                  </p>
+                  <PointsProgressionChart evaluations={evaluationsHistory} />
+                </div>
+              )
+            )}
           </div>
-        </>
-      )}
 
-      {/* ASCII decoration */}
-      <div className="text-center text-xs text-muted-foreground/30">
-        ═══════════════════════════════════════════
-      </div>
+          {/* Points Progression - show below if achievements exist */}
+          {achievementsData &&
+            achievementsData.achievements.length > 0 &&
+            evaluationsHistory &&
+            evaluationsHistory.length >= 2 && (
+              <div className="border border-border p-3">
+                <p className="mb-2 text-[10px] text-muted-foreground">
+                  points_progression (30d)
+                </p>
+                <PointsProgressionChart evaluations={evaluationsHistory} />
+              </div>
+            )}
+        </div>
+      )}
     </div>
   );
 }
@@ -277,25 +284,29 @@ interface StatBoxProps {
 
 function StatBox({ label, value, extra }: StatBoxProps) {
   return (
-    <div className="border border-border bg-card p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-2 text-xl text-foreground">{value}</p>
-      {extra && <p className="mt-1 text-xs text-muted-foreground">{extra}</p>}
+    <div className="border border-border bg-card p-3">
+      <p className="text-[10px] text-muted-foreground">{label}</p>
+      <p className="mt-1 text-lg text-foreground">{value}</p>
+      {extra && (
+        <p className="mt-0.5 text-[10px] text-muted-foreground">{extra}</p>
+      )}
     </div>
   );
 }
 
 function DashboardSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <Skeleton className="h-5 w-32" />
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-24" />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-20" />
         ))}
       </div>
-      <div className="space-y-4">
-        <Skeleton className="h-4 w-40" />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Skeleton className="h-64" />
+        </div>
         <Skeleton className="h-64" />
       </div>
     </div>

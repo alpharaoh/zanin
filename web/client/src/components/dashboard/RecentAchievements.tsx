@@ -1,6 +1,5 @@
 import type { Achievement, AchievementDefinition } from "@/api";
 import { formatDistance } from "date-fns";
-import { Link } from "@tanstack/react-router";
 
 interface RecentAchievementsProps {
   achievements: Achievement[];
@@ -30,39 +29,31 @@ export function RecentAchievements({
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 space-y-2">
-        {recent.map((achievement) => {
-          const def = definitions[achievement.achievementType];
-          return (
-            <div
-              key={achievement.id}
-              className="flex items-center gap-2.5 p-2 border border-border bg-card/50"
-            >
-              <span className="text-base shrink-0">{def?.icon || "🏅"}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium truncate">
-                  {def?.name || achievement.achievementType}
-                </p>
-                <p className="text-[10px] text-muted-foreground truncate">
-                  {achievement.metadata?.signalName && (
-                    <span>"{achievement.metadata.signalName}" · </span>
-                  )}
-                  {formatDistance(new Date(achievement.unlockedAt), new Date(), {
-                    addSuffix: true,
-                  })}
-                </p>
-              </div>
+    <div className="space-y-2">
+      {recent.map((achievement) => {
+        const def = definitions[achievement.achievementType];
+        return (
+          <div
+            key={achievement.id}
+            className="flex items-center gap-2.5 p-2 border border-border bg-card/50"
+          >
+            <span className="text-base shrink-0">{def?.icon || "🏅"}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate">
+                {def?.name || achievement.achievementType}
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate">
+                {achievement.metadata?.signalName && (
+                  <span>"{achievement.metadata.signalName}" · </span>
+                )}
+                {formatDistance(new Date(achievement.unlockedAt), new Date(), {
+                  addSuffix: true,
+                })}
+              </p>
             </div>
-          );
-        })}
-      </div>
-      <Link
-        to="/dashboard/signals"
-        className="text-[11px] text-muted-foreground hover:text-primary transition-colors mt-3 block"
-      >
-        View all signals →
-      </Link>
+          </div>
+        );
+      })}
     </div>
   );
 }
