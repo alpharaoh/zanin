@@ -1,24 +1,7 @@
-# Zanin Local Development Stack
+# Zanin Production Stack
 # Usage: docker compose up --build
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:18-alpine
-    environment:
-      POSTGRES_USER: zanin
-      POSTGRES_PASSWORD: zanin
-      POSTGRES_DB: zanin
-    ports:
-      - "54399:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U zanin"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # API Service (Express + TSOA)
   api:
     build:
@@ -27,19 +10,29 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - DATABASE_URL=postgresql://zanin:zanin@postgres:5432/zanin
-      - NODE_ENV=development
+      - DATABASE_URL=${DATABASE_URL}
+      - NODE_ENV=production
       - PORT=8081
       - VAD_SERVICE_URL=http://vad:8000
       - SID_SERVICE_URL=http://sid:8082
       - LANGGRAPH_URL=http://agents:3001
+      - INNGEST_SIGNING_KEY=${INNGEST_SIGNING_KEY}
+      - INNGEST_EVENT_KEY=${INNGEST_EVENT_KEY}
     env_file:
       - .env
     depends_on:
-      postgres:
-        condition: service_healthy
       agents:
         condition: service_healthy
+      vad:
+        condition: service_healthy
+      sid:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bun -e \"fetch('http://localhost:8081/health').then(r => process.exit(r.ok ? 0 : 1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # Agents Service (LangGraph)
   agents:
@@ -49,13 +42,13 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - DATABASE_URL=postgresql://zanin:zanin@postgres:5432/zanin
+      - NODE_ENV=production
       - PORT=3001
+      - DATABASE_URL=${DATABASE_URL}
+      - GOOGLE_GENERATIVE_AI_API_KEY=${GOOGLE_GENERATIVE_AI_API_KEY}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
     env_file:
       - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "bun -e \"fetch('http://localhost:3001/health').then(r => process.exit(r.ok ? 0 : 1))\""]
       interval: 10s
@@ -73,6 +66,12 @@ services:
     environment:
       - VAD_HOST=0.0.0.0
       - VAD_PORT=8000
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   # SID Service (Speaker Identification)
   sid:
@@ -86,7 +85,12 @@ services:
       - SID_PORT=8082
     volumes:
       - sid_profiles:/data/profiles
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8082/health/live')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
 
 volumes:
-  postgres_data:
   sid_profiles:

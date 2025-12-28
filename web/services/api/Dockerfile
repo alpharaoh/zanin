@@ -50,6 +50,14 @@ COPY --from=builder /app/services/api ./services/api
 
 WORKDIR /app/services/api
 
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+# Set production environment
+ENV NODE_ENV=production
+
 # Expose port
 EXPOSE 8081
 
