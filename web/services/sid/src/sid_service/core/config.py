@@ -16,8 +16,8 @@ class Settings(BaseSettings):
 
     # Server
     host: str = Field(default="0.0.0.0")
-    port: int = Field(default=8001)
-    workers: int = Field(default=4)
+    port: int = Field(default=8082)
+    workers: int = Field(default=1)
     debug: bool = Field(default=False)
 
     # Speaker Identification Settings

@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     # Server
     host: str = Field(default="0.0.0.0")
     port: int = Field(default=8000)
-    workers: int = Field(default=4)
+    workers: int = Field(default=1)
     debug: bool = Field(default=False)
 
     # VAD Settings
