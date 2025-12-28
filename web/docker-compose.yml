@@ -15,14 +15,12 @@ services:
       - PORT=8081
       - VAD_SERVICE_URL=http://vad:8000
       - SID_SERVICE_URL=http://sid:8082
-      - LANGGRAPH_URL=http://agents:3001
       - INNGEST_SIGNING_KEY=${INNGEST_SIGNING_KEY}
       - INNGEST_EVENT_KEY=${INNGEST_EVENT_KEY}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
     env_file:
       - .env
     depends_on:
-      agents:
-        condition: service_healthy
       vad:
         condition: service_healthy
       sid:
@@ -32,28 +30,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
-
-  # Agents Service (LangGraph)
-  agents:
-    build:
-      context: .
-      dockerfile: services/agents/Dockerfile
-    ports:
-      - "3001:3001"
-    environment:
-      - NODE_ENV=production
-      - PORT=3001
-      - DATABASE_URL=${DATABASE_URL}
-      - GOOGLE_GENERATIVE_AI_API_KEY=${GOOGLE_GENERATIVE_AI_API_KEY}
-      - PINECONE_API_KEY=${PINECONE_API_KEY}
-    env_file:
-      - .env
-    healthcheck:
-      test: ["CMD-SHELL", "bun -e \"fetch('http://localhost:3001/health').then(r => process.exit(r.ok ? 0 : 1))\""]
-      interval: 10s
-      timeout: 5s
-      retries: 5
       start_period: 30s
 
   # VAD Service (Voice Activity Detection)
