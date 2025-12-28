@@ -2,16 +2,24 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { tool } from "@langchain/core/tools";
 import * as z from "zod";
 import { parseISO, getUnixTime } from "date-fns";
-import { pinecone, RECORDINGS_INDEX } from "../lib/pinecone";
-import { embedText } from "../lib/embedding";
-import db from "../lib/db";
-import { recordings, type SelectRecording } from "../lib/schema";
-import { eq, and, isNull, inArray, gte, lte } from "drizzle-orm";
+import { env } from "@zanin/env/server";
+import { listRecordings } from "@zanin/db/queries/select/many/listRecordings";
+import {
+  VectorSearchService,
+  type DocumentSearchResult,
+  type SearchableMetadata,
+} from "../../services/external/store/vector/search";
+import { RECORDINGS_INDEX } from "../../services/recordings";
 
 const model = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash",
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+  apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
 });
+
+interface RecordingMetadata extends SearchableMetadata {
+  recordingId: string;
+  createdAtTs: number;
+}
 
 /**
  * Build Pinecone filter for date range queries.
@@ -49,21 +57,20 @@ function buildDateFilter(
  */
 const searchRecordings = tool(
   async ({ query, organizationId, limit, startDate, endDate }) => {
-    const queryEmbedding = await embedText(query);
-
-    const index = pinecone.index(RECORDINGS_INDEX);
-    const ns = index.namespace(organizationId);
-
     const filter = buildDateFilter(startDate, endDate);
 
-    const results = await ns.query({
-      vector: queryEmbedding,
-      topK: limit,
-      includeMetadata: true,
-      filter,
-    });
+    const results = await VectorSearchService.searchByPromptGrouped<RecordingMetadata>(
+      RECORDINGS_INDEX,
+      organizationId,
+      query,
+      {
+        maxDocuments: limit,
+        chunksPerDocument: 3,
+        filter,
+      },
+    );
 
-    if (!results.matches || results.matches.length === 0) {
+    if (results.length === 0) {
       return JSON.stringify({
         success: true,
         results: [],
@@ -71,48 +78,11 @@ const searchRecordings = tool(
       });
     }
 
-    // Group results by documentId (recording)
-    const groupedResults = new Map<
-      string,
-      { texts: string[]; topScore: number }
-    >();
-
-    for (const match of results.matches) {
-      const metadata = match.metadata as {
-        documentId?: string;
-        recordingId?: string;
-        text?: string;
-      };
-      const recordingId = metadata?.documentId || metadata?.recordingId;
-      const text = metadata?.text || "";
-
-      if (!recordingId) {
-        continue;
-      }
-
-      if (!groupedResults.has(recordingId)) {
-        groupedResults.set(recordingId, {
-          texts: [],
-          topScore: match.score ?? 0,
-        });
-      }
-
-      const group = groupedResults.get(recordingId)!;
-      if (group.texts.length < 3) {
-        group.texts.push(text);
-      }
-      if ((match.score ?? 0) > group.topScore) {
-        group.topScore = match.score ?? 0;
-      }
-    }
-
-    const searchResults = Array.from(groupedResults.entries())
-      .map(([recordingId, data]) => ({
-        recordingId,
-        relevantExcerpts: data.texts,
-        relevanceScore: data.topScore,
-      }))
-      .sort((a, b) => b.relevanceScore - a.relevanceScore);
+    const searchResults = results.map((doc: DocumentSearchResult<RecordingMetadata>) => ({
+      recordingId: doc.documentId,
+      relevantExcerpts: doc.chunks.map((c) => c.text),
+      relevanceScore: doc.topScore,
+    }));
 
     return JSON.stringify({
       success: true,
@@ -135,8 +105,8 @@ const searchRecordings = tool(
         .describe("The organization ID to search within"),
       limit: z
         .number()
-        .default(20)
-        .describe("Maximum number of vector results to retrieve (default: 20)"),
+        .default(10)
+        .describe("Maximum number of recordings to return (default: 10)"),
       startDate: z
         .string()
         .optional()
@@ -171,28 +141,17 @@ const getRecordingDetails = tool(
       });
     }
 
-    const conditions = [
-      eq(recordings.organizationId, organizationId),
-      isNull(recordings.deletedAt),
-    ];
+    const { data: results } = await listRecordings(
+      {
+        organizationId,
+        ids: hasIds ? recordingIds : undefined,
+        startDate: startDate ? parseISO(startDate) : undefined,
+        endDate: endDate ? parseISO(endDate) : undefined,
+      },
+      { createdAt: "asc" },
+    );
 
-    if (hasIds) {
-      conditions.push(inArray(recordings.id, recordingIds!));
-    }
-    if (startDate) {
-      conditions.push(gte(recordings.createdAt, parseISO(startDate)));
-    }
-    if (endDate) {
-      conditions.push(lte(recordings.createdAt, parseISO(endDate)));
-    }
-
-    const results = await db
-      .select()
-      .from(recordings)
-      .where(and(...conditions))
-      .orderBy(recordings.createdAt);
-
-    const foundRecordings = (results as SelectRecording[]).map((recording) => ({
+    const foundRecordings = results.map((recording) => ({
       id: recording.id,
       title: recording.title,
       createdAt: recording.createdAt,

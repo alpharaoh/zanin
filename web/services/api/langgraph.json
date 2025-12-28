@@ -3,7 +3,7 @@
     "."
   ],
   "graphs": {
-    "customer_support": "./src/agents/recordings/agent.ts:graph"
+    "recordings": "./src/agents/recordings/agent.ts:graph"
   },
   "env": "../../.env"
 }

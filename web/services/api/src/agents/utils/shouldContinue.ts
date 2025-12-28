@@ -1,6 +1,6 @@
 import { AIMessage } from "@langchain/core/messages";
 import { END } from "@langchain/langgraph";
-import type { RecordingsQueryStateType } from "../recordings_query/state";
+import type { RecordingsQueryStateType } from "../recordings/state";
 
 const MAX_ITERATIONS = 10;
 
