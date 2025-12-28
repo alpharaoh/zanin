@@ -338,7 +338,7 @@ router.post(
 
       // Generate title if thread doesn't have one yet
       if (!thread.title) {
-        await inngest.send({
+        inngest.send({
           name: "chat/generate-title",
           data: {
             threadId,

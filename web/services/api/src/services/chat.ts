@@ -203,7 +203,7 @@ const ChatService = {
 
     // Generate title if thread doesn't have one yet
     if (!chatThread.title) {
-      await inngest.send({
+      inngest.send({
         name: "chat/generate-title",
         data: {
           threadId,

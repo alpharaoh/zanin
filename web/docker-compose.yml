@@ -32,10 +32,13 @@ services:
       - PORT=8081
       - VAD_SERVICE_URL=http://vad:8000
       - SID_SERVICE_URL=http://sid:8082
+      - LANGGRAPH_URL=http://agents:3001
     env_file:
       - .env
     depends_on:
       postgres:
+        condition: service_healthy
+      agents:
         condition: service_healthy
 
   # Agents Service (LangGraph)
@@ -53,6 +56,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bun -e \"fetch('http://localhost:3001/health').then(r => process.exit(r.ok ? 0 : 1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # VAD Service (Voice Activity Detection)
   vad:
